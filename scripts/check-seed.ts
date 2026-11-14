@@ -37,7 +37,7 @@ const contacts = await readJson(path.join(recordsDirectory, "contacts.json"));
 if (employees.length !== 32) fail(`employees ${employees.length}`);
 if (accounts.length !== 40) fail(`accounts ${accounts.length}`);
 if (products.length !== 40) fail(`products ${products.length}`);
-if (contacts.length !== 40) fail(`contacts ${contacts.length}`);
+if (contacts.length < 40) fail(`contacts ${contacts.length}`);
 
 const user = employees.find((row: { id: string }) => row.id === "user");
 const alex = employees.find((row: { id: string }) => row.id === "alex-morgan");
@@ -71,6 +71,8 @@ if (!discountPolicy.includes("15 percent")) fail("policy missing cap");
 if (!discountPolicy.includes("send a quote")) fail("policy missing send");
 if (!sending.includes("Opportunity header")) fail("send page missing header");
 if (!sending.includes("Send Quote")) fail("send page missing button");
+
+await import("./check-workflow-seed.ts");
 
 console.log("seed ok");
 console.log(`authored ${authored.length} generated ${generated.length}`);

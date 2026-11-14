@@ -4,104 +4,219 @@
     "accountId": "goldfinch-cafe",
     "warehouseId": "jersey-city-cold",
     "status": "open",
-    "amount": 1211
+    "amount": 1211,
+    "quoteId": "",
+    "opportunityId": "",
+    "deliveryDate": "2026-11-17",
+    "holdReason": ""
   },
   {
     "id": "order-2",
     "accountId": "river-salt",
     "warehouseId": "newark-dry-goods",
     "status": "delivered",
-    "amount": 1348
+    "amount": 1348,
+    "quoteId": "",
+    "opportunityId": "",
+    "deliveryDate": "2026-10-20",
+    "holdReason": ""
   },
   {
     "id": "order-3",
     "accountId": "olive-room",
     "warehouseId": "chicago-dry",
     "status": "delivered",
-    "amount": 1485
+    "amount": 1485,
+    "quoteId": "",
+    "opportunityId": "",
+    "deliveryDate": "2026-10-20",
+    "holdReason": ""
   },
   {
     "id": "order-4",
     "accountId": "paper-lantern",
     "warehouseId": "chicago-dry",
     "status": "delivered",
-    "amount": 1622
+    "amount": 1622,
+    "quoteId": "",
+    "opportunityId": "",
+    "deliveryDate": "2026-10-20",
+    "holdReason": ""
   },
   {
     "id": "order-5",
     "accountId": "sunday-roast",
     "warehouseId": "jersey-city-cold",
     "status": "delivered",
-    "amount": 1759
+    "amount": 1759,
+    "quoteId": "",
+    "opportunityId": "",
+    "deliveryDate": "2026-10-20",
+    "holdReason": ""
   },
   {
     "id": "order-6",
     "accountId": "blue-plate-yard",
     "warehouseId": "newark-dry-goods",
     "status": "delivered",
-    "amount": 1896
+    "amount": 1896,
+    "quoteId": "",
+    "opportunityId": "",
+    "deliveryDate": "2026-10-20",
+    "holdReason": ""
   },
   {
     "id": "order-7",
     "accountId": "kindling-pizza",
     "warehouseId": "chicago-dry",
     "status": "delivered",
-    "amount": 2033
+    "amount": 2033,
+    "quoteId": "",
+    "opportunityId": "",
+    "deliveryDate": "2026-10-20",
+    "holdReason": ""
   },
   {
     "id": "order-8",
     "accountId": "the-copper-pot",
     "warehouseId": "chicago-dry",
     "status": "delivered",
-    "amount": 2170
+    "amount": 2170,
+    "quoteId": "",
+    "opportunityId": "",
+    "deliveryDate": "2026-10-20",
+    "holdReason": ""
   },
   {
     "id": "order-9",
     "accountId": "low-tide-tacos",
     "warehouseId": "jersey-city-cold",
     "status": "delivered",
-    "amount": 2307
+    "amount": 2307,
+    "quoteId": "",
+    "opportunityId": "",
+    "deliveryDate": "2026-10-20",
+    "holdReason": ""
   },
   {
     "id": "order-10",
     "accountId": "orchard-table",
     "warehouseId": "newark-dry-goods",
     "status": "delivered",
-    "amount": 2444
+    "amount": 2444,
+    "quoteId": "",
+    "opportunityId": "",
+    "deliveryDate": "2026-10-20",
+    "holdReason": ""
   },
   {
     "id": "order-11",
     "accountId": "steam-house",
     "warehouseId": "chicago-dry",
     "status": "delivered",
-    "amount": 2581
+    "amount": 2581,
+    "quoteId": "",
+    "opportunityId": "",
+    "deliveryDate": "2026-10-20",
+    "holdReason": ""
   },
   {
     "id": "order-12",
     "accountId": "fennel-rye",
     "warehouseId": "chicago-dry",
     "status": "delivered",
-    "amount": 2718
+    "amount": 2718,
+    "quoteId": "",
+    "opportunityId": "",
+    "deliveryDate": "2026-10-20",
+    "holdReason": ""
   },
   {
     "id": "order-13",
     "accountId": "dockside-bowls",
     "warehouseId": "jersey-city-cold",
     "status": "delivered",
-    "amount": 2855
+    "amount": 2855,
+    "quoteId": "",
+    "opportunityId": "",
+    "deliveryDate": "2026-10-20",
+    "holdReason": ""
   },
   {
     "id": "order-14",
     "accountId": "night-market-kitchen",
     "warehouseId": "newark-dry-goods",
     "status": "delivered",
-    "amount": 2992
+    "amount": 2992,
+    "quoteId": "",
+    "opportunityId": "",
+    "deliveryDate": "2026-10-20",
+    "holdReason": ""
   },
   {
     "id": "order-15",
     "accountId": "butter-street",
     "warehouseId": "chicago-dry",
     "status": "delivered",
-    "amount": 3129
+    "amount": 3129,
+    "quoteId": "",
+    "opportunityId": "",
+    "deliveryDate": "2026-10-20",
+    "holdReason": ""
+  },
+  {
+    "id": "order-16",
+    "accountId": "dockside-bowls",
+    "warehouseId": "newark-dry-goods",
+    "status": "delivered",
+    "amount": 435.9,
+    "quoteId": "",
+    "opportunityId": "",
+    "deliveryDate": "2026-11-10",
+    "holdReason": ""
+  },
+  {
+    "id": "order-19",
+    "accountId": "river-salt",
+    "warehouseId": "newark-dry-goods",
+    "status": "open",
+    "amount": 135,
+    "quoteId": "",
+    "opportunityId": "",
+    "deliveryDate": "2026-11-19",
+    "holdReason": ""
+  },
+  {
+    "id": "order-20",
+    "accountId": "cedar-spoon",
+    "warehouseId": "newark-dry-goods",
+    "status": "backordered",
+    "amount": 90,
+    "quoteId": "",
+    "opportunityId": "",
+    "deliveryDate": "2026-11-19",
+    "holdReason": ""
+  },
+  {
+    "id": "order-17",
+    "accountId": "juniper-deli",
+    "warehouseId": "newark-dry-goods",
+    "status": "delivered",
+    "amount": 1840,
+    "quoteId": "",
+    "opportunityId": "",
+    "deliveryDate": "2026-08-17",
+    "holdReason": ""
+  },
+  {
+    "id": "order-18",
+    "accountId": "juniper-deli",
+    "warehouseId": "newark-dry-goods",
+    "status": "held",
+    "amount": 640,
+    "quoteId": "",
+    "opportunityId": "",
+    "deliveryDate": "2026-11-19",
+    "holdReason": "invoice-17 is past due."
   }
 ]

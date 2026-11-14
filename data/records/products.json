@@ -6,7 +6,8 @@
     "family": "paper",
     "unit": "case",
     "price": 4,
-    "supplierId": "northline-foods"
+    "supplierId": "northline-foods",
+    "cost": 2.4
   },
   {
     "id": "fryer-oil",
@@ -15,7 +16,8 @@
     "family": "oil",
     "unit": "jug",
     "price": 7.5,
-    "supplierId": "harbor-mills"
+    "supplierId": "harbor-mills",
+    "cost": 4.5
   },
   {
     "id": "gloves",
@@ -24,7 +26,8 @@
     "family": "paper",
     "unit": "box",
     "price": 11,
-    "supplierId": "cedar-dairy-co"
+    "supplierId": "cedar-dairy-co",
+    "cost": 6.6
   },
   {
     "id": "butter",
@@ -33,7 +36,8 @@
     "family": "dairy",
     "unit": "case",
     "price": 14.5,
-    "supplierId": "paperlane-supply"
+    "supplierId": "paperlane-supply",
+    "cost": 8.7
   },
   {
     "id": "cheddar",
@@ -42,7 +46,8 @@
     "family": "dairy",
     "unit": "wheel",
     "price": 18,
-    "supplierId": "iron-pan-works"
+    "supplierId": "iron-pan-works",
+    "cost": 10.8
   },
   {
     "id": "cream",
@@ -51,7 +56,8 @@
     "family": "dairy",
     "unit": "quart",
     "price": 21.5,
-    "supplierId": "great-lakes-oil"
+    "supplierId": "great-lakes-oil",
+    "cost": 12.9
   },
   {
     "id": "milk",
@@ -60,7 +66,8 @@
     "family": "dairy",
     "unit": "gallon",
     "price": 25,
-    "supplierId": "metro-dry-goods"
+    "supplierId": "metro-dry-goods",
+    "cost": 15
   },
   {
     "id": "yogurt",
@@ -69,7 +76,8 @@
     "family": "dairy",
     "unit": "tub",
     "price": 28.5,
-    "supplierId": "atlas-smallwares"
+    "supplierId": "atlas-smallwares",
+    "cost": 17.1
   },
   {
     "id": "rice",
@@ -78,7 +86,8 @@
     "family": "dry goods",
     "unit": "bag",
     "price": 32,
-    "supplierId": "northline-foods"
+    "supplierId": "northline-foods",
+    "cost": 19.2
   },
   {
     "id": "flour",
@@ -87,7 +96,8 @@
     "family": "dry goods",
     "unit": "bag",
     "price": 4,
-    "supplierId": "harbor-mills"
+    "supplierId": "harbor-mills",
+    "cost": 2.4
   },
   {
     "id": "sugar",
@@ -96,7 +106,8 @@
     "family": "dry goods",
     "unit": "bag",
     "price": 7.5,
-    "supplierId": "cedar-dairy-co"
+    "supplierId": "cedar-dairy-co",
+    "cost": 4.5
   },
   {
     "id": "salt",
@@ -105,7 +116,8 @@
     "family": "dry goods",
     "unit": "box",
     "price": 11,
-    "supplierId": "paperlane-supply"
+    "supplierId": "paperlane-supply",
+    "cost": 6.6
   },
   {
     "id": "pasta",
@@ -114,7 +126,8 @@
     "family": "dry goods",
     "unit": "case",
     "price": 14.5,
-    "supplierId": "iron-pan-works"
+    "supplierId": "iron-pan-works",
+    "cost": 8.7
   },
   {
     "id": "beans",
@@ -123,7 +136,8 @@
     "family": "dry goods",
     "unit": "case",
     "price": 18,
-    "supplierId": "great-lakes-oil"
+    "supplierId": "great-lakes-oil",
+    "cost": 10.8
   },
   {
     "id": "oats",
@@ -132,7 +146,8 @@
     "family": "dry goods",
     "unit": "bag",
     "price": 21.5,
-    "supplierId": "metro-dry-goods"
+    "supplierId": "metro-dry-goods",
+    "cost": 12.9
   },
   {
     "id": "cans",
@@ -141,7 +156,8 @@
     "family": "dry goods",
     "unit": "case",
     "price": 25,
-    "supplierId": "atlas-smallwares"
+    "supplierId": "atlas-smallwares",
+    "cost": 15
   },
   {
     "id": "towels",
@@ -150,7 +166,8 @@
     "family": "paper",
     "unit": "case",
     "price": 28.5,
-    "supplierId": "northline-foods"
+    "supplierId": "northline-foods",
+    "cost": 17.1
   },
   {
     "id": "foil",
@@ -159,7 +176,8 @@
     "family": "paper",
     "unit": "box",
     "price": 32,
-    "supplierId": "harbor-mills"
+    "supplierId": "harbor-mills",
+    "cost": 19.2
   },
   {
     "id": "wrap",
@@ -168,7 +186,8 @@
     "family": "paper",
     "unit": "box",
     "price": 4,
-    "supplierId": "cedar-dairy-co"
+    "supplierId": "cedar-dairy-co",
+    "cost": 2.4
   },
   {
     "id": "containers",
@@ -177,7 +196,8 @@
     "family": "paper",
     "unit": "case",
     "price": 7.5,
-    "supplierId": "paperlane-supply"
+    "supplierId": "paperlane-supply",
+    "cost": 4.5
   },
   {
     "id": "cups",
@@ -186,7 +206,8 @@
     "family": "paper",
     "unit": "case",
     "price": 11,
-    "supplierId": "iron-pan-works"
+    "supplierId": "iron-pan-works",
+    "cost": 6.6
   },
   {
     "id": "lids",
@@ -195,7 +216,8 @@
     "family": "paper",
     "unit": "case",
     "price": 14.5,
-    "supplierId": "great-lakes-oil"
+    "supplierId": "great-lakes-oil",
+    "cost": 8.7
   },
   {
     "id": "straws",
@@ -204,7 +226,8 @@
     "family": "paper",
     "unit": "box",
     "price": 18,
-    "supplierId": "metro-dry-goods"
+    "supplierId": "metro-dry-goods",
+    "cost": 10.8
   },
   {
     "id": "bags",
@@ -213,7 +236,8 @@
     "family": "paper",
     "unit": "bundle",
     "price": 21.5,
-    "supplierId": "atlas-smallwares"
+    "supplierId": "atlas-smallwares",
+    "cost": 12.9
   },
   {
     "id": "spatula",
@@ -222,7 +246,8 @@
     "family": "smallwares",
     "unit": "each",
     "price": 25,
-    "supplierId": "northline-foods"
+    "supplierId": "northline-foods",
+    "cost": 15
   },
   {
     "id": "tongs",
@@ -231,7 +256,8 @@
     "family": "smallwares",
     "unit": "each",
     "price": 28.5,
-    "supplierId": "harbor-mills"
+    "supplierId": "harbor-mills",
+    "cost": 17.1
   },
   {
     "id": "ladle",
@@ -240,7 +266,8 @@
     "family": "smallwares",
     "unit": "each",
     "price": 32,
-    "supplierId": "cedar-dairy-co"
+    "supplierId": "cedar-dairy-co",
+    "cost": 19.2
   },
   {
     "id": "sheet-pan",
@@ -249,7 +276,8 @@
     "family": "smallwares",
     "unit": "each",
     "price": 4,
-    "supplierId": "paperlane-supply"
+    "supplierId": "paperlane-supply",
+    "cost": 2.4
   },
   {
     "id": "hotel-pan",
@@ -258,7 +286,8 @@
     "family": "smallwares",
     "unit": "each",
     "price": 7.5,
-    "supplierId": "iron-pan-works"
+    "supplierId": "iron-pan-works",
+    "cost": 4.5
   },
   {
     "id": "thermometer",
@@ -267,7 +296,8 @@
     "family": "smallwares",
     "unit": "each",
     "price": 11,
-    "supplierId": "great-lakes-oil"
+    "supplierId": "great-lakes-oil",
+    "cost": 6.6
   },
   {
     "id": "peeler",
@@ -276,7 +306,8 @@
     "family": "smallwares",
     "unit": "each",
     "price": 14.5,
-    "supplierId": "metro-dry-goods"
+    "supplierId": "metro-dry-goods",
+    "cost": 8.7
   },
   {
     "id": "knife",
@@ -285,7 +316,8 @@
     "family": "smallwares",
     "unit": "each",
     "price": 18,
-    "supplierId": "atlas-smallwares"
+    "supplierId": "atlas-smallwares",
+    "cost": 10.8
   },
   {
     "id": "canola",
@@ -294,7 +326,8 @@
     "family": "oil",
     "unit": "jug",
     "price": 21.5,
-    "supplierId": "northline-foods"
+    "supplierId": "northline-foods",
+    "cost": 12.9
   },
   {
     "id": "olive-oil",
@@ -303,7 +336,8 @@
     "family": "oil",
     "unit": "bottle",
     "price": 25,
-    "supplierId": "harbor-mills"
+    "supplierId": "harbor-mills",
+    "cost": 15
   },
   {
     "id": "spray",
@@ -312,7 +346,8 @@
     "family": "oil",
     "unit": "can",
     "price": 28.5,
-    "supplierId": "cedar-dairy-co"
+    "supplierId": "cedar-dairy-co",
+    "cost": 17.1
   },
   {
     "id": "vinegar",
@@ -321,7 +356,8 @@
     "family": "dry goods",
     "unit": "gallon",
     "price": 32,
-    "supplierId": "paperlane-supply"
+    "supplierId": "paperlane-supply",
+    "cost": 19.2
   },
   {
     "id": "honey",
@@ -330,7 +366,8 @@
     "family": "dry goods",
     "unit": "jar",
     "price": 4,
-    "supplierId": "iron-pan-works"
+    "supplierId": "iron-pan-works",
+    "cost": 2.4
   },
   {
     "id": "pepper",
@@ -339,7 +376,8 @@
     "family": "dry goods",
     "unit": "tin",
     "price": 7.5,
-    "supplierId": "great-lakes-oil"
+    "supplierId": "great-lakes-oil",
+    "cost": 4.5
   },
   {
     "id": "baking-soda",
@@ -348,7 +386,8 @@
     "family": "dry goods",
     "unit": "box",
     "price": 11,
-    "supplierId": "metro-dry-goods"
+    "supplierId": "metro-dry-goods",
+    "cost": 6.6
   },
   {
     "id": "filters",
@@ -357,6 +396,7 @@
     "family": "oil",
     "unit": "pack",
     "price": 14.5,
-    "supplierId": "atlas-smallwares"
+    "supplierId": "atlas-smallwares",
+    "cost": 8.7
   }
 ]

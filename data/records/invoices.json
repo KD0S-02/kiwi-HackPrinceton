@@ -4,104 +4,186 @@
     "orderId": "order-1",
     "accountId": "goldfinch-cafe",
     "status": "open",
-    "amount": 1211
+    "amount": 1211,
+    "issuedAt": "2026-11-02",
+    "dueDate": "2026-12-02",
+    "paid": 0,
+    "credited": 0
   },
   {
     "id": "invoice-2",
     "orderId": "order-2",
     "accountId": "river-salt",
     "status": "paid",
-    "amount": 1348
+    "amount": 1348,
+    "issuedAt": "2026-09-20",
+    "dueDate": "2026-10-20",
+    "paid": 1348,
+    "credited": 0
   },
   {
     "id": "invoice-3",
     "orderId": "order-3",
     "accountId": "olive-room",
     "status": "paid",
-    "amount": 1485
+    "amount": 1485,
+    "issuedAt": "2026-09-20",
+    "dueDate": "2026-10-20",
+    "paid": 1485,
+    "credited": 0
   },
   {
     "id": "invoice-4",
     "orderId": "order-4",
     "accountId": "paper-lantern",
     "status": "paid",
-    "amount": 1622
+    "amount": 1622,
+    "issuedAt": "2026-09-20",
+    "dueDate": "2026-10-20",
+    "paid": 1622,
+    "credited": 0
   },
   {
     "id": "invoice-5",
     "orderId": "order-5",
     "accountId": "sunday-roast",
     "status": "paid",
-    "amount": 1759
+    "amount": 1759,
+    "issuedAt": "2026-09-20",
+    "dueDate": "2026-10-20",
+    "paid": 1759,
+    "credited": 0
   },
   {
     "id": "invoice-6",
     "orderId": "order-6",
     "accountId": "blue-plate-yard",
     "status": "paid",
-    "amount": 1896
+    "amount": 1896,
+    "issuedAt": "2026-09-20",
+    "dueDate": "2026-10-20",
+    "paid": 1896,
+    "credited": 0
   },
   {
     "id": "invoice-7",
     "orderId": "order-7",
     "accountId": "kindling-pizza",
     "status": "paid",
-    "amount": 2033
+    "amount": 2033,
+    "issuedAt": "2026-09-20",
+    "dueDate": "2026-10-20",
+    "paid": 2033,
+    "credited": 0
   },
   {
     "id": "invoice-8",
     "orderId": "order-8",
     "accountId": "the-copper-pot",
     "status": "paid",
-    "amount": 2170
+    "amount": 2170,
+    "issuedAt": "2026-09-20",
+    "dueDate": "2026-10-20",
+    "paid": 2170,
+    "credited": 0
   },
   {
     "id": "invoice-9",
     "orderId": "order-9",
     "accountId": "low-tide-tacos",
     "status": "paid",
-    "amount": 2307
+    "amount": 2307,
+    "issuedAt": "2026-09-20",
+    "dueDate": "2026-10-20",
+    "paid": 2307,
+    "credited": 0
   },
   {
     "id": "invoice-10",
     "orderId": "order-10",
     "accountId": "orchard-table",
     "status": "paid",
-    "amount": 2444
+    "amount": 2444,
+    "issuedAt": "2026-09-20",
+    "dueDate": "2026-10-20",
+    "paid": 2444,
+    "credited": 0
   },
   {
     "id": "invoice-11",
     "orderId": "order-11",
     "accountId": "steam-house",
     "status": "paid",
-    "amount": 2581
+    "amount": 2581,
+    "issuedAt": "2026-09-20",
+    "dueDate": "2026-10-20",
+    "paid": 2581,
+    "credited": 0
   },
   {
     "id": "invoice-12",
     "orderId": "order-12",
     "accountId": "fennel-rye",
     "status": "paid",
-    "amount": 2718
+    "amount": 2718,
+    "issuedAt": "2026-09-20",
+    "dueDate": "2026-10-20",
+    "paid": 2718,
+    "credited": 0
   },
   {
     "id": "invoice-13",
     "orderId": "order-13",
     "accountId": "dockside-bowls",
     "status": "paid",
-    "amount": 2855
+    "amount": 2855,
+    "issuedAt": "2026-09-20",
+    "dueDate": "2026-10-20",
+    "paid": 2855,
+    "credited": 0
   },
   {
     "id": "invoice-14",
     "orderId": "order-14",
     "accountId": "night-market-kitchen",
     "status": "paid",
-    "amount": 2992
+    "amount": 2992,
+    "issuedAt": "2026-09-20",
+    "dueDate": "2026-10-20",
+    "paid": 2992,
+    "credited": 0
   },
   {
     "id": "invoice-15",
     "orderId": "order-15",
     "accountId": "butter-street",
     "status": "paid",
-    "amount": 3129
+    "amount": 3129,
+    "issuedAt": "2026-09-20",
+    "dueDate": "2026-10-20",
+    "paid": 3129,
+    "credited": 0
+  },
+  {
+    "id": "invoice-16",
+    "orderId": "order-16",
+    "accountId": "dockside-bowls",
+    "status": "open",
+    "amount": 435.9,
+    "issuedAt": "2026-11-10",
+    "dueDate": "2026-12-10",
+    "paid": 0,
+    "credited": 0
+  },
+  {
+    "id": "invoice-17",
+    "orderId": "order-17",
+    "accountId": "juniper-deli",
+    "status": "open",
+    "amount": 1840,
+    "issuedAt": "2026-08-16",
+    "dueDate": "2026-09-15",
+    "paid": 0,
+    "credited": 0
   }
 ]

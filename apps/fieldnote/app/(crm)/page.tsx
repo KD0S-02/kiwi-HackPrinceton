@@ -1,6 +1,7 @@
 import { ActionButton } from "../../components/ActionButton";
 import { loadNames, money, readRecords, readRules } from "../../lib/data";
 import { seesAll } from "../../lib/people";
+import { approvalAmount } from "../../lib/workflow/view";
 import { signedInUser } from "../../lib/session";
 
 export const dynamic = "force-dynamic";
@@ -9,14 +10,15 @@ const stages = [
   { stage: "Qualify", color: "#9db1ff" },
   { stage: "Proposal", color: "#2f5bea" },
   { stage: "Commit", color: "#12b76a" },
-  { stage: "Closed", color: "#d0d5dd" },
+  { stage: "Closed Won", color: "#d0d5dd" },
 ];
 
 export default async function HomePage() {
-  const [opportunities, accounts, cases, rules, nameOf] = await Promise.all([
+  const [opportunities, accounts, cases, approvals, rules, nameOf] = await Promise.all([
     readRecords("opportunities.json"),
     readRecords("accounts.json"),
     readRecords("cases.json"),
+    readRecords("approvals.json"),
     readRules(),
     loadNames(),
   ]);
@@ -24,7 +26,10 @@ export default async function HomePage() {
   const wide = seesAll(person);
   const mine = wide ? opportunities : opportunities.filter((row) => row.ownerId === person.id);
   const myAccounts = wide ? accounts : accounts.filter((row) => row.ownerId === person.id);
-  const myCases = cases.filter((row) => row.status === "open" && (wide || row.ownerId === person.id));
+  const myCases = cases.filter((row) => row.status !== "closed" && (wide || row.ownerId === person.id));
+  const waiting = approvals.filter((row) => row.status === "pending" && row.approverId === person.id && row.requestedBy !== person.id);
+  const asked = approvals.filter((row) => row.status === "pending" && row.requestedBy === person.id);
+  const onHold = myAccounts.filter((row) => row.creditHold === "yes");
   const pipeline = mine.reduce((sum, row) => sum + Number(row.amount), 0);
   const overCap = mine.filter((row) => Number(row.discountPercent) > rules.discountCapPercent);
   const harbor = opportunities.find((row) => row.id === "opp-harbor-diner");
@@ -67,6 +72,38 @@ export default async function HomePage() {
         <article className="card stat tone-amber"><span>Over the cap</span><strong>{overCap.length}</strong><em>{person.approverName ? `need ${person.approverName}` : "yours to approve"}</em></article>
         <article className="card stat tone-red"><span>Open cases</span><strong>{myCases.length}</strong><em>{person.book === "company" ? "across the company" : wide ? "across the team" : "on your restaurants"}</em></article>
       </div>
+
+      {waiting.length > 0 || asked.length > 0 || onHold.length > 0 ? (
+        <section className="panel waiting-card" data-kiwi="waiting-on-you">
+          <div className="panel-head">
+            <h2>{waiting.length > 0 ? `Waiting on you · ${waiting.length}` : "Waiting on others"}</h2>
+            <a href={waiting.length > 0 ? "/approvals?view=waiting" : "/approvals?view=requests"}>Approvals →</a>
+          </div>
+          <div className="waiting-list">
+            {waiting.slice(0, 6).map((row) => (
+              <a key={String(row.id)} className="waiting-item" href={`/approvals/${row.id}`}>
+                <span className="pill warn">{String(row.kind)}</span>
+                <strong>{nameOf(row.accountId || row.opportunityId)}</strong>
+                <em>{approvalAmount(row)} · from {nameOf(row.requestedBy)}</em>
+              </a>
+            ))}
+            {waiting.length === 0 ? asked.slice(0, 6).map((row) => (
+              <a key={String(row.id)} className="waiting-item" href={`/approvals/${row.id}`}>
+                <span className="pill gray">{String(row.kind)}</span>
+                <strong>{nameOf(row.accountId || row.opportunityId)}</strong>
+                <em>waiting on {nameOf(row.approverId)}</em>
+              </a>
+            )) : null}
+            {onHold.map((row) => (
+              <a key={`hold-${row.id}`} className="waiting-item" href={`/accounts/${row.id}`}>
+                <span className="pill bad">credit hold</span>
+                <strong>{String(row.name)}</strong>
+                <em>{String(row.holdReason)}</em>
+              </a>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <div className="dash-top">
         {focus ? (
@@ -130,13 +167,13 @@ export default async function HomePage() {
         <section className="panel">
           <div className="panel-head">
             <h2>Open cases</h2>
-            <a href="/orders">Fulfillment →</a>
+            <a href="/cases">All cases →</a>
           </div>
           <div className="stack">
             {myCases.length === 0 ? <p className="empty">No open cases.</p> : myCases.map((row) => (
-              <a className="case-row" key={String(row.id)} href={`/accounts/${row.accountId}`}>
+              <a className="case-row" key={String(row.id)} href={`/cases/${row.id}`}>
                 <strong>{nameOf(row.accountId)}</strong>
-                <span>{row.kind}</span>
+                <span>{String(row.subject && row.subject !== row.kind ? row.subject : row.kind)} · {row.status}</span>
               </a>
             ))}
           </div>

@@ -1,8 +1,8 @@
 import { Icon } from "./Icon";
 import { Menu } from "./Menu";
 import { Logo } from "./Logo";
-import { SideNav } from "./SideNav";
-import { loadNames, nav, readRecords } from "../lib/data";
+import { SidebarNav } from "./SidebarNav";
+import { loadNames, readRecords } from "../lib/data";
 import { seesAll } from "../lib/people";
 import { signedInUser } from "../lib/session";
 
@@ -13,13 +13,17 @@ export async function Shell({ children }: { children: React.ReactNode }) {
     readRecords("cases.json"),
     loadNames(),
   ]);
+  const pending = approvals.filter((row) => row.status === "pending");
+  const waitingOnMe = pending.filter((row) => row.approverId === person.id && row.requestedBy !== person.id);
+  const subject = (row: (typeof approvals)[number]) => nameOf(row.accountId || row.opportunityId);
   const alerts = [
-    ...approvals
-      .filter((row) => row.requestedBy === person.id && row.status === "pending")
-      .map((row) => ({ id: String(row.id), href: `/opportunities/${row.opportunityId}`, title: `${nameOf(row.opportunityId)} is waiting on ${person.approverName || "you"}`, detail: "Discount approval pending" })),
+    ...waitingOnMe.map((row) => ({ id: `w-${row.id}`, href: `/approvals/${row.id}`, title: `${nameOf(row.requestedBy)} needs your decision`, detail: `${String(row.kind)} · ${subject(row)}` })),
+    ...pending
+      .filter((row) => row.requestedBy === person.id)
+      .map((row) => ({ id: `r-${row.id}`, href: `/approvals/${row.id}`, title: `${subject(row)} is waiting on ${nameOf(row.approverId)}`, detail: `${String(row.kind)} request pending` })),
     ...cases
-      .filter((row) => row.status === "open" && (seesAll(person) || row.ownerId === person.id))
-      .map((row) => ({ id: String(row.id), href: `/accounts/${row.accountId}`, title: `${nameOf(row.accountId)}: ${row.kind}`, detail: "Open case" })),
+      .filter((row) => row.status !== "closed" && (seesAll(person) || row.ownerId === person.id))
+      .map((row) => ({ id: `c-${row.id}`, href: `/cases/${row.id}`, title: `${nameOf(row.accountId)}: ${row.kind}`, detail: `Case ${row.status}` })),
   ];
 
   return (
@@ -32,18 +36,18 @@ export async function Shell({ children }: { children: React.ReactNode }) {
             <small>Sales cloud</small>
           </div>
         </a>
-        <SideNav items={nav} />
+        <SidebarNav waiting={waitingOnMe.length} />
         <div className="sidebar-card">
-          <strong>{person.territory}</strong>
-          <span>{person.office} office</span>
-          <span>{person.managerName ? `Your manager: ${person.managerName}` : "Owner"}</span>
+          <strong>{person.name}</strong>
+          <span>{person.role} · {person.territory}</span>
+          <span>{person.managerName ? `Manager: ${person.managerName}` : "Owner · no manager"}</span>
         </div>
       </aside>
       <div className="workspace">
         <header className="topbar">
           <form className="search" action="/search">
             <Icon name="search" size={16} />
-            <input name="q" placeholder="Search restaurants, buyers, products" />
+            <input name="q" placeholder="Search restaurants, orders, invoices, products" />
           </form>
           <Menu label="Notifications" trigger={<><Icon name="bell" size={17} />{alerts.length > 0 ? <i className="badge">{alerts.length}</i> : null}</>}>
             <div className="menu-head">Notifications</div>

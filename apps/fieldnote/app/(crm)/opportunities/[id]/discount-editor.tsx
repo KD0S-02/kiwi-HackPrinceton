@@ -1,73 +1,66 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+// Discount and Send Quote. The server decides whether sending is allowed (owner, cap or approved
+// exception, lines, stock) and passes that sentence in as `blocked`; #quote-message shows it.
 export function DiscountEditor({
   opportunityId,
   discountPercent,
-  sendAllowed,
-  ownerOk,
+  blocked,
   cap,
-  approverName,
+  approvedPercent,
+  canEdit,
 }: {
   opportunityId: string;
   discountPercent: number;
-  sendAllowed: boolean;
-  ownerOk: boolean;
+  blocked: string;
   cap: number;
-  approverName: string;
+  approvedPercent: number | null;
+  canEdit: boolean;
 }) {
   const router = useRouter();
   const [discountField, setDiscountField] = useState(String(discountPercent));
-  const [savedPercent, setSavedPercent] = useState(discountPercent);
-  const [message, setMessage] = useState(
-    !ownerOk
-      ? "You can send a quote on your own opportunities."
-      : sendAllowed
-        ? "Ready to send."
-        : approverName
-          ? `An account executive stops at ${cap} percent. ${approverName} has to approve the rest.`
-          : `An account executive stops at ${cap} percent. You approve the rest.`,
-  );
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => setDiscountField(String(discountPercent)), [discountPercent]);
+  useEffect(() => setNote(""), [blocked]);
 
   async function saveDiscount() {
+    setBusy(true);
     const response = await fetch(`/api/opportunities/${opportunityId}/discount`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ discountPercent: Number(discountField) }),
     });
-    const next = Number(discountField);
-    setSavedPercent(next);
-    setMessage(
-      !response.ok
-        ? await response.text()
-        : next > cap
-          ? `Saved ${next}. Still over the ${cap}% cap. ${approverName ? `${approverName} has to approve it.` : "You approve it."}`
-          : ownerOk
-            ? `Saved ${next}. Ready to send.`
-            : `Saved ${next}. Only the owner can send this quote.`,
-    );
+    setBusy(false);
+    setNote(await response.text());
     router.refresh();
   }
 
   async function sendQuote() {
+    setBusy(true);
     const response = await fetch(`/api/opportunities/${opportunityId}/send`, { method: "POST" });
-    setMessage(await response.text());
+    setBusy(false);
+    setNote(await response.text());
     router.refresh();
   }
 
+  const message = note && /quote sent/i.test(note) ? note : blocked || note || "Ready to send.";
+  const ok = !blocked && /ready to send|quote sent|saved/i.test(message);
   return (
     <div className="highlight quote-box">
-      <span>Discount</span>
+      <span>Discount{approvedPercent != null ? ` · approved up to ${approvedPercent}%` : ` · cap ${cap}%`}</span>
       <div className="quote-row">
         <div className="pct">
-          <input id="discount" value={discountField} onChange={(event) => setDiscountField(event.target.value)} inputMode="decimal" />
+          <input id="discount" aria-label="Discount percent" value={discountField} onChange={(event) => setDiscountField(event.target.value)} inputMode="decimal" disabled={!canEdit} />
         </div>
-        <button type="button" className="btn ghost" id="save-discount" onClick={saveDiscount}>Save</button>
-        <button type="button" className="btn primary" id="send-quote" disabled={savedPercent > cap || !ownerOk} onClick={sendQuote}>Send Quote</button>
+        <button type="button" className="btn ghost" id="save-discount" onClick={saveDiscount} disabled={busy || !canEdit}>Save</button>
+        <button type="button" className="btn primary" id="send-quote" data-kiwi="send-quote" disabled={busy || !!blocked} title={blocked || undefined} onClick={sendQuote}>Send Quote</button>
       </div>
-      {message ? <p className={`warning${/ready to send|quote sent/i.test(message) ? " ok" : ""}`} id="quote-message">{message}</p> : null}
+      <p className={`warning${ok ? " ok" : ""}`} id="quote-message" data-kiwi="send-quote-why">{message}</p>
     </div>
   );
 }

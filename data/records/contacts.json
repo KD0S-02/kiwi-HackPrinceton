@@ -3,240 +3,328 @@
     "id": "contact-harbor-diner",
     "accountId": "harbor-diner",
     "name": "Priya Shah",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "priya.shah@harbor-diner.example",
+    "phone": ""
   },
   {
     "id": "contact-cedar-spoon",
     "accountId": "cedar-spoon",
     "name": "Chris Alvarez",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "chris.alvarez@cedar-spoon.example",
+    "phone": ""
   },
   {
     "id": "contact-lantern-noodle",
     "accountId": "lantern-noodle",
     "name": "Morgan Blake",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "morgan.blake@lantern-noodle.example",
+    "phone": ""
   },
   {
     "id": "contact-bright-pie",
     "accountId": "bright-pie",
     "name": "Elena Vasquez",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "elena.vasquez@bright-pie.example",
+    "phone": ""
   },
   {
     "id": "contact-north-fork-grill",
     "accountId": "north-fork-grill",
     "name": "Noah Patel",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "noah.patel@north-fork-grill.example",
+    "phone": ""
   },
   {
     "id": "contact-little-anchor",
     "accountId": "little-anchor",
     "name": "Grace Kim",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "grace.kim@little-anchor.example",
+    "phone": ""
   },
   {
     "id": "contact-red-kettle",
     "accountId": "red-kettle",
     "name": "Owen Brooks",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "owen.brooks@red-kettle.example",
+    "phone": ""
   },
   {
     "id": "contact-maple-counter",
     "accountId": "maple-counter",
     "name": "Hannah Diaz",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "hannah.diaz@maple-counter.example",
+    "phone": ""
   },
   {
     "id": "contact-goldfinch-cafe",
     "accountId": "goldfinch-cafe",
     "name": "Leo Nguyen",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "leo.nguyen@goldfinch-cafe.example",
+    "phone": ""
   },
   {
     "id": "contact-river-salt",
     "accountId": "river-salt",
     "name": "Jack Romero",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "jack.romero@river-salt.example",
+    "phone": ""
   },
   {
     "id": "contact-olive-room",
     "accountId": "olive-room",
     "name": "Sofia Berg",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "sofia.berg@olive-room.example",
+    "phone": ""
   },
   {
     "id": "contact-paper-lantern",
     "accountId": "paper-lantern",
     "name": "Ethan Cole",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "ethan.cole@paper-lantern.example",
+    "phone": ""
   },
   {
     "id": "contact-sunday-roast",
     "accountId": "sunday-roast",
     "name": "Ava Rahman",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "ava.rahman@sunday-roast.example",
+    "phone": ""
   },
   {
     "id": "contact-blue-plate-yard",
     "accountId": "blue-plate-yard",
     "name": "Liam Ortiz",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "liam.ortiz@blue-plate-yard.example",
+    "phone": ""
   },
   {
     "id": "contact-kindling-pizza",
     "accountId": "kindling-pizza",
     "name": "Nora Kapoor",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "nora.kapoor@kindling-pizza.example",
+    "phone": ""
   },
   {
     "id": "contact-the-copper-pot",
     "accountId": "the-copper-pot",
     "name": "Ben Cho",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "ben.cho@the-copper-pot.example",
+    "phone": ""
   },
   {
     "id": "contact-low-tide-tacos",
     "accountId": "low-tide-tacos",
     "name": "Iris Feldman",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "iris.feldman@low-tide-tacos.example",
+    "phone": ""
   },
   {
     "id": "contact-orchard-table",
     "accountId": "orchard-table",
     "name": "Theo March",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "theo.march@orchard-table.example",
+    "phone": ""
   },
   {
     "id": "contact-steam-house",
     "accountId": "steam-house",
     "name": "Camille Brooks",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "camille.brooks@steam-house.example",
+    "phone": ""
   },
   {
     "id": "contact-fennel-rye",
     "accountId": "fennel-rye",
     "name": "Derek Huang",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "derek.huang@fennel-rye.example",
+    "phone": ""
   },
   {
     "id": "contact-dockside-bowls",
     "accountId": "dockside-bowls",
     "name": "Paige Lerner",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "paige.lerner@dockside-bowls.example",
+    "phone": ""
   },
   {
     "id": "contact-night-market-kitchen",
     "accountId": "night-market-kitchen",
     "name": "Omar Farouk",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "omar.farouk@night-market-kitchen.example",
+    "phone": ""
   },
   {
     "id": "contact-butter-street",
     "accountId": "butter-street",
     "name": "Nina Solis",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "nina.solis@butter-street.example",
+    "phone": ""
   },
   {
     "id": "contact-the-green-apron",
     "accountId": "the-green-apron",
     "name": "Victor Adeyemi",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "victor.adeyemi@the-green-apron.example",
+    "phone": ""
   },
   {
     "id": "contact-saltbox-supper",
     "accountId": "saltbox-supper",
     "name": "Holly Grant",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "holly.grant@saltbox-supper.example",
+    "phone": ""
   },
   {
     "id": "contact-juniper-deli",
     "accountId": "juniper-deli",
     "name": "Quinn Parker",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "quinn.parker@juniper-deli.example",
+    "phone": ""
   },
   {
     "id": "contact-east-window",
     "accountId": "east-window",
     "name": "Felix Rahman",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "felix.rahman@east-window.example",
+    "phone": ""
   },
   {
     "id": "contact-pebble-cafe",
     "accountId": "pebble-cafe",
     "name": "Priya Shah",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "priya.shah@pebble-cafe.example",
+    "phone": ""
   },
   {
     "id": "contact-harvest-room",
     "accountId": "harvest-room",
     "name": "Chris Alvarez",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "chris.alvarez@harvest-room.example",
+    "phone": ""
   },
   {
     "id": "contact-two-bell-pizza",
     "accountId": "two-bell-pizza",
     "name": "Morgan Blake",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "morgan.blake@two-bell-pizza.example",
+    "phone": ""
   },
   {
     "id": "contact-cinder-bakery",
     "accountId": "cinder-bakery",
     "name": "Elena Vasquez",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "elena.vasquez@cinder-bakery.example",
+    "phone": ""
   },
   {
     "id": "contact-the-late-owl",
     "accountId": "the-late-owl",
     "name": "Noah Patel",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "noah.patel@the-late-owl.example",
+    "phone": ""
   },
   {
     "id": "contact-marlow-s-lunch",
     "accountId": "marlow-s-lunch",
     "name": "Grace Kim",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "grace.kim@marlow-s-lunch.example",
+    "phone": ""
   },
   {
     "id": "contact-field-fork",
     "accountId": "field-fork",
     "name": "Owen Brooks",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "owen.brooks@field-fork.example",
+    "phone": ""
   },
   {
     "id": "contact-sunny-side-counter",
     "accountId": "sunny-side-counter",
     "name": "Hannah Diaz",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "hannah.diaz@sunny-side-counter.example",
+    "phone": ""
   },
   {
     "id": "contact-brick-oven-north",
     "accountId": "brick-oven-north",
     "name": "Leo Nguyen",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "leo.nguyen@brick-oven-north.example",
+    "phone": ""
   },
   {
     "id": "contact-the-quiet-bun",
     "accountId": "the-quiet-bun",
     "name": "Jack Romero",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "jack.romero@the-quiet-bun.example",
+    "phone": ""
   },
   {
     "id": "contact-lemon-yard",
     "accountId": "lemon-yard",
     "name": "Sofia Berg",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "sofia.berg@lemon-yard.example",
+    "phone": ""
   },
   {
     "id": "contact-atlas-noodles",
     "accountId": "atlas-noodles",
     "name": "Ethan Cole",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "ethan.cole@atlas-noodles.example",
+    "phone": ""
   },
   {
     "id": "contact-corner-hearth",
     "accountId": "corner-hearth",
     "name": "Ava Rahman",
-    "role": "buyer"
+    "role": "buyer",
+    "email": "ava.rahman@corner-hearth.example",
+    "phone": ""
+  },
+  {
+    "id": "contact-juniper-deli-ap",
+    "accountId": "juniper-deli",
+    "name": "Rosa Lind",
+    "role": "accounts payable",
+    "email": "rosa.lind@juniper-deli.example",
+    "phone": ""
   }
 ]

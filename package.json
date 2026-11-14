@@ -13,7 +13,10 @@
     "test-agent": "tsx scripts/test-agent.ts",
     "desktop": "electron apps/desktop/start.mjs",
     "kiwi": "open -n dist/Kiwi.app",
-    "test": "tsx scripts/check-env.ts && tsx scripts/check-seed.ts && tsx scripts/check-retrieval.ts && tsx scripts/test-agent.ts"
+    "test": "tsx scripts/check-env.ts && tsx scripts/check-seed.ts && tsx scripts/check-retrieval.ts && tsx scripts/test-agent.ts",
+    "seed-workflows": "tsx scripts/seed-workflows.ts",
+    "reset-data": "tsx scripts/reset-data.ts",
+    "check-workflows": "tsx scripts/check-workflows.ts"
   },
   "dependencies": {
     "@langchain/core": "^1.1.0",

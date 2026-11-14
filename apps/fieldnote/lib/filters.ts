@@ -36,7 +36,7 @@ export const pageFilters: PageFilters[] = [
     about: "deals (opportunities) only",
     filters: [
       { name: "q", label: "Search", kind: "search", placeholder: "Search deals" },
-      { name: "stage", label: "Stage", kind: "select", all: "All stages", options: ["Qualify", "Proposal", "Commit"].map((value) => ({ value, label: value })) },
+      { name: "stage", label: "Stage", kind: "select", all: "All stages", options: ["Qualify", "Proposal", "Commit", "Closed Won"].map((value) => ({ value, label: value })) },
       { name: "owner", label: "Owner", kind: "select", all: "Everyone", source: "owners", fallback: "mine" },
       { name: "discount", label: "Discount", kind: "select", all: "Any discount", options: [{ value: "over", label: "Over the 15% cap" }, { value: "within", label: "Within the cap" }] },
       { name: "min", label: "Amount at least", kind: "number", placeholder: "Min $" },
@@ -48,7 +48,7 @@ export const pageFilters: PageFilters[] = [
     about: "customer orders only. it cannot filter invoices, shipments or cases; those have their own lists",
     filters: [
       { name: "q", label: "Search", kind: "search", placeholder: "Search restaurant or order" },
-      { name: "status", label: "Status", kind: "select", all: "All statuses", options: [{ value: "open", label: "Open" }, { value: "delivered", label: "Delivered" }] },
+      { name: "status", label: "Status", kind: "select", all: "All statuses", options: ["open", "held", "backordered", "picking", "delivered", "cancelled"].map((value) => ({ value, label: value[0].toUpperCase() + value.slice(1) })) },
       { name: "warehouse", label: "Warehouse", kind: "select", all: "All warehouses", source: "warehouses" },
       { name: "min", label: "Amount at least", kind: "number", placeholder: "Min $" },
     ],
@@ -62,6 +62,7 @@ export const pageFilters: PageFilters[] = [
       { name: "warehouse", label: "Warehouse", kind: "select", all: "All warehouses", source: "warehouses" },
       { name: "family", label: "Family", kind: "select", all: "All families", source: "families" },
       { name: "stock", label: "Stock", kind: "select", all: "Any stock", options: [{ value: "low", label: "Under 30 units" }, { value: "ok", label: "30 or more" }] },
+      { name: "low", label: "Reorder", kind: "select", all: "Any level", options: [{ value: "reorder", label: "Below reorder point" }] },
     ],
   },
 ];

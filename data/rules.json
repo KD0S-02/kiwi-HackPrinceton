@@ -1,4 +1,23 @@
 {
+  "creditApprovalOverDollars": 100,
+  "paymentPlanApprovalOverDollars": 1000,
+  "paymentPlanMaxInstallmentsWithoutApproval": 3,
+  "purchaseOrderApprovalOverDollars": 5000,
+  "autoCreditLimitDollars": 2500,
+  "holdAfterDaysPastDue": 30,
+  "quoteValidDays": 14,
+  "financeApproverId": "krishna-das",
+  "deliveryDays": {
+    "northeast": "Tue|Fri",
+    "southeast": "Mon|Thu",
+    "midwest": "Wed",
+    "west": "Thu"
+  },
+  "warehouseFamilies": {
+    "jersey-city-cold": "dairy",
+    "newark-dry-goods": "dry goods|paper|oil|smallwares",
+    "chicago-dry": "dry goods|paper|oil|smallwares"
+  },
   "discountCapPercent": 15,
   "sendQuote": "own opportunities"
 }

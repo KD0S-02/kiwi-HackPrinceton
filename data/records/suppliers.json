@@ -2,41 +2,57 @@
   {
     "id": "northline-foods",
     "name": "Northline Foods",
-    "category": "dairy"
+    "category": "dairy",
+    "minOrderDollars": 500,
+    "leadDays": 3
   },
   {
     "id": "harbor-mills",
     "name": "Harbor Mills",
-    "category": "dry goods"
+    "category": "dry goods",
+    "minOrderDollars": 500,
+    "leadDays": 4
   },
   {
     "id": "cedar-dairy-co",
     "name": "Cedar Dairy Co",
-    "category": "dairy"
+    "category": "dairy",
+    "minOrderDollars": 500,
+    "leadDays": 5
   },
   {
     "id": "paperlane-supply",
     "name": "Paperlane Supply",
-    "category": "paper"
+    "category": "paper",
+    "minOrderDollars": 500,
+    "leadDays": 6
   },
   {
     "id": "iron-pan-works",
     "name": "Iron Pan Works",
-    "category": "smallwares"
+    "category": "smallwares",
+    "minOrderDollars": 500,
+    "leadDays": 7
   },
   {
     "id": "great-lakes-oil",
     "name": "Great Lakes Oil",
-    "category": "oil"
+    "category": "oil",
+    "minOrderDollars": 500,
+    "leadDays": 3
   },
   {
     "id": "metro-dry-goods",
     "name": "Metro Dry Goods",
-    "category": "dry goods"
+    "category": "dry goods",
+    "minOrderDollars": 500,
+    "leadDays": 4
   },
   {
     "id": "atlas-smallwares",
     "name": "Atlas Smallwares",
-    "category": "smallwares"
+    "category": "smallwares",
+    "minOrderDollars": 500,
+    "leadDays": 5
   }
 ]

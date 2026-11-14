@@ -2,33 +2,70 @@ import { notFound } from "next/navigation";
 import { ActionButton } from "../../../../components/ActionButton";
 import { DeleteButton } from "../../../../components/DeleteButton";
 import { FollowButton } from "../../../../components/FollowButton";
-import { loadNames, money, readRecords, tone } from "../../../../lib/data";
+import { Pill } from "../../../../components/RecordLink";
+import { Timeline } from "../../../../components/Timeline";
+import { loadNames, money, prettyDate } from "../../../../lib/data";
+import { signedInUser } from "../../../../lib/session";
+import { accountActivity } from "../../../../lib/workflow/activity";
+import { preflight } from "../../../../lib/workflow/actions";
+import { callOutcomes } from "../../../../lib/workflow/actions/cases";
+import { checklist } from "../../../../lib/workflow/actions/onboarding";
+import { orderBlocker, releaseBlocker } from "../../../../lib/workflow/credit";
+import { find, num, openDb } from "../../../../lib/workflow/db";
+import { agingBuckets, availableCredit, committed, invoiceBalance, isPastDue, openBalance } from "../../../../lib/workflow/money";
+import { accountReason, financeCheck } from "../../../../lib/workflow/permissions";
 
 export const dynamic = "force-dynamic";
 
+const dayChoices = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+
 export default async function AccountPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [accounts, contacts, opportunities, orders, cases, activity, territories, warehouses, nameOf] = await Promise.all([
-    readRecords("accounts.json"),
-    readRecords("contacts.json"),
-    readRecords("opportunities.json"),
-    readRecords("orders.json"),
-    readRecords("cases.json"),
-    readRecords("activity.json"),
-    readRecords("territories.json"),
-    readRecords("warehouses.json"),
+  const db = openDb();
+  const account = await find(db, "accounts.json", id);
+  if (!account) notFound();
+  const person = await signedInUser();
+  const [contacts, opportunities, orders, cases, activity, invoices, territories, warehouses, priceBooks, rules, nameOf] = await Promise.all([
+    db.rows("contacts.json"),
+    db.rows("opportunities.json"),
+    db.rows("orders.json"),
+    db.rows("cases.json"),
+    db.rows("activity.json"),
+    db.rows("invoices.json"),
+    db.rows("territories.json"),
+    db.rows("warehouses.json"),
+    db.rows("price-books.json"),
+    db.rules(),
     loadNames(),
   ]);
-  const account = accounts.find((row) => row.id === id);
-  if (!account) notFound();
-  const buyers = contacts.filter((row) => row.accountId === id);
+  const people = contacts.filter((row) => row.accountId === id);
   const deals = opportunities.filter((row) => row.accountId === id);
-  const accountOrders = orders.filter((row) => row.accountId === id);
+  const accountOrders = orders.filter((row) => row.accountId === id).sort((a, b) => String(b.id).localeCompare(String(a.id), undefined, { numeric: true }));
   const accountCases = cases.filter((row) => row.accountId === id);
-  const notes = activity
-    .filter((row) => row.accountId === id || deals.some((deal) => deal.id === row.opportunityId))
-    .reverse();
-  const lifetime = accountOrders.reduce((sum, row) => sum + Number(row.amount), 0);
+  const accountInvoices = invoices.filter((row) => row.accountId === id);
+  const notes = accountActivity(activity, id, deals.map((deal) => String(deal.id)));
+  const onboarding = account.status === "onboarding";
+  const onHold = account.creditHold === "yes";
+  const editBlocked = await accountReason(db, person, account);
+  const balance = await openBalance(db, id);
+  const promised = await committed(db, id);
+  const available = await availableCredit(db, account);
+  const aging = agingBuckets(accountInvoices);
+  const items = onboarding ? await checklist(db, account) : [];
+  const territoryDays = String(rules.deliveryDays[String(account.territoryId)] ?? "").split("|").filter(Boolean);
+  const newOrderBlocked = editBlocked || (await orderBlocker(db, account, 1));
+  const holdBlocker = onHold ? await releaseBlocker(db, account) : "";
+  const [requestBlocked, releaseBlocked, activateBlocked, creditBlocked, territoryBlocked] = await Promise.all([
+    onHold ? preflight("request-release", person, { accountId: id }) : Promise.resolve(""),
+    onHold ? preflight("release-hold", person, { accountId: id }) : Promise.resolve(""),
+    onboarding ? preflight("activate-account", person, { accountId: id }) : Promise.resolve(""),
+    onboarding ? preflight("apply-credit", person, { accountId: id, requestedLimit: "2000" }) : Promise.resolve(""),
+    onboarding ? preflight("confirm-territory", person, { accountId: id }) : Promise.resolve(""),
+  ]);
+  const placeBlocked = financeCheck(person) || (onHold ? `${account.name} is already on credit hold.` : "");
+  const pastDue = accountInvoices.filter((row) => isPastDue(row, rules));
+  const lifetime = accountOrders.reduce((sum, row) => sum + num(row.amount), 0);
+  const itemDone = (key: string) => items.find((item) => item.key === key)?.done;
 
   return (
     <section>
@@ -38,8 +75,8 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
           <div className="record-title">
             <span className="avatar">{String(account.name).slice(0, 1)}</span>
             <div>
-              <h1>{String(account.name)}</h1>
-              <p>{nameOf(account.territoryId)} · {nameOf(account.warehouseId)} · owned by {nameOf(account.ownerId)}</p>
+              <h1>{String(account.name)} {onboarding ? <span className="pill warn">onboarding</span> : null}{onHold ? <span className="pill bad">credit hold</span> : null}</h1>
+              <p>{nameOf(account.territoryId)} · {nameOf(account.warehouseId)} · owned by {nameOf(account.ownerId)}{account.zip ? ` · ZIP ${account.zip}` : ""}</p>
             </div>
           </div>
         </div>
@@ -51,116 +88,183 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
             title={`Edit ${String(account.name)}`}
             endpoint={`/api/records/accounts/${id}`}
             method="PATCH"
+            blocked={editBlocked}
+            why="title"
             fields={[
               { name: "name", label: "Restaurant name", value: String(account.name), required: true },
               { name: "buyerName", label: "Buyer", value: String(account.buyerName ?? "") },
               { name: "usualOrder", label: "Usual order", value: String(account.usualOrder ?? "") },
-              { name: "territoryId", label: "Territory", type: "select", value: String(account.territoryId), options: territories.map((row) => ({ value: String(row.id), label: String(row.name) })) },
-              { name: "warehouseId", label: "Warehouse", type: "select", value: String(account.warehouseId), options: warehouses.map((row) => ({ value: String(row.id), label: String(row.name) })) },
+              { name: "territoryId", label: "Territory", type: "select", value: String(account.territoryId ?? ""), options: territories.map((row) => ({ value: String(row.id), label: String(row.name) })) },
+              { name: "warehouseId", label: "Warehouse", type: "select", value: String(account.warehouseId ?? ""), options: warehouses.map((row) => ({ value: String(row.id), label: String(row.name) })), hint: "Has to be in the territory's office." },
             ]}
           />
-          <DeleteButton endpoint={`/api/records/accounts/${id}`} name={String(account.name)} redirect="/accounts" />
+          {editBlocked ? null : <DeleteButton endpoint={`/api/records/accounts/${id}`} name={String(account.name)} redirect="/accounts" />}
           <ActionButton
+            kiwi="log-call"
+            icon="phone"
+            label="Log call"
+            title={`Log a call with ${String(account.name)}`}
+            action="log-call"
+            hidden={{ subjectType: "account", subjectId: id }}
+            blocked={editBlocked}
+            why="title"
+            fields={[
+              { name: "outcome", label: "How it went", type: "select", options: callOutcomes.map((value) => ({ value, label: value })) },
+              { name: "text", label: "Note", type: "textarea", required: true, placeholder: "Called Priya about the standing order." },
+            ]}
+          />
+          <ActionButton
+            kiwi="new-order"
             variant="primary"
-            icon="note"
-            label="Log activity"
-            title="Log activity"
-            description={`A note on ${String(account.name)} that your team can see.`}
-            endpoint="/api/records/activity"
-            hidden={{ accountId: id }}
-            fields={[{ name: "text", label: "Note", type: "textarea", required: true, placeholder: "Called Priya about the standing order." }]}
+            icon="plus"
+            label="New order"
+            title={`New order for ${String(account.name)}`}
+            description={`Available credit ${money(available)}.`}
+            endpoint="/api/records/orders"
+            redirect="/orders/{id}"
+            submit="Create order"
+            hidden={{ accountId: id, warehouseId: String(account.warehouseId ?? "") }}
+            blocked={newOrderBlocked}
+            fields={[{ name: "amount", label: "Amount", type: "number", required: true, placeholder: "1500" }]}
           />
         </div>
       </div>
 
+      {onHold ? (
+        <div className="banner bad" data-kiwi="hold-banner">
+          <div>
+            <strong>On credit hold since {prettyDate(account.holdSince)}.</strong> {String(account.holdReason)} New orders are refused until finance releases the hold.
+            {holdBlocker ? <p className="warning">{holdBlocker}</p> : <p className="ok-text">Release conditions are met.</p>}
+          </div>
+          <div className="actions">
+            <ActionButton kiwi="request-release" icon="send" label="Request release" title="Ask finance to release the hold" action="request-release" hidden={{ accountId: id }} submit="Send request" blocked={requestBlocked} why="title" fields={[{ name: "note", label: "Note", type: "textarea", placeholder: "First installment is in." }]} />
+            <ActionButton kiwi="release-hold" variant="primary" icon="lock" label="Release hold" title="Release the credit hold" action="release-hold" hidden={{ accountId: id }} submit="Release hold" blocked={releaseBlocked} why="title" fields={[]} />
+          </div>
+        </div>
+      ) : null}
+
+      {onboarding ? (
+        <section className="panel checklist" data-kiwi="onboarding-checklist">
+          <div className="panel-head">
+            <h2>Onboarding · {items.filter((item) => item.done).length} of {items.length} done</h2>
+            <ActionButton kiwi="activate-account" variant="primary" icon="check" label="Activate" title={`Activate ${String(account.name)}`} description="Orders open once the account is active." action="activate-account" hidden={{ accountId: id }} submit="Activate" blocked={activateBlocked} fields={[]} />
+          </div>
+          <ol>
+            {items.map((item) => (
+              <li key={item.key} className={item.done ? "done" : ""}>
+                <span className="check-mark">{item.done ? "✓" : ""}</span>
+                <div><strong>{item.label}</strong><small>{item.detail}</small></div>
+                <div className="row-actions">
+                  {item.key === "buyer" ? <ActionButton small kiwi="add-buyer" icon="plus" label="Add buyer" title="Add buyer contact" endpoint="/api/records/contacts" hidden={{ accountId: id, role: "buyer" }} blocked={editBlocked} why="title" fields={[{ name: "name", label: "Name", required: true }, { name: "email", label: "Email", type: "email" }, { name: "phone", label: "Phone" }]} /> : null}
+                  {item.key === "ap" ? <ActionButton small kiwi="add-ap-contact" icon="plus" label="Add AP contact" title="Add accounts payable contact" description="Invoices go to this email." endpoint="/api/records/contacts" hidden={{ accountId: id, role: "accounts payable" }} blocked={editBlocked} why="title" fields={[{ name: "name", label: "Name", required: true }, { name: "email", label: "Email", type: "email", required: true }, { name: "phone", label: "Phone" }]} /> : null}
+                  {item.key === "territory" ? <ActionButton small kiwi="confirm-territory" icon="check" label="Confirm" title="Confirm territory and warehouse" description={`From ZIP ${account.zip || "—"}.`} action="confirm-territory" hidden={{ accountId: id }} submit="Confirm" blocked={territoryBlocked} why={itemDone("territory") ? "title" : "below"} fields={[]} /> : null}
+                  {item.key === "price-book" ? <ActionButton small kiwi="set-price-book" icon="edit" label="Set" title="Price book" action="set-price-book" hidden={{ accountId: id }} blocked={editBlocked} why="title" fields={[{ name: "priceBookId", label: "Price book", type: "select", value: account.territoryId === "northeast" ? "northeast" : "standard", options: priceBooks.map((row) => ({ value: String(row.id), label: String(row.name) })) }]} /> : null}
+                  {item.key === "delivery-days" ? <ActionButton small kiwi="set-delivery-days" icon="truck" label="Set" title="Delivery days" description={territoryDays.length ? `${nameOf(account.territoryId)} trucks run on ${territoryDays.join(" and ")}.` : "Confirm the territory first."} action="set-delivery-days" hidden={{ accountId: id }} blocked={editBlocked} why="title" fields={[{ name: "deliveryDays", label: "Days", type: "select", value: territoryDays.join("|"), options: [...(territoryDays.length > 1 ? [{ value: territoryDays.join("|"), label: territoryDays.join(" and ") }] : []), ...dayChoices.map((day) => ({ value: day, label: day }))] }]} /> : null}
+                  {item.key === "tax" ? <ActionButton small kiwi="set-tax" icon="edit" label="Set" title="Tax status" description="Exempt needs a certificate number and a future expiry date." action="set-tax" hidden={{ accountId: id }} blocked={editBlocked} why="title" fields={[{ name: "taxStatus", label: "Status", type: "select", options: [{ value: "taxable", label: "Taxable" }, { value: "exempt", label: "Exempt" }] }, { name: "taxCertificate", label: "Certificate number" }, { name: "taxExpires", label: "Certificate expires", type: "date" }]} /> : null}
+                  {item.key === "credit" ? <ActionButton small kiwi="apply-credit" icon="dollar" label="Apply" title="Apply for credit" description={`Up to ${money(rules.autoCreditLimitDollars)} is approved at once. More goes to finance.`} action="apply-credit" hidden={{ accountId: id }} submit="Apply" blocked={item.done ? "Credit is approved." : creditBlocked} why={item.done ? "title" : "below"} fields={[{ name: "requestedLimit", label: "Credit limit", type: "number", required: true, value: "2000" }, { name: "tradeReference", label: "Trade reference", placeholder: "Sysco, account 4471" }]} /> : null}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
+
       <div className="highlights">
-        <div className="highlight"><span>Buyer</span><strong>{String(account.buyerName ?? "—")}</strong></div>
-        <div className="highlight"><span>Usual order</span><strong>{String(account.usualOrder ?? "—")}</strong></div>
-        <div className="highlight"><span>Open deals</span><strong>{deals.length}</strong></div>
-        <div className="highlight"><span>Orders to date</span><strong>{money(lifetime)}</strong></div>
+        <div className="highlight"><span>Credit limit</span><strong>{money(account.creditLimit)}</strong><small className="sub">{String(account.paymentTerms || "no terms")} · {String(account.creditStatus || "none")}</small></div>
+        <div className="highlight"><span>Open balance</span><strong>{money(balance)}</strong><small className="sub">{pastDue.length ? `${pastDue.length} past due` : "nothing past due"}</small></div>
+        <div className="highlight"><span>Committed</span><strong>{money(promised)}</strong><small className="sub">orders not billed yet</small></div>
+        <div className={`highlight${available < 0 ? " alert" : ""}`}><span>Available credit</span><strong id="available-credit">{money(available)}</strong></div>
+      </div>
+
+      <div className="split">
+        <section className="panel" data-kiwi="credit-panel">
+          <div className="panel-head">
+            <h2>Credit</h2>
+            <ActionButton small kiwi="place-hold" icon="lock" label="Place hold" title={`Put ${String(account.name)} on credit hold`} description="Open orders that have not shipped become held." action="place-hold" hidden={{ accountId: id }} submit="Place hold" blocked={placeBlocked} why="title" fields={[{ name: "reason", label: "Reason", required: true, value: pastDue[0] ? `${pastDue[0].id} is past due.` : "" }]} />
+          </div>
+          <div className="aging">
+            {aging.map((bucket) => (
+              <div key={bucket.label} className={bucket.amount > 0 && bucket.label !== "Current" ? "late" : ""}>
+                <span>{bucket.label}</span>
+                <strong>{money(bucket.amount)}</strong>
+              </div>
+            ))}
+          </div>
+          <table style={{ marginTop: 14 }}>
+            <thead><tr><th>Invoice</th><th>Due</th><th>Status</th><th className="num">Balance</th></tr></thead>
+            <tbody>
+              {accountInvoices.length === 0 ? <tr><td colSpan={4} className="empty">No invoices yet.</td></tr> : accountInvoices.map((row) => (
+                <tr key={String(row.id)}>
+                  <td><a href={`/invoices/${row.id}`}>{String(row.id)}</a></td>
+                  <td>{prettyDate(row.dueDate)}</td>
+                  <td>{isPastDue(row, rules) ? <span className="pill bad">past due</span> : <Pill value={row.status} />}</td>
+                  <td className="num">{money(invoiceBalance(row))}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+        <section className="panel">
+          <div className="panel-head">
+            <h2>Contacts</h2>
+            <ActionButton small kiwi={onboarding ? "add-contact" : "add-buyer"} icon="plus" label="Add contact" title="Add contact" endpoint="/api/records/contacts" hidden={{ accountId: id }} blocked={editBlocked} why="title" fields={[{ name: "name", label: "Name", required: true }, { name: "role", label: "Role", type: "select", options: ["buyer", "accounts payable", "chef", "owner"].map((value) => ({ value, label: value })) }, { name: "email", label: "Email", type: "email" }, { name: "phone", label: "Phone" }]} />
+          </div>
+          {people.length === 0 ? <p className="empty">No contacts on file.</p> : people.map((row) => (
+            <div className="person" key={String(row.id)}>
+              <span className="avatar">{String(row.name).slice(0, 1)}</span>
+              <div><strong>{String(row.name)}</strong><small>{String(row.role)}{row.email ? ` · ${row.email}` : ""}</small></div>
+            </div>
+          ))}
+          <dl className="facts" style={{ marginTop: 14 }}>
+            <dt>Price book</dt><dd>{nameOf(account.priceBookId)}</dd>
+            <dt>Delivery days</dt><dd>{String(account.deliveryDays || "—").split("|").join(", ")}</dd>
+            <dt>Tax</dt><dd>{String(account.taxStatus || "—")}{account.taxCertificate ? ` · ${account.taxCertificate}` : ""}</dd>
+            <dt>Usual order</dt><dd>{String(account.usualOrder ?? "—")}</dd>
+          </dl>
+        </section>
       </div>
 
       <div className="split">
         <section className="panel">
-          <div className="panel-head">
-            <h2>Deals</h2>
-            <a href="/pipeline">Pipeline →</a>
-          </div>
+          <div className="panel-head"><h2>Deals</h2><a href="/pipeline">Pipeline →</a></div>
           {deals.length === 0 ? <p className="empty">No deals yet.</p> : (
             <table>
               <thead><tr><th>Deal</th><th>Stage</th><th className="num">Amount</th><th>Discount</th></tr></thead>
               <tbody>
                 {deals.map((row) => (
                   <tr key={String(row.id)}>
-                    <td><a href={`/opportunities/${row.id}`}>{row.name}</a></td>
-                    <td><span className="pill">{row.stage}</span></td>
+                    <td><a href={`/opportunities/${row.id}`}>{String(row.name)}</a></td>
+                    <td><span className="pill">{String(row.stage)}</span></td>
                     <td className="num">{money(row.amount)}</td>
-                    <td><span className={Number(row.discountPercent) > 15 ? "pill bad" : "pill good"}>{row.discountPercent}%</span></td>
+                    <td><span className={num(row.discountPercent) > rules.discountCapPercent ? "pill bad" : "pill good"}>{num(row.discountPercent)}%</span></td>
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
-        </section>
-        <section className="panel">
-          <div className="panel-head">
-            <h2>Buyers</h2>
-            <ActionButton
-              small
-              icon="plus"
-              label="Add buyer"
-              title="Add buyer"
-              endpoint="/api/records/contacts"
-              hidden={{ accountId: id }}
-              fields={[
-                { name: "name", label: "Name", required: true },
-                { name: "role", label: "Role", value: "buyer" },
-              ]}
-            />
-          </div>
-          {buyers.length === 0 ? <p className="empty">No buyers on file.</p> : buyers.map((row) => (
-            <div className="person" key={String(row.id)}>
-              <span className="avatar">{String(row.name).slice(0, 1)}</span>
-              <div><strong>{row.name}</strong><small>{row.role}</small></div>
-            </div>
-          ))}
-        </section>
-      </div>
-
-      <div className="split">
-        <section className="panel">
-          <h2 style={{ marginBottom: 12 }}>Orders and cases</h2>
-          {accountOrders.length + accountCases.length === 0 ? <p className="empty">No orders or cases yet.</p> : (
+          <h2 style={{ margin: "20px 0 12px" }}>Orders and cases</h2>
+          {accountOrders.length + accountCases.length === 0 ? <p className="empty">No orders or cases yet. {money(lifetime)} to date.</p> : (
             <div className="stack">
               {accountOrders.map((row) => (
-                <div className="line" key={String(row.id)}>
+                <a className="line" key={String(row.id)} href={`/orders/${row.id}`}>
                   <strong>{String(row.id)}</strong>
-                  <span>{money(row.amount)}</span>
-                  <span className={`pill ${tone(row.status)}`}>{String(row.status)}</span>
-                </div>
+                  <span>{money(row.amount)} · {prettyDate(row.deliveryDate)}</span>
+                  <Pill value={row.status} />
+                </a>
               ))}
               {accountCases.map((row) => (
-                <div className="line" key={String(row.id)}>
-                  <strong>{String(row.kind)}</strong>
-                  <span>Case</span>
-                  <span className={`pill ${tone(row.status)}`}>{String(row.status)}</span>
-                </div>
+                <a className="line" key={String(row.id)} href={`/cases/${row.id}`}>
+                  <strong>{String(row.subject || row.kind)}</strong>
+                  <span>Case {String(row.id)}</span>
+                  <Pill value={row.status} />
+                </a>
               ))}
             </div>
           )}
         </section>
         <section className="panel">
           <h2 style={{ marginBottom: 14 }}>Activity</h2>
-          {notes.length === 0 ? <p className="empty">Nothing logged yet.</p> : (
-            <ul className="timeline">
-              {notes.map((row) => (
-                <li key={String(row.id)}>
-                  {String(row.text)}
-                  {row.at ? <small>{new Date(String(row.at)).toLocaleString()}</small> : null}
-                </li>
-              ))}
-            </ul>
-          )}
+          <Timeline entries={notes} nameOf={nameOf} />
         </section>
       </div>
     </section>

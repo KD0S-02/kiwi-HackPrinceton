@@ -3,240 +3,320 @@
     "id": "inv-napkins",
     "productId": "napkins",
     "warehouseId": "jersey-city-cold",
-    "onHand": 20
+    "onHand": 20,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-fryer-oil",
     "productId": "fryer-oil",
     "warehouseId": "newark-dry-goods",
-    "onHand": 24
+    "onHand": 24,
+    "reorderPoint": 40,
+    "reorderQty": 60
   },
   {
     "id": "inv-gloves",
     "productId": "gloves",
     "warehouseId": "newark-dry-goods",
-    "onHand": 28
+    "onHand": 28,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-butter",
     "productId": "butter",
     "warehouseId": "jersey-city-cold",
-    "onHand": 32
+    "onHand": 32,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-cheddar",
     "productId": "cheddar",
     "warehouseId": "chicago-dry",
-    "onHand": 36
+    "onHand": 36,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-cream",
     "productId": "cream",
     "warehouseId": "newark-dry-goods",
-    "onHand": 40
+    "onHand": 40,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-milk",
     "productId": "milk",
     "warehouseId": "jersey-city-cold",
-    "onHand": 44
+    "onHand": 44,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-yogurt",
     "productId": "yogurt",
     "warehouseId": "chicago-dry",
-    "onHand": 48
+    "onHand": 48,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-rice",
     "productId": "rice",
     "warehouseId": "newark-dry-goods",
-    "onHand": 52
+    "onHand": 52,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-flour",
     "productId": "flour",
     "warehouseId": "jersey-city-cold",
-    "onHand": 56
+    "onHand": 56,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-sugar",
     "productId": "sugar",
     "warehouseId": "chicago-dry",
-    "onHand": 60
+    "onHand": 60,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-salt",
     "productId": "salt",
     "warehouseId": "newark-dry-goods",
-    "onHand": 64
+    "onHand": 64,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-pasta",
     "productId": "pasta",
     "warehouseId": "jersey-city-cold",
-    "onHand": 68
+    "onHand": 68,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-beans",
     "productId": "beans",
     "warehouseId": "chicago-dry",
-    "onHand": 72
+    "onHand": 72,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-oats",
     "productId": "oats",
     "warehouseId": "newark-dry-goods",
-    "onHand": 76
+    "onHand": 76,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-cans",
     "productId": "cans",
     "warehouseId": "jersey-city-cold",
-    "onHand": 20
+    "onHand": 20,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-towels",
     "productId": "towels",
     "warehouseId": "chicago-dry",
-    "onHand": 24
+    "onHand": 24,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-foil",
     "productId": "foil",
     "warehouseId": "newark-dry-goods",
-    "onHand": 28
+    "onHand": 28,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-wrap",
     "productId": "wrap",
     "warehouseId": "jersey-city-cold",
-    "onHand": 32
+    "onHand": 32,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-containers",
     "productId": "containers",
     "warehouseId": "chicago-dry",
-    "onHand": 36
+    "onHand": 36,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-cups",
     "productId": "cups",
     "warehouseId": "newark-dry-goods",
-    "onHand": 40
+    "onHand": 40,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-lids",
     "productId": "lids",
     "warehouseId": "jersey-city-cold",
-    "onHand": 44
+    "onHand": 44,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-straws",
     "productId": "straws",
     "warehouseId": "chicago-dry",
-    "onHand": 48
+    "onHand": 48,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-bags",
     "productId": "bags",
     "warehouseId": "newark-dry-goods",
-    "onHand": 52
+    "onHand": 52,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-spatula",
     "productId": "spatula",
     "warehouseId": "jersey-city-cold",
-    "onHand": 56
+    "onHand": 56,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-tongs",
     "productId": "tongs",
     "warehouseId": "chicago-dry",
-    "onHand": 60
+    "onHand": 60,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-ladle",
     "productId": "ladle",
     "warehouseId": "newark-dry-goods",
-    "onHand": 64
+    "onHand": 64,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-sheet-pan",
     "productId": "sheet-pan",
     "warehouseId": "jersey-city-cold",
-    "onHand": 68
+    "onHand": 68,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-hotel-pan",
     "productId": "hotel-pan",
     "warehouseId": "chicago-dry",
-    "onHand": 72
+    "onHand": 72,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-thermometer",
     "productId": "thermometer",
     "warehouseId": "newark-dry-goods",
-    "onHand": 76
+    "onHand": 76,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-peeler",
     "productId": "peeler",
     "warehouseId": "jersey-city-cold",
-    "onHand": 20
+    "onHand": 20,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-knife",
     "productId": "knife",
     "warehouseId": "chicago-dry",
-    "onHand": 24
+    "onHand": 24,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-canola",
     "productId": "canola",
     "warehouseId": "newark-dry-goods",
-    "onHand": 28
+    "onHand": 28,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-olive-oil",
     "productId": "olive-oil",
     "warehouseId": "jersey-city-cold",
-    "onHand": 32
+    "onHand": 32,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-spray",
     "productId": "spray",
     "warehouseId": "chicago-dry",
-    "onHand": 36
+    "onHand": 36,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-vinegar",
     "productId": "vinegar",
     "warehouseId": "newark-dry-goods",
-    "onHand": 40
+    "onHand": 40,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-honey",
     "productId": "honey",
     "warehouseId": "jersey-city-cold",
-    "onHand": 44
+    "onHand": 44,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-pepper",
     "productId": "pepper",
     "warehouseId": "chicago-dry",
-    "onHand": 48
+    "onHand": 48,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-baking-soda",
     "productId": "baking-soda",
     "warehouseId": "newark-dry-goods",
-    "onHand": 52
+    "onHand": 52,
+    "reorderPoint": 30,
+    "reorderQty": 40
   },
   {
     "id": "inv-filters",
     "productId": "filters",
     "warehouseId": "jersey-city-cold",
-    "onHand": 56
+    "onHand": 56,
+    "reorderPoint": 30,
+    "reorderQty": 40
   }
 ]

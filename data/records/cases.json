@@ -4,83 +4,181 @@
     "accountId": "harbor-diner",
     "ownerId": "user",
     "kind": "delivery complaint",
-    "status": "open"
+    "status": "open",
+    "subject": "delivery complaint",
+    "orderId": "",
+    "shipmentId": "",
+    "invoiceId": "",
+    "resolution": "",
+    "openedAt": "2026-11-03",
+    "closedAt": ""
   },
   {
     "id": "case-2",
     "accountId": "cedar-spoon",
     "ownerId": "user",
     "kind": "billing question",
-    "status": "open"
+    "status": "open",
+    "subject": "billing question",
+    "orderId": "",
+    "shipmentId": "",
+    "invoiceId": "",
+    "resolution": "",
+    "openedAt": "2026-11-03",
+    "closedAt": ""
   },
   {
     "id": "case-3",
     "accountId": "lantern-noodle",
     "ownerId": "user",
     "kind": "missing item",
-    "status": "open"
+    "status": "open",
+    "subject": "missing item",
+    "orderId": "",
+    "shipmentId": "",
+    "invoiceId": "",
+    "resolution": "",
+    "openedAt": "2026-11-03",
+    "closedAt": ""
   },
   {
     "id": "case-4",
     "accountId": "bright-pie",
     "ownerId": "user",
     "kind": "delivery complaint",
-    "status": "open"
+    "status": "open",
+    "subject": "delivery complaint",
+    "orderId": "",
+    "shipmentId": "",
+    "invoiceId": "",
+    "resolution": "",
+    "openedAt": "2026-11-03",
+    "closedAt": ""
   },
   {
     "id": "case-5",
     "accountId": "north-fork-grill",
     "ownerId": "user",
     "kind": "billing question",
-    "status": "closed"
+    "status": "closed",
+    "subject": "billing question",
+    "orderId": "",
+    "shipmentId": "",
+    "invoiceId": "",
+    "resolution": "",
+    "openedAt": "2026-11-03",
+    "closedAt": ""
   },
   {
     "id": "case-6",
     "accountId": "little-anchor",
     "ownerId": "user",
     "kind": "missing item",
-    "status": "closed"
+    "status": "closed",
+    "subject": "missing item",
+    "orderId": "",
+    "shipmentId": "",
+    "invoiceId": "",
+    "resolution": "",
+    "openedAt": "2026-11-03",
+    "closedAt": ""
   },
   {
     "id": "case-7",
     "accountId": "red-kettle",
     "ownerId": "user",
     "kind": "delivery complaint",
-    "status": "closed"
+    "status": "closed",
+    "subject": "delivery complaint",
+    "orderId": "",
+    "shipmentId": "",
+    "invoiceId": "",
+    "resolution": "",
+    "openedAt": "2026-11-03",
+    "closedAt": ""
   },
   {
     "id": "case-8",
     "accountId": "maple-counter",
     "ownerId": "user",
     "kind": "billing question",
-    "status": "closed"
+    "status": "closed",
+    "subject": "billing question",
+    "orderId": "",
+    "shipmentId": "",
+    "invoiceId": "",
+    "resolution": "",
+    "openedAt": "2026-11-03",
+    "closedAt": ""
   },
   {
     "id": "case-9",
     "accountId": "goldfinch-cafe",
     "ownerId": "ae-west",
     "kind": "missing item",
-    "status": "closed"
+    "status": "closed",
+    "subject": "missing item",
+    "orderId": "",
+    "shipmentId": "",
+    "invoiceId": "",
+    "resolution": "",
+    "openedAt": "2026-11-03",
+    "closedAt": ""
   },
   {
     "id": "case-10",
     "accountId": "river-salt",
     "ownerId": "ae-northeast-2",
     "kind": "delivery complaint",
-    "status": "closed"
+    "status": "closed",
+    "subject": "delivery complaint",
+    "orderId": "",
+    "shipmentId": "",
+    "invoiceId": "",
+    "resolution": "",
+    "openedAt": "2026-11-03",
+    "closedAt": ""
   },
   {
     "id": "case-11",
     "accountId": "olive-room",
     "ownerId": "user",
     "kind": "billing question",
-    "status": "closed"
+    "status": "closed",
+    "subject": "billing question",
+    "orderId": "",
+    "shipmentId": "",
+    "invoiceId": "",
+    "resolution": "",
+    "openedAt": "2026-11-03",
+    "closedAt": ""
   },
   {
     "id": "case-12",
     "accountId": "paper-lantern",
     "ownerId": "ae-southeast",
     "kind": "missing item",
-    "status": "closed"
+    "status": "closed",
+    "subject": "missing item",
+    "orderId": "",
+    "shipmentId": "",
+    "invoiceId": "",
+    "resolution": "",
+    "openedAt": "2026-11-03",
+    "closedAt": ""
+  },
+  {
+    "id": "case-13",
+    "accountId": "dockside-bowls",
+    "ownerId": "user",
+    "kind": "missing item",
+    "status": "open",
+    "subject": "Tuesday truck short 4 gloves and 18 fryer oil",
+    "orderId": "order-16",
+    "shipmentId": "shipment-11",
+    "invoiceId": "invoice-16",
+    "resolution": "",
+    "openedAt": "2026-11-11",
+    "closedAt": ""
   }
 ]
