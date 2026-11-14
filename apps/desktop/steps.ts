@@ -46,6 +46,48 @@ function normalizeDiscount(question: string, stop: Stop): Stop {
   return stop;
 }
 
+export class StepBuffer {
+  private steps: Stop[] = [];
+
+  push(steps: Stop[]) {
+    for (const step of steps) {
+      if (this.steps.length >= 3) return;
+      this.steps.push(step);
+    }
+  }
+
+  // The next planned step, in the order the planner added them.
+  takeNext() {
+    return this.steps.shift();
+  }
+
+  clear() {
+    this.steps = [];
+  }
+
+  get pending() {
+    return this.steps.length;
+  }
+}
+
+// A url, a tab, a paste, or an answer can run from any page. A click or a
+// type can run only when that control is on the page open right now.
+export function stepAligned(stop: Stop, controls: Control[]) {
+  const target = stop.target.trim();
+  if (!target || target === "none" || target === "paste" || /^(url|tab):/i.test(target)) return true;
+  return controlHere(target, controls);
+}
+
+export function goalReached(question: string, played: Stop[], bufferEmpty: boolean) {
+  if (played.length === 0) return false;
+  if (wantsDiscount(question)) return !stillToDo(question, played);
+  const last = played[played.length - 1];
+  if (!last.target || last.target === "none") return true;
+  if (!bufferEmpty) return false;
+  if (last.kind === "show") return true;
+  return /^url:/i.test(last.target) && !/\b(set|change|update|type|click|press|why|how|walk|tour|guide|approve)\b/i.test(question);
+}
+
 function controlHere(target: string, controls: Control[]) {
   const wanted = target.trim().toLowerCase();
   if (!wanted || wanted === "none" || wanted === "paste" || /^(url|tab):/.test(wanted)) return true;

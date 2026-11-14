@@ -9,7 +9,7 @@ import { ask, clearSignedIn, primeCache, type Stop } from "../../scripts/ask.ts"
 import { askPage, pageInFront, pagePath, startBridge } from "./bridge.ts";
 import { ensureFieldnote, fieldnoteUrl } from "./fieldnote.ts";
 import { route } from "./router.ts";
-import { prepareStops, stillToDo } from "./steps.ts";
+import { StepBuffer, goalReached, prepareStops, stepAligned } from "./steps.ts";
 import { adjustOwner, personByEmail, personById, type Person } from "../fieldnote/lib/people.ts";
 import { activateApp, chromeTabs, frontWindow, openChromeTab, openChromeUrl, prefetchChromeTabs } from "./chrome.ts";
 import { requiredEnv } from "../../scripts/load-env.ts";
@@ -387,6 +387,72 @@ async function playStop(stop: Stop) {
   await wait(300);
 }
 
+function chainPrompt(question: string, played: Stop[], rejected?: Stop) {
+  const done = played.map((stop) => stop.say || `${stop.kind} ${stop.target}`).filter(Boolean).join("; ") || "nothing yet";
+  const wrong = rejected
+    ? `\nThe step ${rejected.kind} ${rejected.target} is not on this page. Clear that plan. Use the PAGE CONTROLS below.`
+    : "";
+  return `${question}\n\nAlready done: ${done}.${wrong}\nPlan at most 3 stops. If the request is already finished, one stop with target none.`;
+}
+
+async function runChain(
+  question: string,
+  asked: string,
+  page: Awaited<ReturnType<typeof screenContext>>,
+  shot: string | undefined,
+  current: number,
+) {
+  const buffer = new StepBuffer();
+  const played: Stop[] = [];
+  let rejected: Stop | undefined;
+  let plans = 0;
+  while (current === runId && plans < 3) {
+    if (goalReached(question, played, buffer.pending === 0)) break;
+    if (buffer.pending === 0) {
+      const follow = !rejected && played.length > 0 ? route(question, page.controls, page.tabs, page.facts) : undefined;
+      if (follow && stepAligned(follow, page.controls) && !played.some((stop) => stop.target === follow.target && stop.kind === follow.kind)) {
+        buffer.push([follow]);
+        continue;
+      }
+      plans += 1;
+      if (plans > 1) send("status", { busy: true, label: "Next step" });
+      const result = await ask({
+        question: plans === 1 && !rejected ? asked : chainPrompt(question, played, rejected),
+        screenContext: page.text,
+        ...(shot && plans === 1 ? { imagePngBase64: shot, imageMime: "image/jpeg" as const } : {}),
+      });
+      if (current !== runId) return played;
+      rejected = undefined;
+      const stops = prepareStops(question, result.stops, page.controls)
+        .slice(0, 3)
+        .map((stop) => keepWritingHere(question, { ...stop, target: ownerTarget(question, stop.target ?? "") }));
+      if (stops.length === 0) {
+        if (played.length === 0) throw new Error("Kiwi did not return a stop.");
+        break;
+      }
+      buffer.push(stops);
+      continue;
+    }
+    const step = buffer.takeNext();
+    if (!step) continue;
+    if (!stepAligned(step, page.controls)) {
+      buffer.clear();
+      rejected = step;
+      page = await screenContext();
+      continue;
+    }
+    await playStop(step);
+    if (current !== runId) return played;
+    played.push(step);
+    page = await screenContext();
+    if (goalReached(question, played, buffer.pending === 0)) {
+      buffer.clear();
+      break;
+    }
+  }
+  return played;
+}
+
 async function answerQuestion(question: string) {
   if (!sessionPerson) {
     send("answer", "Sign in with your work email first.");
@@ -416,49 +482,15 @@ async function answerQuestion(question: string) {
     const shot = aboutScreen ? await captureScreen() : undefined;
     if (current !== runId) return;
     const frontLine = front.app ? `FRONT APP ${front.app}${front.title ? ` — ${front.title}` : ""}\n` : "";
-    const result = await ask({
-      question: asked,
-      screenContext: `${frontLine}${shot ? "SCREEN attached\n" : ""}${context.text}`,
-      ...(shot ? { imagePngBase64: shot, imageMime: "image/jpeg" as const } : {}),
-    });
-    if (current !== runId) return;
-    if (result.stops.length === 0) throw new Error("Kiwi did not return a stop.");
-    let planned = prepareStops(question, result.stops, context.controls);
-    for (const stop of planned) {
-      if (current !== runId) return;
-      await playStop(keepWritingHere(question, { ...stop, target: ownerTarget(question, stop.target ?? "") }));
-    }
-    // The first reply often only opens the page, because the field is not on it yet.
-    // Read the page it landed on and finish the change. Do not wait for "continue".
-    for (let round = 0; round < 2 && stillToDo(question, planned) && current === runId; round += 1) {
-      const landed = await screenContext();
-      const next = await ask({
-        question: `${question}\nThe deal is open. Type the discount and click save-discount now. Do not navigate. Do not ask to continue.`,
-        screenContext: landed.text,
-        mode: "act",
-      });
-      const more = prepareStops(question, next.stops, landed.controls).filter((stop) => !/^url:/i.test(stop.target));
-      if (more.length === 0) break;
-      for (const stop of more) {
-        if (current !== runId) return;
-        await playStop(keepWritingHere(question, { ...stop, target: ownerTarget(question, stop.target ?? "") }));
-      }
-      planned = [...planned, ...more];
-    }
-    if (planned.some((stop) => /save-discount/.test(stop.target)) && current === runId) {
+    const played = await runChain(question, asked, { text: `${frontLine}${shot ? "SCREEN attached\n" : ""}${context.text}`, controls: context.controls, tabs: context.tabs, facts: context.facts }, shot, current);
+    if (played.some((stop) => /save-discount/.test(stop.target)) && current === runId) {
       await wait(700);
       const landed = await screenContext();
       const status = (landed.facts ?? []).filter((fact) => fact.id === "quote-message" || fact.id === "readiness").map((fact) => fact.text);
       if (status.length > 0) send("answer", status.join(" "));
     }
-    const last = planned.at(-1);
-    if (last && /^url:/i.test(last.target ?? "") && /\b(why|where|how|can'?t|cannot)\b/i.test(question) && current === runId) {
-      const landed = await screenContext();
-      const follow = route(question, landed.controls, landed.tabs, landed.facts);
-      if (follow) await playStop(follow);
-    }
-    const notes = planned.map((stop) => stop.note).filter(Boolean).join("\n").slice(0, 1500);
-    history.push(`User: ${question}`, `Kiwi: ${planned.map((stop) => stop.say).join(" ")}${notes ? `\nKiwi wrote: ${notes}` : ""}`);
+    const notes = played.map((stop) => stop.note).filter(Boolean).join("\n").slice(0, 1500);
+    history.push(`User: ${question}`, `Kiwi: ${played.map((stop) => stop.say).join(" ")}${notes ? `\nKiwi wrote: ${notes}` : ""}`);
     timing(question, shot ? "model+screen" : "model", started);
   } catch (error) {
     if (current !== runId) return;
