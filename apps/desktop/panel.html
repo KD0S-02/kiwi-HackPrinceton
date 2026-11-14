@@ -58,11 +58,12 @@
     .session-error:not(:empty) { margin-top: 6px; }
     input { flex: 1; min-width: 0; border: 0; border-radius: 10px; padding: 10px 12px; background: #1f2937; color: white; font: inherit; }
     button { border: 0; border-radius: 10px; padding: 10px 12px; background: #1f6b32; color: white; font: inherit; cursor: pointer; -webkit-app-region: no-drag; display: inline-flex; align-items: center; justify-content: center; }
-    .hint, .partial, .answer { -webkit-app-region: no-drag; margin-left: 4px; padding-left: 0; }
+    /* Same left edge as the text inside the search bar (its 12px padding). */
+    .hint, .partial, .answer, .name-run p { -webkit-app-region: no-drag; margin-left: 12px; padding-left: 0; }
     .hint { margin-top: 8px; color: #9ca3af; font-size: 12px; }
     .name-run { display: none; flex-direction: column; gap: 8px; margin-top: 10px; -webkit-app-region: no-drag; }
     .name-run.on { display: flex; }
-    .name-run p { margin: 0; color: #e5e7eb; }
+    .name-run p { margin: 0 0 0 12px; color: #e5e7eb; }
     .name-run input, .name-run textarea { flex: none; width: 100%; box-sizing: border-box; background: #1f2937; color: white; border: 0; border-radius: 10px; padding: 10px 12px; font: inherit; }
     .name-run textarea { min-height: 68px; resize: none; }
     .name-run .save-row { display: flex; justify-content: flex-end; }
@@ -71,11 +72,18 @@
     .name-run .miss:empty { display: none; }
     .partial { min-height: 0; margin-top: 6px; color: #d1d5db; }
     .answer { margin-top: 4px; color: white; }
-    .note { display: none; margin-top: 10px; background: #1f2937; border-radius: 12px; -webkit-app-region: no-drag; }
+    .note { display: none; position: relative; margin-top: 10px; background: #1f2937; border-radius: 12px; -webkit-app-region: no-drag; }
     .note.on { display: block; }
-    .note pre { margin: 0; padding: 10px 12px; max-height: 380px; overflow: auto; white-space: pre-wrap; word-wrap: break-word; font: 12.5px/1.5 Inter, "Segoe UI", sans-serif; color: #e5e7eb; user-select: text; }
-    .note footer { display: flex; justify-content: flex-end; gap: 6px; padding: 0 8px 8px; }
-    .note button { padding: 6px 10px; font-size: 12px; background: #374151; }
+    .note pre:empty { display: none; }
+    .note pre { margin: 0; padding: 12px 40px 12px 14px; max-height: 380px; overflow: auto; white-space: pre-wrap; word-wrap: break-word; font: 12.5px/1.5 Inter, "Segoe UI", sans-serif; color: #e5e7eb; user-select: text; }
+    .note #note-close { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; padding: 0; border-radius: 8px; background: transparent; color: #9ca3af; }
+    .note #note-close:hover { background: #374151; color: white; }
+    .offer { display: none; align-items: center; gap: 10px; padding: 0 40px 12px 14px; color: #e5e7eb; }
+    .offer.on { display: flex; }
+    .note pre:empty + .offer { padding-top: 12px; }
+    .offer { flex-wrap: wrap; }
+    .offer-buttons { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+    .offer button { padding: 5px 14px; font-size: 12px; background: #1f6b32; }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
@@ -126,11 +134,9 @@
     <div class="partial" id="partial"></div>
     <div class="answer" id="answer"></div>
     <div class="note" id="note">
+      <button type="button" id="note-close" aria-label="Close"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></button>
       <pre id="note-text"></pre>
-      <footer>
-        <button type="button" id="note-close">Close</button>
-        <button type="button" id="note-copy">Copy</button>
-      </footer>
+      <div class="offer" id="offer"><span id="offer-text"></span><span class="offer-buttons" id="offer-buttons"></span></div>
     </div>
     </div>
   </div>
@@ -166,17 +172,60 @@
     window.kiwi.on("answer", (text) => { answer.textContent = text; fit(); });
     const note = document.getElementById("note");
     const noteText = document.getElementById("note-text");
+    const offer = document.getElementById("offer");
+    function showNote() {
+      note.classList.toggle("on", Boolean(noteText.textContent) || offer.classList.contains("on"));
+      fit();
+    }
     window.kiwi.on("note", (text) => {
       noteText.textContent = text || "";
-      note.classList.toggle("on", Boolean(text));
-      fit();
+      showNote();
     });
-    document.getElementById("note-copy").addEventListener("click", (event) => {
-      window.kiwi.copy(noteText.textContent);
-      event.target.textContent = "Copied";
-      setTimeout(() => { event.target.textContent = "Copy"; }, 1400);
+    const offerText = document.getElementById("offer-text");
+    const offerButtons = document.getElementById("offer-buttons");
+    function clearOffer() {
+      offerText.textContent = "";
+      offerButtons.replaceChildren();
+      offer.classList.remove("on");
+    }
+    function offerButton(label, run) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = label;
+      button.addEventListener("click", () => {
+        clearOffer();
+        noteText.textContent = "";
+        showNote();
+        run();
+      });
+      offerButtons.append(button);
+    }
+    function askChoice(ask) {
+      document.getElementById("question").value = ask;
+      partial.textContent = ask;
+      window.kiwi.ask(ask);
+    }
+    // { question } offers to do a how-to. { choices } answers a question Kiwi asked.
+    window.kiwi.on("offer", (payload) => {
+      clearOffer();
+      const choices = (payload && payload.choices) || [];
+      if (choices.length === 1) {
+        const choice = choices[0];
+        offerText.textContent = `${choice.label}?`;
+        offerButton("Yes", () => askChoice(choice.ask));
+      } else if (choices.length > 1) {
+        for (const choice of choices) offerButton(choice.label, () => askChoice(choice.ask));
+      } else if (payload && payload.question) {
+        const question = payload.question;
+        offerText.textContent = "Want me to do it for you?";
+        offerButton("Yes", () => { partial.textContent = question; window.kiwi.doIt(question); });
+      }
+      offer.classList.toggle("on", offerButtons.childElementCount > 0);
+      showNote();
     });
     document.getElementById("note-close").addEventListener("click", () => {
+      noteText.textContent = "";
+      clearOffer();
       note.classList.remove("on");
       fit();
     });
@@ -361,7 +410,9 @@
         return;
       }
       hideNaming();
-      answer.textContent = "Saved.";
+      answer.textContent = result.steps
+        ? `Saved as a skill with ${result.steps} ${result.steps === 1 ? "step" : "steps"}. Anyone can ask Kiwi to guide them through "${title}".`
+        : "Saved the recording, but nothing happened in Fieldnote, so there is no skill to replay.";
       fit();
     });
 

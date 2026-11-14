@@ -6,16 +6,19 @@ import { app, BrowserWindow, clipboard, desktopCapturer, globalShortcut, ipcMain
 import { uIOhook, UiohookKey } from "uiohook-napi";
 import { AssemblyAI, StreamingTranscriber } from "assemblyai";
 import { ask, clearSignedIn, primeCache, type Stop } from "../../scripts/ask.ts";
-import { askPage, pageInFront, pagePath, startBridge } from "./bridge.ts";
+import { askPage, onPageAction, pageInFront, pagePath, startBridge } from "./bridge.ts";
 import { ensureFieldnote } from "./fieldnote.ts";
 import { route } from "./router.ts";
 import { StepBuffer, goalReached, prepareStops, stepAligned } from "./steps.ts";
 import { adjustOwner, personByEmail, personById, type Person } from "../fieldnote/lib/people.ts";
+import { nav } from "../fieldnote/lib/data.ts";
 import { activateApp, chromeTabs, frontWindow, openChromeTab, prefetchChromeTabs } from "./chrome.ts";
 import { requiredEnv } from "../../scripts/load-env.ts";
+import { knownPath, placesIn } from "../../scripts/site-map.ts";
 import { lookupUser } from "../../scripts/lookup-user.ts";
 import { dataDirectory } from "../../scripts/paths.ts";
 import { createRecorder, nameRun } from "./record.ts";
+import { compileSkill, describeStep, findSkill, listSkills, saveSkill, type Skill } from "./skills.ts";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const keyterms = [
@@ -44,6 +47,7 @@ let stoppedPress = 0;
 let talkGeneration = 0;
 let transcript = "";
 let runId = 0;
+const howToQuestion = /^\s*(how (do|can|should|would|to)\b|how'?s\b|what (do|should) i\b|what'?s the (best )?way\b|what steps\b)/i;
 let followCursor = true;
 let followTimer: NodeJS.Timeout | undefined;
 const history: string[] = [];
@@ -343,6 +347,10 @@ async function playStop(stop: Stop) {
     return;
   }
 
+  if (/^url:/i.test(target) && !knownPath(urlOf(target))) {
+    send("answer", `Fieldnote has no ${urlOf(target).split("?")[0]} page.`);
+    return;
+  }
   const problem = await ensureFieldnote(/^url:/i.test(target) ? urlOf(target) : "/", (text) => send("answer", text));
   if (problem) {
     send("answer", problem);
@@ -451,7 +459,90 @@ async function runChain(
   return played;
 }
 
-async function answerQuestion(question: string) {
+const skillsDirectory = path.join(dataDirectory, "skills");
+const skillWords = /\b(skill|skills|recorded|recording|guide|walk|teach|show me how|how do i|run|replay)\b/i;
+
+// Walks through a saved skill on the real page: opens each page and points at each control.
+async function playSkill(skill: Skill, current: number) {
+  const author = skill.authorId === sessionPerson?.id ? "you" : skill.authorName;
+  send("answer", `Here's "${skill.title}", recorded by ${author}. ${skill.steps.length} steps.`);
+  send("note", [skill.note, ...skill.steps.map((step, index) => `${index + 1}. ${describeStep(step, index === 0, nav)}`)].filter(Boolean).join("\n"));
+  for (const [index, step] of skill.steps.entries()) {
+    if (current !== runId) return;
+    point(null);
+    if (step.kind === "page") {
+      if (!knownPath(step.path)) continue;
+      const problem = await ensureFieldnote(step.path, (text) => send("answer", text));
+      if (problem) {
+        send("answer", problem);
+        return;
+      }
+      const opened = await askPage({ op: "navigate", url: step.path }, 6500);
+      if (!opened?.ok) {
+        send("answer", `I could not open ${step.path}.`);
+        return;
+      }
+      send("answer", `${describeStep(step, index === 0, nav)}.`);
+      await wait(1600);
+      continue;
+    }
+    if (step.path && pagePath() !== step.path && knownPath(step.path)) {
+      await askPage({ op: "navigate", url: step.path }, 6500);
+      await wait(500);
+    }
+    const say = `${describeStep(step, index === 0, nav)}.`;
+    const found = await askPage({ op: "locate", target: step.target }, 800) ?? undefined;
+    const spot = found?.ok ? found : await askPage({ op: "locate", target: step.label }, 800);
+    if (spot?.ok && spot.rect) point({ ...overlayPoint(spot.rect.x, spot.rect.y), say });
+    send("answer", spot?.ok ? say : `${say} I can't see it on this page.`);
+    await wait(2200);
+  }
+  if (current === runId && skill.end && pagePath() !== skill.end && knownPath(skill.end)) {
+    await askPage({ op: "navigate", url: skill.end }, 6500);
+  }
+  if (current === runId) {
+    returnToCursor(400);
+    send("answer", `That's all of "${skill.title}".`);
+  }
+}
+
+const blockedWords = /approv|sign off|can'?t|cannot|not allowed|isn'?t allowed|switched off|doesn'?t (have|exist|track)|does not (have|exist|track)|no such/i;
+
+// A how-to answer that only explained something he is allowed to do. Kiwi offers to do it.
+// Options Kiwi asked him to pick from, each with the request to run when picked.
+function choicesIn(stops: Stop[]) {
+  return stops.flatMap((stop) => stop.choices ?? [])
+    .map((choice) => ({ label: String(choice.label ?? "").trim().slice(0, 32), ask: String(choice.ask ?? "").trim() }))
+    .filter((choice) => choice.label && choice.ask)
+    .slice(0, 3);
+}
+
+const missingWords = /\b(doesn'?t|does not) (have|exist|track)|\bthere(?: is|'s) no\b|\bno such\b|\bisn'?t a\b/i;
+
+function sendOffer(question: string, stops: Stop[], doIt: boolean) {
+  if (doIt) return;
+  if (offerable(question, stops, doIt)) {
+    send("offer", { question });
+    return;
+  }
+  let choices = choicesIn(stops);
+  const said = stops.map((stop) => stop.say).join(" ");
+  if (choices.length === 0 && missingWords.test(said)) {
+    choices = placesIn(said).slice(0, 3).map((place) => ({ label: `Open ${place.name}`, ask: `take me to ${place.name}` }));
+  }
+  if (choices.length > 0) send("offer", { choices });
+}
+
+function offerable(question: string, stops: Stop[], doIt: boolean) {
+  if (doIt || !howToQuestion.test(question)) return false;
+  if (stops.some((stop) => blockedWords.test(`${stop.say} ${stop.note ?? ""}`))) return false;
+  if (stops.some((stop) => stop.offer === false || stop.say.trim().endsWith("?"))) return false;
+  if (stops.some((stop) => stop.offer === true)) return true;
+  if (stops.some((stop) => stop.allow && stop.kind !== "show" && !/^(url|tab):/i.test(stop.target ?? ""))) return false;
+  return stops.some((stop) => stop.kind === "show" && !/^(none|paste)?$/i.test((stop.target ?? "").trim()));
+}
+
+async function answerQuestion(question: string, doIt = false) {
   if (!sessionPerson) {
     send("answer", "Sign in with your work email first.");
     return;
@@ -461,22 +552,42 @@ async function answerQuestion(question: string) {
   transcript = "";
   send("status", { busy: true, label: "Looking" });
   send("partial", question);
+  send("answer", "");
   send("note", "");
+  send("offer", "");
   point(null);
   try {
+    const skills = listSkills(skillsDirectory);
+    if (!doIt && /\b(what|which|list|any|my|saved)\b.*\bskills?\b|\bskills?\b.*\b(saved|recorded|have)\b/i.test(question) && !findSkill(skills, question)) {
+      send("answer", skills.length ? `There ${skills.length === 1 ? "is 1 saved skill" : `are ${skills.length} saved skills`}.` : "There are no saved skills yet. Press record to make one.");
+      if (skills.length) send("note", skills.map((skill) => `- ${skill.title} (${skill.authorId === sessionPerson.id ? "you" : skill.authorName}, ${skill.steps.length} steps)`).join("\n"));
+      timing(question, "skills", started);
+      return;
+    }
+    const skill = !doIt && skillWords.test(question) ? findSkill(skills, question) : undefined;
+    if (skill) {
+      await playSkill(skill, current);
+      history.push(`User: ${question}`, `Kiwi: walked through the saved skill "${skill.title}".`);
+      timing(question, "skill", started);
+      return;
+    }
     const [context, front] = await Promise.all([screenContext(), updateFront()]);
     if (current !== runId) return;
     const onFieldnote = front.app === "Google Chrome" && pageInFront();
-    const aboutScreen = !onFieldnote && screenWords.test(question);
-    const quick = aboutScreen ? undefined : route(question, context.controls, context.tabs, context.facts);
+    const aboutScreen = !doIt && !onFieldnote && screenWords.test(question);
+    const quick = aboutScreen || doIt ? undefined : route(question, context.controls, context.tabs, context.facts);
     if (quick) {
       await playStop(quick);
       history.push(`User: ${question}`, `Kiwi: ${quick.say}`);
       timing(question, "local", started);
+      if (current === runId) sendOffer(question, [quick], doIt);
       return;
     }
     const prior = history.slice(-4).join("\n");
-    const asked = prior ? `Earlier:\n${prior}\n\n${question}` : question;
+    const request = doIt
+      ? `${question}\nHe already read how to do this and said yes. Do it for him now. Use click and type stops with allow true on real controls: open the page with a url: stop, then click or fill what is needed. Do not explain again and do not use a show stop unless nothing on Fieldnote can do it. Stop before anything that sends, deletes, or confirms.`
+      : question;
+    const asked = prior ? `Earlier, already answered. Use it only for context:\n${prior}\n\nAnswer this new question only:\n${request}` : request;
     const shot = aboutScreen ? await captureScreen() : undefined;
     if (current !== runId) return;
     const frontLine = front.app ? `FRONT APP ${front.app}${front.title ? ` — ${front.title}` : ""}\n` : "";
@@ -490,6 +601,7 @@ async function answerQuestion(question: string) {
     const notes = played.map((stop) => stop.note).filter(Boolean).join("\n").slice(0, 1500);
     history.push(`User: ${question}`, `Kiwi: ${played.map((stop) => stop.say).join(" ")}${notes ? `\nKiwi wrote: ${notes}` : ""}`);
     timing(question, shot ? "model+screen" : "model", started);
+    if (current === runId) sendOffer(question, played, doIt);
   } catch (error) {
     if (current !== runId) return;
     send("answer", error instanceof Error ? error.message : String(error));
@@ -630,7 +742,28 @@ function savedPanelPosition(width: number, height: number) {
   }
 }
 
+const arrowSteps: Record<number, [number, number]> = {
+  [UiohookKey.ArrowLeft]: [-1, 0],
+  [UiohookKey.ArrowRight]: [1, 0],
+  [UiohookKey.ArrowUp]: [0, -1],
+  [UiohookKey.ArrowDown]: [0, 1],
+};
+
+// Holding Command and pressing an arrow nudges the panel. Not shown anywhere in the UI.
+function nudgePanel(code: number) {
+  const step = arrowSteps[code];
+  if (!step || panel.isDestroyed() || !panel.isVisible()) return;
+  if (!holding([UiohookKey.Meta, UiohookKey.MetaRight])) return;
+  const bounds = panel.getBounds();
+  const area = screen.getDisplayNearestPoint({ x: bounds.x + bounds.width / 2, y: bounds.y + 20 }).workArea;
+  const x = Math.max(area.x - bounds.width + 80, Math.min(area.x + area.width - 80, bounds.x + step[0] * 24));
+  const y = Math.max(area.y, Math.min(area.y + area.height - 60, bounds.y + step[1] * 24));
+  panel.setPosition(x, y);
+  writeFileSync(path.join(app.getPath("userData"), "panel-position.json"), JSON.stringify({ x, y }));
+}
+
 function trackShortcut(code: number, pressed: boolean) {
+  if (pressed) nudgePanel(code);
   if (!modifierKeys.has(code)) {
     if (pressed && shortcutHeld && shortcutUsesCommand) {
       shortcutHeld = false;
@@ -792,6 +925,11 @@ app.whenReady().then(async () => {
     const bounds = panel.getBounds();
     if (bounds.height !== next) panel.setSize(bounds.width, next);
   });
+  globalShortcut.register("CommandOrControl+\\", () => {
+    if (panel.isDestroyed()) return;
+    if (panel.isVisible()) panel.hide();
+    else panel.showInactive();
+  });
   globalShortcut.register("Escape", () => {
     runId += 1;
     point(null);
@@ -816,13 +954,17 @@ app.whenReady().then(async () => {
     const cleanTitle = String(title ?? "").trim();
     if (!/^run-[a-z0-9]+$/.test(cleanId) || !cleanTitle) return { ok: false as const };
     try {
-      nameRun(path.join(dataDirectory, "runs"), cleanId, cleanTitle, String(note ?? "").trim());
+      const run = nameRun(path.join(dataDirectory, "runs"), cleanId, cleanTitle, String(note ?? "").trim());
+      const skill = compileSkill(run);
+      const acted = skill.steps.some((step) => step.kind !== "page");
+      if (acted) saveSkill(skillsDirectory, skill);
+      return { ok: true as const, steps: acted ? skill.steps.length : 0 };
     } catch {
       return { ok: false as const };
     }
-    return { ok: true as const };
   });
   ipcMain.handle("ask", (_event, question: string) => answerQuestion(question));
+  ipcMain.handle("do-it", (_event, question: string) => answerQuestion(String(question), true));
   ipcMain.handle("talk-start", (_event, press: number) => {
     if (!sessionPerson) {
       send("answer", "Sign in with your work email first.");
@@ -844,6 +986,7 @@ app.whenReady().then(async () => {
   const icon = nativeImage.createFromPath(path.join(here, "kiwi.png"));
   if (!icon.isEmpty()) app.dock.setIcon(icon);
   startBridge();
+  onPageAction((step) => recorder.action(step));
   watchKeys();
   watchCursor();
   watchFront();

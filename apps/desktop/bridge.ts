@@ -14,7 +14,14 @@ export type PageReply = {
 
 type Page = { socket: WebSocket; visible: boolean; focused: boolean; path: string; url: string; agent: string; seen: number };
 
+export type PageAction = { action: "click" | "type"; id: string; label: string; text: string; control?: string; path: string };
+
 const pages = new Set<Page>();
+const actionListeners = new Set<(action: PageAction) => void>();
+
+export function onPageAction(listener: (action: PageAction) => void) {
+  actionListeners.add(listener);
+}
 const waiting = new Map<number, (reply: PageReply) => void>();
 let nextId = 1;
 
@@ -32,6 +39,10 @@ export function startBridge(port = 4555) {
       if (message.url) page.url = message.url;
       if (message.agent) page.agent = message.agent;
       page.seen = Date.now();
+      if (message.type === "action") {
+        const action = message as unknown as PageAction;
+        for (const listener of actionListeners) listener(action);
+      }
       if (message.type === "reply" && message.id !== undefined) {
         waiting.get(message.id)?.(message);
         waiting.delete(message.id);

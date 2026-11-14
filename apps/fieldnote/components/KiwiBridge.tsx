@@ -65,15 +65,46 @@ function screenRect(element: Element) {
   };
 }
 
+// One highlight at a time, drawn above the page. It is not part of the element, so
+// the sidebar cannot clip it, two of them cannot pile up, and nothing is left behind.
+let highlight: { box: HTMLDivElement; stop: () => void } | undefined;
+
 function flash(element: HTMLElement) {
-  const before = element.style.outline;
-  const offset = element.style.outlineOffset;
-  element.style.outline = "3px solid #3b82f6";
-  element.style.outlineOffset = "3px";
-  setTimeout(() => {
-    element.style.outline = before;
-    element.style.outlineOffset = offset;
-  }, 2400);
+  highlight?.stop();
+  const box = document.createElement("div");
+  box.setAttribute("aria-hidden", "true");
+  box.style.cssText =
+    "position:fixed;z-index:2147483647;pointer-events:none;box-sizing:border-box;border:2px solid #3b82f6;" +
+    "box-shadow:0 0 0 4px rgba(59,130,246,.22);transition:opacity .25s ease;opacity:1;";
+  document.body.appendChild(box);
+  const radius = parseFloat(getComputedStyle(element).borderTopLeftRadius) || 0;
+  let frame = 0;
+  const place = () => {
+    const rect = element.getBoundingClientRect();
+    const grow = 3;
+    box.style.left = `${rect.left - grow}px`;
+    box.style.top = `${rect.top - grow}px`;
+    box.style.width = `${rect.width + grow * 2}px`;
+    box.style.height = `${rect.height + grow * 2}px`;
+    box.style.borderRadius = `${Math.min(radius + grow, 999)}px`;
+    frame = requestAnimationFrame(place);
+  };
+  place();
+  let done = false;
+  const stop = () => {
+    if (done) return;
+    done = true;
+    cancelAnimationFrame(frame);
+    clearTimeout(fade);
+    clearTimeout(remove);
+    box.remove();
+    if (highlight?.box === box) highlight = undefined;
+  };
+  const fade = setTimeout(() => {
+    box.style.opacity = "0";
+  }, 2100);
+  const remove = setTimeout(stop, 2400);
+  highlight = { box, stop };
 }
 
 function choose(select: HTMLSelectElement, text: string) {
@@ -127,7 +158,7 @@ function inventory() {
   const facts = [...document.querySelectorAll("h1, #stage, #amount, #quote-message, #readiness, #filter-count, .warning, .pill")]
     .filter(isShown)
     .slice(0, 12)
-    .map((element) => ({ id: element.id || "", text: labelOf(element) }))
+    .map((element) => ({ id: element.id || "", text: ((element as HTMLElement).innerText || "").replace(/\s+/g, " ").trim().slice(0, 200) }))
     .filter((fact) => fact.text);
   return { ok: true, path: location.pathname + location.search, title: document.title, controls, facts };
 }
@@ -227,6 +258,26 @@ export function KiwiBridge() {
       socket.onerror = () => socket?.close();
     };
     connect();
+    // What the person does on the page, so a recording can become a skill.
+    const tell = (action: "click" | "type", element: HTMLElement, text = "") => {
+      if (socket?.readyState !== WebSocket.OPEN) return;
+      const label = labelOf(element) || element.getAttribute("name") || "";
+      socket.send(JSON.stringify({ type: "action", action, id: element.id || element.dataset.kiwi || "", label, text: text.slice(0, 80), control: element.getAttribute("role") || element.tagName.toLowerCase(), path: location.pathname + location.search }));
+    };
+    const onClick = (event: MouseEvent) => {
+      const element = (event.target as Element | null)?.closest(clickable) as HTMLElement | null;
+      if (!element || element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) return;
+      tell("click", element);
+    };
+    const onChange = (event: Event) => {
+      const element = event.target as HTMLElement;
+      if (element instanceof HTMLSelectElement) tell("type", element, element.selectedOptions[0]?.label ?? element.value);
+      else if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+        if (element.type !== "password") tell("type", element, element.value);
+      }
+    };
+    document.addEventListener("click", onClick, true);
+    document.addEventListener("change", onChange, true);
     // Chrome does not always fire visibilitychange when a window is restored from the Dock.
     const heartbeat = setInterval(report, 1000);
     document.addEventListener("visibilitychange", report);
@@ -236,6 +287,8 @@ export function KiwiBridge() {
       stopped = true;
       clearInterval(heartbeat);
       if (retry) clearTimeout(retry);
+      document.removeEventListener("click", onClick, true);
+      document.removeEventListener("change", onChange, true);
       socket?.close();
       document.removeEventListener("visibilitychange", report);
       window.removeEventListener("focus", report);
