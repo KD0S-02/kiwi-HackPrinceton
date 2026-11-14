@@ -45,11 +45,12 @@ export function FilterBar({ path, filters, values, shown, total, noun, keep = {}
     const value = values[filter.name] ?? "";
     return value !== "" && value !== filter.fallback;
   });
+  const focusFilter = active[0]?.name;
 
   return (
     <form
       className="filter-bar"
-      data-kiwi="filters"
+      data-kiwi={focusFilter ? undefined : "filters"}
       onSubmit={(event) => {
         event.preventDefault();
         clearTimeout(timer.current);
@@ -59,9 +60,10 @@ export function FilterBar({ path, filters, values, shown, total, noun, keep = {}
       <Icon name="filter" size={15} />
       {filters.map((filter) => {
         const id = `filter-${filter.name}`;
+        const kiwi = filter.name === focusFilter ? "filters" : undefined;
         if (filter.kind === "select") {
           return (
-            <select key={filter.name} id={id} aria-label={filter.label} value={draft[filter.name] ?? ""} onChange={(event) => change(filter.name, event.target.value, 0)}>
+            <select key={filter.name} id={id} data-kiwi={kiwi} aria-label={filter.label} value={draft[filter.name] ?? ""} onChange={(event) => change(filter.name, event.target.value, 0)}>
               <option value={filter.fallback ? "all" : ""}>{filter.all ?? `Any ${filter.label.toLowerCase()}`}</option>
               {filter.choices.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
@@ -71,6 +73,7 @@ export function FilterBar({ path, filters, values, shown, total, noun, keep = {}
           <input
             key={filter.name}
             id={id}
+            data-kiwi={kiwi}
             aria-label={filter.label}
             type={filter.kind === "number" ? "number" : "search"}
             className={filter.kind === "number" ? "narrow" : ""}

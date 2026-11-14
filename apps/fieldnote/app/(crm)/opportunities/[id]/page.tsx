@@ -13,6 +13,7 @@ import { find, num, openDb } from "../../../../lib/workflow/db";
 import { linesTotal, quoteAmount, unitPriceFor } from "../../../../lib/workflow/money";
 import { accountReason } from "../../../../lib/workflow/permissions";
 import { freeForAccount } from "../../../../lib/workflow/stock";
+import { approvalKind, approvalNumber } from "../../../../lib/workflow/view";
 import { DiscountEditor } from "./discount-editor";
 
 export const dynamic = "force-dynamic";
@@ -325,8 +326,8 @@ export default async function OpportunityPage({
             <tbody>
               {dealApprovals.length === 0 ? <tr><td colSpan={6} className="empty">No approvals on this deal.</td></tr> : dealApprovals.map((row) => (
                 <tr key={String(row.id)}>
-                  <td><a href={`/approvals/${row.id}`}>{String(row.id)}</a></td>
-                  <td>{String(row.kind)}</td>
+                  <td><a href={`/approvals/${row.id}`}>{approvalNumber(row.id)}</a></td>
+                  <td>{approvalKind(row.kind)}</td>
                   <td className="num">{row.amount != null ? `${num(row.amount)}%` : "—"}</td>
                   <td>{nameOf(row.requestedBy)}</td>
                   <td>{nameOf(row.approverId)}</td>

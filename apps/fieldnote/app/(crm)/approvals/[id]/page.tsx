@@ -9,7 +9,7 @@ import { activityFor } from "../../../../lib/workflow/activity";
 import { ruleSentence, subjectOf, subjectTypeOf } from "../../../../lib/workflow/approvals";
 import { find, openDb } from "../../../../lib/workflow/db";
 import { decideReason } from "../../../../lib/workflow/permissions";
-import { approvalAmount } from "../../../../lib/workflow/view";
+import { approvalAmount, approvalKind, approvalNumber } from "../../../../lib/workflow/view";
 
 export const dynamic = "force-dynamic";
 
@@ -32,8 +32,8 @@ export default async function ApprovalPage({ params }: { params: Promise<{ id: s
     <section>
       <div className="page-head">
         <div>
-          <div className="crumb"><a href="/approvals">Approvals</a> / {id}</div>
-          <h1>{String(approval.kind)[0].toUpperCase() + String(approval.kind).slice(1)} request</h1>
+          <div className="crumb"><a href="/approvals">Approvals</a> / {approvalNumber(id)}</div>
+          <h1>{approvalKind(approval.kind)} request {approvalNumber(id)}</h1>
           <p>{nameOf(approval.requestedBy)} asked {nameOf(approval.approverId)} · {approval.requestedAt ? prettyDate(approval.requestedAt) : "earlier"}</p>
         </div>
         <div className="actions">
@@ -55,6 +55,7 @@ export default async function ApprovalPage({ params }: { params: Promise<{ id: s
           />
           <ActionButton
             kiwi="reject"
+            variant="soft-danger"
             icon="x"
             label="Reject"
             title="Reject request"

@@ -247,7 +247,7 @@ function wait(ms: number) {
 }
 
 async function screenContext() {
-  const [page, tabs] = await Promise.all([askPage({ op: "inventory" }, 400), chromeTabs()]);
+  const [page, tabs] = await Promise.all([askPage({ op: "inventory" }, 1500), chromeTabs()]);
   const lines: string[] = [];
   if (tabs.length > 0) {
     lines.push(`BROWSER TABS ${JSON.stringify(tabs.map((tab) => tab.title))}`);
@@ -364,7 +364,15 @@ async function playStop(stop: Stop) {
       send("answer", opened?.error ?? "Fieldnote did not open that page.");
       return;
     }
-    let spot = await askPage({ op: "locate", target: "filters" }, 600);
+    // Prefer the filter that the URL set (filter-warehouse), not the whole wide bar.
+    let spot: Awaited<ReturnType<typeof askPage>> | undefined;
+    const query = urlOf(target).split("?")[1] ?? "";
+    for (const key of new URLSearchParams(query).keys()) {
+      spot = await askPage({ op: "locate", target: `filter-${key}` }, 500);
+      if (spot?.ok && spot.rect) break;
+      spot = undefined;
+    }
+    if (!spot?.ok) spot = await askPage({ op: "locate", target: "filters" }, 600);
     if (!spot?.ok) spot = await askPage({ op: "locate", target: "results" }, 600);
     if (spot?.ok && spot.rect) fly(spot.rect.x, spot.rect.y);
     returnToCursor(2200);
@@ -416,11 +424,19 @@ async function runChain(
 ) {
   const buffer = new StepBuffer();
   const played: Stop[] = [];
+  const failed = new Set<string>();
   let rejected: Stop | undefined;
   let plans = 0;
   while (current === runId && plans < 3) {
     if (goalReached(question, played, buffer.pending === 0)) break;
     if (buffer.pending === 0) {
+      const local = prepareStops(question, [], page.controls).filter(
+        (stop) => !failed.has(stop.target) && !played.some((done) => done.kind === stop.kind && done.target === stop.target && done.text === stop.text),
+      );
+      if (local.some((stop) => stop.target === "new-account" || stop.target.startsWith("new-account-"))) {
+        buffer.push(local);
+        continue;
+      }
       const follow = !rejected && played.length > 0 ? route(question, page.controls, page.tabs, page.facts) : undefined;
       if (follow && stepAligned(follow, page.controls) && !played.some((stop) => stop.target === follow.target && stop.kind === follow.kind)) {
         buffer.push([follow]);
@@ -448,10 +464,14 @@ async function runChain(
     const step = buffer.takeNext();
     if (!step) continue;
     if (!stepAligned(step, page.controls)) {
-      buffer.clear();
-      rejected = step;
+      // A click that opens a dialog lands before the fields exist. Read the page once more.
       page = await screenContext();
-      continue;
+      if (!stepAligned(step, page.controls)) {
+        failed.add(step.target);
+        buffer.clear();
+        rejected = step;
+        continue;
+      }
     }
     await playStop(step);
     if (current !== runId) return played;
