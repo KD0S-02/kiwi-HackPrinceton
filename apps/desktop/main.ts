@@ -15,7 +15,7 @@ import { activateApp, chromeTabs, frontWindow, openChromeTab, openChromeUrl, pre
 import { requiredEnv } from "../../scripts/load-env.ts";
 import { lookupUser } from "../../scripts/lookup-user.ts";
 import { dataDirectory } from "../../scripts/paths.ts";
-import { createRecorder } from "./record.ts";
+import { createRecorder, nameRun } from "./record.ts";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const keyterms = [
@@ -757,8 +757,19 @@ app.whenReady().then(async () => {
   ipcMain.handle("record-resume", () => recorder.resume());
   ipcMain.handle("record-stop", () => {
     const saved = recorder.stop();
-    if (saved) send("answer", saved.beats.length ? `Saved ${saved.beats.length} moments.` : "Saved. Nothing on screen changed.");
-    return { ok: true as const, beats: saved?.beats.length ?? 0 };
+    if (!saved) return { ok: false as const };
+    return { ok: true as const, id: saved.id, beats: saved.beats.length };
+  });
+  ipcMain.handle("record-name", (_event, id: string, title: string, note: string) => {
+    const cleanId = String(id ?? "");
+    const cleanTitle = String(title ?? "").trim();
+    if (!/^run-[a-z0-9]+$/.test(cleanId) || !cleanTitle) return { ok: false as const };
+    try {
+      nameRun(path.join(dataDirectory, "runs"), cleanId, cleanTitle, String(note ?? "").trim());
+    } catch {
+      return { ok: false as const };
+    }
+    return { ok: true as const };
   });
   ipcMain.handle("ask", (_event, question: string) => answerQuestion(question));
   ipcMain.handle("talk-start", () => {

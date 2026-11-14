@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 export type RecordMode = "idle" | "recording" | "paused";
@@ -17,7 +17,9 @@ type Run = {
   personName: string;
   startedAt: string;
   stoppedAt?: string;
-  status: "recording" | "paused" | "stopped";
+  status: "recording" | "paused" | "stopped" | "draft";
+  title?: string;
+  note?: string;
   beats: Beat[];
 };
 
@@ -126,4 +128,13 @@ export function createRecorder(options: {
   }
 
   return { start, pause, resume, stop, mode: () => mode };
+}
+
+export function nameRun(directory: string, id: string, title: string, note: string) {
+  const file = path.join(directory, id, "run.json");
+  const run = JSON.parse(readFileSync(file, "utf8")) as Run;
+  run.title = title;
+  run.note = note;
+  run.status = "draft";
+  writeFileSync(file, JSON.stringify(run, null, 2));
 }

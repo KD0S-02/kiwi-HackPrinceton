@@ -12,7 +12,10 @@
     .pill.out .brand-copy strong { font-size: 22px; line-height: 1; }
     .row { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 28px; -webkit-app-region: drag; cursor: grab; }
     .pill.signed .row { justify-content: flex-start; }
+    .pill.signed .brand { align-items: center; }
     .pill.signed .brand-copy { align-items: flex-start; }
+    .pill.signed .brand-copy strong,
+    .pill.signed .brand-copy small { line-height: 1.15; }
     .pill.signed .brand-copy small { font-size: 11px; }
     .pill.signed .sign-in { display: none !important; }
     .row:active { cursor: grabbing; }
@@ -20,7 +23,9 @@
     .brand-copy { display: flex; flex-direction: column; align-items: center; }
     .brand-copy small { color: #9ca3af; font-size: 11px; }
     .brand-copy small:empty { display: none; }
-    .logo { width: 28px; height: 28px; }
+    .logo { width: 28px; height: 28px; display: block; }
+    .pill.signed .logo { width: 36px; height: 36px; }
+    .logo.spin { animation: spin 1s linear infinite; }
     strong { font-size: 14px; letter-spacing: -0.01em; }
     .corner { position: absolute; right: 0; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 8px; -webkit-app-region: no-drag; }
     .status { display: none; color: #9ca3af; font-size: 12px; }
@@ -53,8 +58,17 @@
     .session-error:not(:empty) { margin-top: 6px; }
     input { flex: 1; min-width: 0; border: 0; border-radius: 10px; padding: 10px 12px; background: #1f2937; color: white; font: inherit; }
     button { border: 0; border-radius: 10px; padding: 10px 12px; background: #1f6b32; color: white; font: inherit; cursor: pointer; -webkit-app-region: no-drag; display: inline-flex; align-items: center; justify-content: center; }
-    .hint, .partial, .answer { -webkit-app-region: no-drag; }
+    .hint, .partial, .answer { -webkit-app-region: no-drag; margin-left: 0; padding-left: 0; }
     .hint { margin-top: 8px; color: #9ca3af; font-size: 12px; }
+    .name-run { display: none; flex-direction: column; gap: 8px; margin-top: 10px; -webkit-app-region: no-drag; }
+    .name-run.on { display: flex; }
+    .name-run p { margin: 0; color: #e5e7eb; }
+    .name-run input, .name-run textarea { flex: none; width: 100%; box-sizing: border-box; background: #1f2937; color: white; border: 0; border-radius: 10px; padding: 10px 12px; font: inherit; }
+    .name-run textarea { min-height: 68px; resize: none; }
+    .name-run .save-row { display: flex; justify-content: flex-end; }
+    .name-run button { background: #1f6b32; }
+    .name-run .miss { color: #fca5a5; font-size: 12px; }
+    .name-run .miss:empty { display: none; }
     .partial { min-height: 0; margin-top: 6px; color: #d1d5db; }
     .answer { margin-top: 4px; color: white; }
     .note { display: none; margin-top: 10px; background: #1f2937; border-radius: 12px; -webkit-app-region: no-drag; }
@@ -62,8 +76,6 @@
     .note pre { margin: 0; padding: 10px 12px; max-height: 380px; overflow: auto; white-space: pre-wrap; word-wrap: break-word; font: 12.5px/1.5 Inter, "Segoe UI", sans-serif; color: #e5e7eb; user-select: text; }
     .note footer { display: flex; justify-content: flex-end; gap: 6px; padding: 0 8px 8px; }
     .note button { padding: 6px 10px; font-size: 12px; background: #374151; }
-    .spinner { width: 12px; height: 12px; border: 2px solid #374151; border-top-color: #86efac; border-radius: 50%; display: none; animation: spin .7s linear infinite; }
-    .spinner.on { display: inline-block; }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
@@ -78,7 +90,6 @@
         </div>
       </div>
       <div class="corner">
-        <span class="spinner" id="spinner"></span>
         <span class="status" id="status"></span>
         <button type="button" id="sign-out" aria-label="Log out"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(1.2 0)"><path d="M9 6H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/><path d="M13 16l4-4-4-4"/><path d="M9 12h8"/></g></svg></button>
       </div>
@@ -105,6 +116,13 @@
       </div>
     </form>
     <div class="hint">Hold Control + Option to talk.</div>
+    <form class="name-run" id="name-run">
+      <p id="run-count">Name this recording.</p>
+      <input id="run-title" type="text" placeholder="Title" autocomplete="off" spellcheck="false" />
+      <textarea id="run-note" placeholder="Note" spellcheck="true"></textarea>
+      <div class="miss" id="run-miss"></div>
+      <div class="save-row"><button type="submit">Save</button></div>
+    </form>
     <div class="partial" id="partial"></div>
     <div class="answer" id="answer"></div>
     <div class="note" id="note">
@@ -118,7 +136,6 @@
   </div>
   <script>
     const status = document.getElementById("status");
-    const spinner = document.getElementById("spinner");
     const partial = document.getElementById("partial");
     const answer = document.getElementById("answer");
     const talk = document.getElementById("talk");
@@ -133,8 +150,8 @@
     }
 
     function setBusy(busy, label) {
-      spinner.classList.toggle("on", busy);
       const working = busy && label && label !== "Ready";
+      document.querySelector(".logo").classList.toggle("spin", working && label !== "Listening");
       status.textContent = working ? label : "";
       status.classList.toggle("on", working);
       status.classList.toggle("busy", working);
@@ -211,6 +228,7 @@
         answer.textContent = "";
         partial.textContent = "";
         note.classList.remove("on");
+        hideNaming();
       }
       fit();
     }
@@ -274,6 +292,12 @@
       return audio;
     }
 
+    let pendingRun = "";
+    function hideNaming() {
+      pendingRun = "";
+      document.getElementById("name-run").classList.remove("on");
+      document.getElementById("run-miss").textContent = "";
+    }
     function showRecord(state) {
       recordMode = state.mode;
       document.getElementById("record").hidden = state.mode === "recording";
@@ -284,11 +308,44 @@
     window.kiwi.on("record", showRecord);
     document.getElementById("record").addEventListener("click", async () => {
       if (!signedIn) return;
+      hideNaming();
       if (recordMode === "paused") await window.kiwi.recordResume();
       else await window.kiwi.recordStart();
     });
     document.getElementById("pause").addEventListener("click", () => window.kiwi.recordPause());
-    document.getElementById("stop-record").addEventListener("click", () => window.kiwi.recordStop());
+    document.getElementById("stop-record").addEventListener("click", async () => {
+      const saved = await window.kiwi.recordStop();
+      if (!saved || !saved.ok) return;
+      pendingRun = saved.id;
+      document.getElementById("run-title").value = "";
+      document.getElementById("run-note").value = "";
+      document.getElementById("run-miss").textContent = "";
+      document.getElementById("run-count").textContent = saved.beats
+        ? `${saved.beats} ${saved.beats === 1 ? "moment" : "moments"}. Add a title and a note.`
+        : "Nothing on screen changed. Add a title and a note.";
+      document.getElementById("name-run").classList.add("on");
+      document.getElementById("run-title").focus();
+      fit();
+    });
+    document.getElementById("name-run").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const title = document.getElementById("run-title").value.trim();
+      const note = document.getElementById("run-note").value.trim();
+      if (!title) {
+        document.getElementById("run-miss").textContent = "Add a title.";
+        fit();
+        return;
+      }
+      const result = await window.kiwi.recordName(pendingRun, title, note);
+      if (!result.ok) {
+        document.getElementById("run-miss").textContent = "Could not save that.";
+        fit();
+        return;
+      }
+      hideNaming();
+      answer.textContent = "Saved.";
+      fit();
+    });
 
     talk.addEventListener("click", async () => {
       if (micOn) {
