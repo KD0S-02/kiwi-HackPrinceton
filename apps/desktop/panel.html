@@ -269,8 +269,8 @@
       document.getElementById("sign-in").hidden = Boolean(person);
       document.getElementById("workspace").classList.toggle("on", Boolean(person));
       document.getElementById("sign-out").classList.toggle("on", Boolean(person));
-      document.getElementById("brand-title").textContent = person ? "Kiwi · Fieldnote" : "Kiwi";
-      document.getElementById("brand-role").textContent = person ? `${person.name} (${person.role})` : "";
+      document.getElementById("brand-title").textContent = "Kiwi";
+      document.getElementById("brand-role").textContent = person ? `${person.name} (${person.role} @ Fieldnote)` : "";
       if (person) {
         document.getElementById("session-error").textContent = "";
         void ensureMic().catch(() => {});
