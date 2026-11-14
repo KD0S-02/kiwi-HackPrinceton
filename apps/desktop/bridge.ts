@@ -7,11 +7,12 @@ export type PageReply = {
   error?: string;
   rect?: PageRect;
   controls?: PageControl[];
+  facts?: { id: string; text: string }[];
   path?: string;
   title?: string;
 };
 
-type Page = { socket: WebSocket; visible: boolean; focused: boolean; path: string; seen: number };
+type Page = { socket: WebSocket; visible: boolean; focused: boolean; path: string; url: string; seen: number };
 
 const pages = new Set<Page>();
 const waiting = new Map<number, (reply: PageReply) => void>();
@@ -21,13 +22,14 @@ export function startBridge(port = 4555) {
   const server = new WebSocketServer({ host: "127.0.0.1", port });
   server.on("connection", (socket) => {
     if (process.env.KIWI_BRIDGE_DEBUG) console.log("page connected");
-    const page: Page = { socket, visible: false, focused: false, path: "", seen: Date.now() };
+    const page: Page = { socket, visible: false, focused: false, path: "", url: "", seen: Date.now() };
     pages.add(page);
     socket.on("message", (data) => {
-      const message = JSON.parse(String(data)) as { type: string; id?: number; visible?: boolean; focused?: boolean; path?: string } & PageReply;
+      const message = JSON.parse(String(data)) as { type: string; id?: number; visible?: boolean; focused?: boolean; path?: string; url?: string } & PageReply;
       if (message.visible !== undefined) page.visible = message.visible;
       if (message.focused !== undefined) page.focused = message.focused;
       if (message.path) page.path = message.path;
+      if (message.url) page.url = message.url;
       page.seen = Date.now();
       if (message.type === "reply" && message.id !== undefined) {
         waiting.get(message.id)?.(message);
@@ -40,9 +42,13 @@ export function startBridge(port = 4555) {
 }
 
 function visiblePage() {
-  return [...pages]
-    .filter((page) => page.visible)
-    .sort((a, b) => Number(b.focused) - Number(a.focused) || b.seen - a.seen)[0];
+  return [...pages].sort(
+    (a, b) => Number(b.visible) - Number(a.visible) || Number(b.focused) - Number(a.focused) || b.seen - a.seen,
+  )[0];
+}
+
+export function pageUrl() {
+  return visiblePage()?.url ?? "";
 }
 
 export function pageIsOpen() {

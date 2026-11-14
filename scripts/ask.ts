@@ -118,7 +118,7 @@ registerHarnessProfile("google", {
 });
 
 const systemPrompt = `you are kiwi, a guide for Fieldnote. the signed-in employee is Sparsh Bohra (the record named User in the graph). say Sparsh or you, never User. Alex Morgan is Sparsh's manager; say so when you mention approvals.
-the reply is spoken. one or two sentences, unless they asked you to walk them through the page.
+the reply is spoken. one short sentence, under 20 words, unless they asked you to walk them through the page.
 you can see their screen. the picture is this moment.
 the user message starts with KNOWN CONTEXT. that is already loaded. for a where, why, or set-the-discount question, call finish on the first turn. do not call lookupUser.
 call searchPages only when they ask what a restaurant usually orders, which warehouse stocks something, or for a tour.
@@ -131,25 +131,31 @@ every stop has a target. that is how kiwi finds the real element, so get it righ
 if the message has PAGE CONTROLS, target is the id of a control in that list, or its label exactly as written. prefer the id.
 to switch to a browser tab from BROWSER TABS, target is tab: and then that tab's title, and kind is click.
 if the thing is not in PAGE CONTROLS or BROWSER TABS, target is empty and x and y are your best guess from the picture.
-x and y are always your guess from the picture. kiwi uses them only when the target is empty or not found.
+x and y are your guess from the picture. kiwi uses them only when the target is empty or not found. with no picture, x and y are 0.
+PAGE TEXT is what the Fieldnote page says right now, like the discount warning. trust it over memory.
 a disabled control cannot be clicked. say why instead.
 if a rule is allow false, finish with kind show. say why. never type a discount over 15. never click send while the picture shows a discount over 15.
 a tour is several show stops. before finish on a tour, call searchPages once so the stops follow the written page.
 a where question is one show stop with allow false. you are pointing, not doing it.`;
 
 let sharedAgent: ReturnType<typeof createDeepAgent> | undefined;
+let sharedModel: ChatGoogleGenerativeAI | undefined;
 
-function getAgent() {
-  if (sharedAgent) return sharedAgent;
-  const model = new ChatGoogleGenerativeAI({
+function getModel() {
+  sharedModel ??= new ChatGoogleGenerativeAI({
     model: requiredEnv("GEMINI_MODEL"),
     apiKey: requiredEnv("GEMINI_API_KEY"),
     temperature: 0,
     maxOutputTokens: 400,
     thinkingConfig: { thinkingBudget: 0 },
   });
+  return sharedModel;
+}
+
+function getAgent() {
+  if (sharedAgent) return sharedAgent;
   sharedAgent = createDeepAgent({
-    model,
+    model: getModel(),
     tools: [lookupUserTool, searchPagesTool, finishTool],
     systemPrompt,
     permissions: [{ operations: ["read", "write"], paths: ["/**"], mode: "deny" }],
@@ -166,6 +172,39 @@ function knownContext(): string {
   return `KNOWN CONTEXT ${JSON.stringify({ user: userRecord, pages })}\n`;
 }
 
+// Gemini sometimes sits on a request for several seconds. If a call is slow,
+// send the same call again and take whichever answers first.
+const hedgeAfterMs = [1500];
+
+function hedged<T>(run: () => Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    let settled = false;
+    let failures = 0;
+    let launched = 1;
+    const finish = (value: T) => {
+      if (settled) return;
+      settled = true;
+      timer.clear();
+      resolve(value);
+    };
+    const fail = (error: unknown) => {
+      failures += 1;
+      if (!settled && failures === launched) {
+        settled = true;
+        timer.clear();
+        reject(error);
+      }
+    };
+    run().then(finish, fail);
+    const timers = hedgeAfterMs.map((delay) => setTimeout(() => {
+      if (settled) return;
+      launched += 1;
+      run().then(finish, fail);
+    }, delay));
+    const timer = { clear: () => timers.forEach(clearTimeout) };
+  });
+}
+
 export async function ask(input: { question: string; screenContext?: string; imagePngBase64?: string; imageMime?: "image/png" | "image/jpeg" }) {
   const question = `${knownContext()}${input.screenContext ? `${input.screenContext}\n` : ""}${input.question}`;
   const mime = input.imageMime ?? "image/png";
@@ -175,20 +214,30 @@ export async function ask(input: { question: string; screenContext?: string; ima
         { type: "image_url", image_url: `data:${mime};base64,${input.imagePngBase64}` },
       ]
     : question;
-  const agent = getAgent();
+  // One forced finish call is much faster than the agent loop. Tours and questions
+  // before the user record is cached still need the agent's lookup tools.
+  const lean = Boolean(cache.get("user:user"))
+    && Boolean(input.screenContext?.includes("PAGE CONTROLS"))
+    && !/\b(tour|walk|guide|explain|how do|usually|order|orders|history|buy|bought|stock|inventory|tell me about|last)\b/i.test(input.question);
+  const run = lean
+    ? async () => {
+        const reply = await getModel()
+          .bindTools([finishTool], { tool_choice: "finish" })
+          .invoke([{ role: "system", content: systemPrompt }, { role: "user", content }]);
+        return { messages: [reply] as unknown[] };
+      }
+    : () => getAgent().invoke({ messages: [{ role: "user", content }] });
   let result: { messages: unknown[] } | undefined;
   let lastError: unknown;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {
-      result = await agent.invoke({
-        messages: [{ role: "user", content }],
-      });
+      result = await hedged(run);
       break;
     } catch (error) {
       lastError = error;
       const message = error instanceof Error ? error.message : String(error);
       if (!/503|429|UNAVAILABLE|high demand/.test(message) || attempt === 3) throw error;
-      await new Promise((resolve) => setTimeout(resolve, attempt * 8000));
+      await new Promise((resolve) => setTimeout(resolve, attempt * 700));
     }
   }
   if (!result) throw lastError;

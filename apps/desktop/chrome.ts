@@ -13,7 +13,53 @@ function quoted(text: string) {
   return `"${text.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
 
-export async function chromeTabs() {
+let tabsCache: { at: number; tabs: { title: string; url: string }[] } | undefined;
+
+export function prefetchChromeTabs() {
+  void chromeTabs(true);
+}
+
+export async function chromeTabs(fresh = false): Promise<{ title: string; url: string }[]> {
+  if (!fresh && tabsCache && Date.now() - tabsCache.at < 4000) return tabsCache.tabs;
+  const tabs = await readChromeTabs();
+  tabsCache = { at: Date.now(), tabs };
+  return tabs;
+}
+
+// Brings the Chrome window holding this URL forward, which also switches to its desktop.
+export async function focusChromeUrl(urlPart: string) {
+  const script = `
+    tell application "Google Chrome"
+      set wanted to ${quoted(urlPart.toLowerCase())}
+      if frontmost then
+        ignoring case
+          if (URL of active tab of front window) contains wanted then return "front"
+        end ignoring
+      end if
+      repeat with chromeWindow in windows
+        set tabIndex to 0
+        repeat with chromeTab in tabs of chromeWindow
+          set tabIndex to tabIndex + 1
+          ignoring case
+            if (URL of chromeTab) contains wanted then
+              set active tab index of chromeWindow to tabIndex
+              set index of chromeWindow to 1
+              activate
+              return "moved"
+            end if
+          end ignoring
+        end repeat
+      end repeat
+      return ""
+    end tell`;
+  try {
+    return await osascript(script, 2000);
+  } catch {
+    return "";
+  }
+}
+
+async function readChromeTabs() {
   try {
     const running = await osascript('application "Google Chrome" is running', 600);
     if (running !== "true") return [];

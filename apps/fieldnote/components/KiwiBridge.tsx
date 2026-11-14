@@ -86,7 +86,12 @@ function handle(request: Request) {
         };
       })
       .filter((control) => control.id || control.label);
-    return { ok: true, path: location.pathname, title: document.title, controls };
+    const facts = [...document.querySelectorAll("h1, #stage, #amount, #quote-message, .warning, .pill")]
+      .filter(isShown)
+      .slice(0, 12)
+      .map((element) => ({ id: element.id || "", text: labelOf(element) }))
+      .filter((fact) => fact.text);
+    return { ok: true, path: location.pathname, title: document.title, controls, facts };
   }
   const element = request.target ? find(request.target) : undefined;
   if (!element) return { ok: false, error: `No control called ${request.target} on this page.` };
@@ -111,7 +116,7 @@ export function KiwiBridge() {
     let socket: WebSocket | undefined;
     let retry: ReturnType<typeof setTimeout> | undefined;
     let stopped = false;
-    const state = () => ({ type: "state", visible: document.visibilityState === "visible", focused: document.hasFocus(), path: location.pathname });
+    const state = () => ({ type: "state", visible: document.visibilityState === "visible", focused: document.hasFocus(), path: location.pathname, url: location.href });
     const report = () => {
       if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(state()));
     };

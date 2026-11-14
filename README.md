@@ -123,6 +123,14 @@ Clicky is quick because it is a single streaming vision call with no tools. Kiwi
 2. Put it in the prompt, not behind a tool call.
 3. Make the last tool end the run.
 
+On top of that, each question takes the fastest path that can answer it:
+
+- **Local router** (`apps/desktop/router.ts`, under 1 ms). "Where is X", "open X", "switch to the Fieldnote tab" and "why can't I send the quote" are answered from the live page controls, the page's own warning text and the Chrome tab list, with no model call.
+- **Lean model call.** Other questions about the page on screen get one forced `finish` call with the page controls as text, without a screenshot or the agent loop. This usually takes 0.6 to 1.5 s.
+- **Full agent.** Data questions ("what does Harbor Diner usually order") and tours use the deepagents loop with its lookup tools.
+- **Hedged requests.** Gemini sometimes sits on a request for several seconds. If a call has not answered after 1.5 s, Kiwi sends the same call again and uses whichever answers first.
+- **Going back to Fieldnote.** Before pointing, Kiwi brings the Fieldnote Chrome window and tab to the front, which switches macOS desktops if you moved away. The Chrome tab list is fetched as soon as you start holding the keys. Timings go to `/tmp/kiwi-timing.log`.
+
 Rejected on purpose: Redis (nothing to share across processes), putting the whole graph in the prompt (slow and noisy), and Pinecone on the click path.
 
 Kiwi keeps Clicky's interaction: hold Control + Option to talk, a buddy that follows the cursor and flies to targets along an arc, a loading state, and a push-to-talk transcript. It differs in using a drawn slice instead of the system cursor, an Electron overlay instead of AppKit, and Gemini plus AssemblyAI instead of Claude plus ElevenLabs.

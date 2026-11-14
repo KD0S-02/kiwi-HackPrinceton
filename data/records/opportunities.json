@@ -178,5 +178,14 @@
     "stage": "Proposal",
     "amount": 3403,
     "discountPercent": 8
+  },
+  {
+    "id": "opp-harbor-diner-2",
+    "ownerId": "user",
+    "stage": "Qualify",
+    "discountPercent": 0,
+    "accountId": "harbor-diner",
+    "name": "Harbor Diner",
+    "amount": 0
   }
 ]

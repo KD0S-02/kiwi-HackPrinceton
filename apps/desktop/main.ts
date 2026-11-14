@@ -6,8 +6,9 @@ import { app, BrowserWindow, desktopCapturer, globalShortcut, ipcMain, nativeIma
 import { uIOhook, UiohookKey } from "uiohook-napi";
 import { AssemblyAI, StreamingTranscriber } from "assemblyai";
 import { ask, primeCache, type Stop } from "../../scripts/ask.ts";
-import { askPage, pageIsOpen, startBridge } from "./bridge.ts";
-import { chromeTabs, openChromeTab } from "./chrome.ts";
+import { askPage, pageIsOpen, pageUrl, startBridge } from "./bridge.ts";
+import { route } from "./router.ts";
+import { chromeTabs, focusChromeUrl, openChromeTab, prefetchChromeTabs } from "./chrome.ts";
 import { requiredEnv } from "../../scripts/load-env.ts";
 import { lookupUser } from "../../scripts/lookup-user.ts";
 
@@ -134,27 +135,46 @@ function wait(ms: number) {
 }
 
 async function screenContext() {
-  const [page, tabs] = await Promise.all([askPage({ op: "inventory" }, 500), chromeTabs()]);
+  const [page, tabs] = await Promise.all([askPage({ op: "inventory" }, 400), chromeTabs()]);
   const lines: string[] = [];
   if (tabs.length > 0) {
     lines.push(`BROWSER TABS ${JSON.stringify(tabs.map((tab) => tab.title))}`);
   }
-  if (page?.ok && page.controls) {
-    const controls = page.controls.map((control) => ({
+  const controls = page?.ok ? page.controls ?? [] : [];
+  if (controls.length > 0) {
+    const listed = controls.map((control) => ({
       id: control.id || undefined,
       label: control.label,
       ...(control.disabled ? { disabled: true } : {}),
     }));
-    lines.push(`PAGE CONTROLS on Fieldnote ${page.path} ${JSON.stringify(controls)}`);
+    lines.push(`PAGE CONTROLS on Fieldnote ${page?.path} ${JSON.stringify(listed)}`);
+    if (page?.facts?.length) lines.push(`PAGE TEXT ${JSON.stringify(page.facts)}`);
   }
-  return lines.join("\n");
+  return { text: lines.join("\n"), controls, tabs, facts: page?.ok ? page.facts ?? [] : [] };
 }
 
-type Place = { toOverlay: (screenX: number, screenY: number) => { x: number; y: number } };
+function overlayPoint(screenX: number, screenY: number) {
+  const display = screen.getDisplayNearestPoint({ x: Math.round(screenX), y: Math.round(screenY) });
+  const bounds = overlay.getBounds();
+  if (bounds.x !== display.bounds.x || bounds.y !== display.bounds.y || bounds.width !== display.bounds.width) {
+    overlay.setBounds(display.bounds);
+  }
+  overlay.showInactive();
+  const placed = overlay.getBounds();
+  return { x: screenX - placed.x, y: screenY - placed.y };
+}
 
-async function playStop(stop: Stop, guess: { x: number; y: number }, place: Place) {
+async function bringPageForward() {
+  const url = pageUrl();
+  if (!url) return false;
+  const result = await focusChromeUrl(new URL(url).host + new URL(url).pathname);
+  if (result === "moved") await wait(450);
+  return result !== "";
+}
+
+async function playStop(stop: Stop, guess: { x: number; y: number } | undefined) {
   const fly = (screenX: number, screenY: number, say = stop.say) => {
-    point({ ...place.toOverlay(screenX, screenY), say });
+    point({ ...overlayPoint(screenX, screenY), say });
     send("answer", say);
   };
   const doing = stop.allow && stop.kind !== "show";
@@ -162,28 +182,23 @@ async function playStop(stop: Stop, guess: { x: number; y: number }, place: Plac
   const target = stop.target.trim();
 
   if (/^tab:/i.test(target)) {
-    fly(guess.x, guess.y);
+    send("answer", stop.say);
     if (!doing || blocked) {
       if (blocked) send("answer", blocked);
+      if (guess) fly(guess.x, guess.y);
       await wait(1200);
       return;
     }
-    await wait(500);
     const opened = await openChromeTab(target).catch((error: Error) => {
       send("answer", `Chrome would not switch tabs: ${error.message}. Allow Kiwi to control Google Chrome in Privacy & Security, Automation.`);
       return "";
     });
-    if (!opened) {
-      send("answer", `I could not find a tab called ${target.slice(4)}.`);
-      return;
-    }
-    await wait(450);
-    const landed = await askPage({ op: "inventory" }, 500);
-    if (landed?.ok) send("answer", `${stop.say}`);
+    if (!opened) send("answer", `I could not find a tab called ${target.slice(4)}.`);
     return;
   }
 
   if (target && pageIsOpen()) {
+    await bringPageForward();
     const found = await askPage({ op: "locate", target }, 600);
     if (found?.ok && found.rect) {
       fly(found.rect.x, found.rect.y);
@@ -195,14 +210,18 @@ async function playStop(stop: Stop, guess: { x: number; y: number }, place: Plac
         send("answer", blocked);
         return;
       }
-      await wait(650);
+      await wait(550);
       const done = await askPage({ op: "act", target, kind: stop.kind, text: stop.text }, 800);
       if (!done?.ok) send("answer", done?.error ?? "The page did not answer.");
-      await wait(400);
+      await wait(300);
       return;
     }
   }
 
+  if (!guess) {
+    send("answer", `I could not find ${stop.label || target} on the page.`);
+    return;
+  }
   fly(guess.x, guess.y);
   if (!doing) {
     await wait(1200);
@@ -227,37 +246,55 @@ async function playStop(stop: Stop, guess: { x: number; y: number }, place: Plac
 
 async function answerQuestion(question: string) {
   const current = ++runId;
+  const started = Date.now();
   transcript = "";
   send("status", { busy: true, label: "Looking" });
   send("partial", question);
   point(null);
   try {
-    const [shot, context] = await Promise.all([captureScreen(), screenContext()]);
+    const context = await screenContext();
+    if (current !== runId) return;
+    const quick = route(question, context.controls, context.tabs, context.facts);
+    if (quick) {
+      await playStop(quick, undefined);
+      history.push(`User: ${question}`, `Kiwi: ${quick.say}`);
+      timing(question, "local", started);
+      return;
+    }
+    const usePage = context.controls.length > 0;
+    const shot = usePage ? undefined : await captureScreen();
     if (current !== runId) return;
     const prior = history.slice(-4).join("\n");
     const asked = prior ? `Earlier:\n${prior}\n\n${question}` : question;
-    const result = await ask({ question: asked, screenContext: context, imagePngBase64: shot.base64, imageMime: "image/jpeg" });
+    const result = await ask({
+      question: asked,
+      screenContext: context.text,
+      ...(shot ? { imagePngBase64: shot.base64, imageMime: "image/jpeg" as const } : {}),
+    });
     if (current !== runId) return;
     if (result.stops.length === 0) throw new Error("Kiwi did not return a stop.");
-    overlay.setBounds(shot.display.bounds);
-    const placed = overlay.getBounds();
-    overlay.showInactive();
-    const place: Place = { toOverlay: (screenX, screenY) => ({ x: screenX - placed.x, y: screenY - placed.y }) };
     for (const stop of result.stops) {
       if (current !== runId) return;
-      const guess = {
-        x: shot.display.bounds.x + (stop.x / shot.width) * shot.display.bounds.width,
-        y: shot.display.bounds.y + (stop.y / shot.height) * shot.display.bounds.height,
-      };
-      await playStop({ ...stop, target: stop.target ?? "" }, guess, place);
+      const guess = shot
+        ? {
+            x: shot.display.bounds.x + (stop.x / shot.width) * shot.display.bounds.width,
+            y: shot.display.bounds.y + (stop.y / shot.height) * shot.display.bounds.height,
+          }
+        : undefined;
+      await playStop({ ...stop, target: stop.target ?? "" }, guess);
     }
     history.push(`User: ${question}`, `Kiwi: ${result.stops.map((stop) => stop.say).join(" ")}`);
+    timing(question, shot ? "model+picture" : "model", started);
   } catch (error) {
     if (current !== runId) return;
     send("answer", error instanceof Error ? error.message : String(error));
   } finally {
     if (current === runId) send("status", { busy: false, label: "Ready" });
   }
+}
+
+function timing(question: string, path: string, started: number) {
+  writeFileSync("/tmp/kiwi-timing.log", `${new Date().toISOString()} ${Date.now() - started}ms ${path} ${question}\n`, { flag: "a" });
 }
 
 async function startTalking() {
@@ -389,6 +426,7 @@ function trackShortcut(code: number, pressed: boolean) {
   if (next === shortcutHeld) return;
   shortcutHeld = next;
   shortcutUsesCommand = next && command;
+  if (next) prefetchChromeTabs();
   send("hold", next);
 }
 
