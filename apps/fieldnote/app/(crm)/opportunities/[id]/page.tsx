@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import { ActionButton } from "../../../../components/ActionButton";
 import { DeleteButton } from "../../../../components/DeleteButton";
 import { loadNames, money, readRecords, readRules, tone } from "../../../../lib/data";
-import { quoteNotes } from "../../../../lib/quote";
 import { signedInUser } from "../../../../lib/session";
 import { DiscountEditor } from "./discount-editor";
 
@@ -19,7 +18,7 @@ export default async function OpportunityPage({
 }) {
   const { id } = await params;
   const { tab = "overview" } = await searchParams;
-  const [opportunities, accounts, employees, rules, lineItems, products, activity, approvals, cases, nameOf] = await Promise.all([
+  const [opportunities, accounts, employees, rules, lineItems, products, activity, approvals, nameOf] = await Promise.all([
     readRecords("opportunities.json"),
     readRecords("accounts.json"),
     readRecords("employees.json"),
@@ -28,7 +27,6 @@ export default async function OpportunityPage({
     readRecords("products.json"),
     readRecords("activity.json"),
     readRecords("approvals.json"),
-    readRecords("cases.json"),
     loadNames(),
   ]);
   const opportunity = opportunities.find((row) => row.id === id);
@@ -100,10 +98,6 @@ export default async function OpportunityPage({
         <div className="highlight"><span>Stage</span><strong id="stage">{String(opportunity.stage)}</strong></div>
         <div className="highlight"><span>Amount</span><strong id="amount">{money(opportunity.amount)}</strong></div>
         <DiscountEditor opportunityId={id} discountPercent={discountPercent} sendAllowed={withinCap} ownerOk={ownerOk} cap={rules.discountCapPercent} approverName={person.approverName} />
-        <p id="readiness">{quoteNotes({
-          products: items.length,
-          cases: cases.filter((row) => row.accountId === opportunity.accountId).map((row) => ({ kind: String(row.kind), status: String(row.status) })),
-        })}</p>
       </div>
 
       <nav className="tabs">

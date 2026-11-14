@@ -1,6 +1,5 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { prepareStops, stillToDo } from "../apps/desktop/steps.ts";
-import { quoteNotes } from "../apps/fieldnote/lib/quote.ts";
 import { ask, primeCache, type Stop } from "./ask.ts";
 import { requiredEnv } from "./load-env.ts";
 import { lookupUser } from "./lookup-user.ts";
@@ -14,7 +13,7 @@ const home = [
 ].join("\n");
 const deal = [
   'PAGE CONTROLS on Fieldnote /opportunities/opp-harbor-diner [{"id":"discount","label":"Discount","kind":"input","value":"20"},{"id":"save-discount","label":"Save"},{"id":"send-quote","label":"Send Quote","disabled":true}]',
-  'PAGE TEXT [{"id":"quote-message","text":"An account executive stops at 15 percent."},{"id":"readiness","text":"Still open on this restaurant: an open delivery complaint."}]',
+  'PAGE TEXT [{"id":"quote-message","text":"An account executive stops at 15 percent."}]',
 ].join("\n");
 const question = "Set Harbor Diner's discount to 15% and save it.";
 const homeControls = [{ id: "brand", label: "Fieldnote logo, home" }, { label: "Pipeline" }, { label: "Open the opportunity" }];
@@ -34,10 +33,8 @@ const repaired = prepareStops(question, [
   { screen: 0, x: 0, y: 0, draw: "circle", label: "Save discount", say: "Save.", allow: true, kind: "click", text: "", target: "Save discount" },
 ], homeControls);
 const localOk = score(repaired, true).ok && stillToDo(question, repaired) === false
-  && stillToDo(question, [repaired[0]]) === true
-  && quoteNotes({ products: 3, cases: [{ kind: "delivery complaint", status: "open" }] }).includes("delivery complaint");
+  && stillToDo(question, [repaired[0]]) === true;
 console.log(`${localOk ? "pass" : "FAIL"} local repair opens the deal, types 15, and saves\n     ${summary(repaired)}`);
-console.log(`     readiness: ${quoteNotes({ products: 3, cases: [{ kind: "delivery complaint", status: "open" }] })}`);
 if (!localOk) process.exit(1);
 
 primeCache(await lookupUser("user"), [
