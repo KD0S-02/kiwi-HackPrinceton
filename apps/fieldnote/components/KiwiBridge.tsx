@@ -57,10 +57,8 @@ function find(target: string) {
 function screenRect(element: Element) {
   const rect = element.getBoundingClientRect();
   const chromeTop = window.outerHeight - window.innerHeight;
-  // Wide bars (filters, tables): point near the left edge, not the empty middle.
-  const offsetX = rect.width > 220 ? Math.min(56, rect.width * 0.15) : rect.width / 2;
   return {
-    x: window.screenX + rect.left + offsetX,
+    x: window.screenX + rect.left + rect.width / 2,
     y: window.screenY + chromeTop + rect.top + rect.height / 2,
     width: rect.width,
     height: rect.height,
@@ -154,10 +152,11 @@ function inventory() {
     const rect = element.getBoundingClientRect();
     return rect.bottom > 0 && rect.top < window.innerHeight;
   };
-  // Dialog fields stay in the list even when the page behind them is long.
+  // Dialog fields and named controls stay in the list even when the page is scrolled.
   const dialog = shown.filter((element) => element.closest(".dialog"));
-  const rest = shown.filter((element) => !element.closest(".dialog") && inView(element));
-  const controls = [...dialog, ...rest].slice(0, 70).map(describe).filter((control) => control.id || control.label);
+  const pinned = shown.filter((element) => element.dataset.kiwi && !element.closest(".dialog"));
+  const rest = shown.filter((element) => !element.closest(".dialog") && !element.dataset.kiwi && inView(element));
+  const controls = [...dialog, ...pinned, ...rest].slice(0, 70).map(describe).filter((control) => control.id || control.label);
   const factNodes = [
     ...document.querySelectorAll("[data-kiwi-fact]"),
     ...document.querySelectorAll("h1, #stage, #amount, #quote-message, #readiness, #filter-count, .warning, .pill"),
