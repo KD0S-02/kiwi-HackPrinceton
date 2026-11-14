@@ -4,15 +4,41 @@
   <meta charset="utf-8" />
   <style>
     html, body { margin: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; }
-    #bird { position: absolute; width: 36px; height: 36px; margin-left: -18px; margin-top: -18px; display: none; filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
-    #bird.busy { animation: pulse .8s ease-in-out infinite; }
+    /* Each icon sits with its hotspot on the bird's point: arrow tip, fingertip, kiwi center. */
+    #bird { position: absolute; width: 0; height: 0; display: none; filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
+    #bird .icon { position: absolute; opacity: 0; transform: scale(.55) rotate(-24deg); transition: opacity .16s ease, transform .32s cubic-bezier(.34, 1.56, .64, 1); }
+    #bird .icon svg { display: block; width: 100%; height: 100%; }
+    #arrow { width: 26px; height: 31px; left: -2.6px; top: -2.6px; transform-origin: 2.6px 2.6px; }
+    #hand { width: 30px; height: 36px; left: -10.3px; top: -1.4px; transform-origin: 10.3px 1.4px; }
+    #kiwi { width: 36px; height: 36px; left: -18px; top: -18px; transform-origin: 50% 50%; }
+    #bird[data-look="arrow"] #arrow, #bird[data-look="hand"] #hand, #bird[data-look="kiwi"] #kiwi { opacity: 1; transform: none; }
+    #kiwi img { width: 100%; height: 100%; animation: spin 1.6s linear infinite, pulse .8s ease-in-out infinite; }
+    #hand.tap svg { animation: tap .34s ease-out; }
+    @keyframes spin { to { rotate: 360deg; } }
+    @keyframes tap { 40% { transform: translateY(3px) scale(.9); } }
     #ring { position: absolute; width: 54px; height: 54px; margin-left: -27px; margin-top: -27px; border: 3px solid #3b82f6; border-radius: 50%; box-shadow: 0 0 0 8px rgba(59, 130, 246, .25); display: none; }
     #card { position: absolute; max-width: 280px; background: #111827; color: white; border-radius: 14px; padding: 10px 12px; font: 14px/1.4 Inter, "Segoe UI", sans-serif; display: none; box-shadow: 0 12px 30px rgba(0,0,0,.28); }
     @keyframes pulse { 50% { transform: scale(1.08); } }
   </style>
 </head>
 <body>
-  <img id="bird" src="kiwi.svg" alt="" />
+  <div id="bird" data-look="arrow">
+    <div class="icon" id="arrow"><svg viewBox="0 0 30 36">
+      <defs><linearGradient id="arrow-fill" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9ee7a"/><stop offset="0.55" stop-color="#9ccc3c"/><stop offset="1" stop-color="#6fae2e"/></linearGradient></defs>
+      <path d="M3 3 L26.5 15.6 Q15.2 18.4 10.6 32.4 Z" fill="url(#arrow-fill)" stroke="#4a3319" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M4.4 5.6 L10.4 30 Q9.4 21 6.6 11.4 Z" fill="#5e9a26" opacity="0.7"/>
+      <path d="M7.2 6.6 L21.6 14.4" stroke="#f1fbc4" stroke-width="1.6" stroke-linecap="round" opacity="0.85"/>
+    </svg></div>
+    <div class="icon" id="hand"><svg viewBox="0 0 32 38">
+      <defs><linearGradient id="hand-fill" x1="0" y1="0" x2="0.6" y2="1"><stop offset="0" stop-color="#d9ee7a"/><stop offset="0.5" stop-color="#9ccc3c"/><stop offset="1" stop-color="#6fae2e"/></linearGradient></defs>
+      <path d="M8 21.5 V4.5 A3 3 0 0 1 14 4.5 V13.4 A2.6 2.6 0 0 1 19.2 13.4 V14.6 A2.5 2.5 0 0 1 24.2 14.6 V16.2 A2.4 2.4 0 0 1 29 16.2 V25 Q29 35.4 19.4 35.4 H15.4 Q9.8 35.4 6.9 30.8 L2.4 22.8 A2.7 2.7 0 0 1 6.9 20 Z" fill="url(#hand-fill)" stroke="#4a3319" stroke-width="2.2" stroke-linejoin="round"/>
+      <path d="M3.6 23.4 L7.6 30.4 Q10.4 34.2 15 34.2 Q10.2 32.6 8.2 28.4 Z" fill="#5e9a26" opacity="0.7"/>
+      <path d="M14 13.4 V20.5 M19.2 14.6 V21 M24.2 16.2 V21.4" stroke="#4a3319" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M10.2 4.2 V9" stroke="#f1fbc4" stroke-width="1.5" stroke-linecap="round" opacity="0.85"/>
+      <path d="M15.8 13.6 V15.6 M20.9 15 V17 M25.8 16.6 V18.4" stroke="#f1fbc4" stroke-width="1.3" stroke-linecap="round" opacity="0.8"/>
+    </svg></div>
+    <div class="icon" id="kiwi"><img src="kiwi.svg" alt="" /></div>
+  </div>
   <div id="ring"></div>
   <div id="card"></div>
   <script>
@@ -24,11 +50,31 @@
     let goal = { x: -100, y: -100 };
     let fly = null;
     let shown = false;
+    let busy = false;
+    let hovering = false;
+    const hand = document.getElementById("hand");
+
+    // Loading shows the kiwi. Pointing at a control, or the mouse over something clickable, shows the hand.
+    function look() {
+      if (mode === "hold") return "hand";
+      if (mode === "fly") return "arrow";
+      if (busy) return "kiwi";
+      return hovering ? "hand" : "arrow";
+    }
 
     function place() {
       birdElement.style.display = shown ? "block" : "none";
       birdElement.style.left = `${bird.x}px`;
       birdElement.style.top = `${bird.y}px`;
+      const next = look();
+      if (birdElement.dataset.look !== next) {
+        if (next === "hand" && mode === "hold") {
+          hand.classList.remove("tap");
+          void hand.offsetWidth;
+          hand.classList.add("tap");
+        }
+        birdElement.dataset.look = next;
+      }
       const pointing = mode === "hold";
       ring.style.display = pointing ? "block" : "none";
       ring.style.left = `${bird.x}px`;
@@ -70,7 +116,11 @@
     });
 
     window.kiwi.on("status", (payload) => {
-      birdElement.classList.toggle("busy", payload.busy);
+      busy = Boolean(payload.busy);
+    });
+
+    window.kiwi.on("hover", (over) => {
+      hovering = Boolean(over);
     });
 
     function tick(now) {

@@ -22,6 +22,12 @@ const actionListeners = new Set<(action: PageAction) => void>();
 export function onPageAction(listener: (action: PageAction) => void) {
   actionListeners.add(listener);
 }
+const hoverListeners = new Set<(over: boolean) => void>();
+
+// True while the mouse is over something clickable on the Fieldnote page.
+export function onPageHover(listener: (over: boolean) => void) {
+  hoverListeners.add(listener);
+}
 const waiting = new Map<number, (reply: PageReply) => void>();
 let nextId = 1;
 
@@ -42,6 +48,9 @@ export function startBridge(port = 4555) {
       if (message.type === "action") {
         const action = message as unknown as PageAction;
         for (const listener of actionListeners) listener(action);
+      }
+      if (message.type === "hover") {
+        for (const listener of hoverListeners) listener(Boolean((message as { over?: boolean }).over));
       }
       if (message.type === "reply" && message.id !== undefined) {
         waiting.get(message.id)?.(message);
