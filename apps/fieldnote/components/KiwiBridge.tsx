@@ -57,8 +57,10 @@ function find(target: string) {
 function screenRect(element: Element) {
   const rect = element.getBoundingClientRect();
   const chromeTop = window.outerHeight - window.innerHeight;
+  // Wide bars (filters, tables): point near the left edge, not the empty middle.
+  const offsetX = rect.width > 220 ? Math.min(56, rect.width * 0.15) : rect.width / 2;
   return {
-    x: window.screenX + rect.left + rect.width / 2,
+    x: window.screenX + rect.left + offsetX,
     y: window.screenY + chromeTop + rect.top + rect.height / 2,
     width: rect.width,
     height: rect.height,
@@ -147,19 +149,30 @@ function describe(element: HTMLElement) {
 }
 
 function inventory() {
-  const controls = ([...document.querySelectorAll(clickable)].filter(isShown) as HTMLElement[])
-    .filter((element) => {
-      const rect = element.getBoundingClientRect();
-      return rect.bottom > 0 && rect.top < window.innerHeight;
-    })
-    .slice(0, 70)
-    .map(describe)
-    .filter((control) => control.id || control.label);
-  const facts = [...document.querySelectorAll("h1, #stage, #amount, #quote-message, #readiness, #filter-count, .warning, .pill")]
-    .filter(isShown)
-    .slice(0, 12)
-    .map((element) => ({ id: element.id || "", text: ((element as HTMLElement).innerText || "").replace(/\s+/g, " ").trim().slice(0, 200) }))
-    .filter((fact) => fact.text);
+  const shown = ([...document.querySelectorAll(clickable)].filter(isShown) as HTMLElement[]);
+  const inView = (element: HTMLElement) => {
+    const rect = element.getBoundingClientRect();
+    return rect.bottom > 0 && rect.top < window.innerHeight;
+  };
+  // Dialog fields stay in the list even when the page behind them is long.
+  const dialog = shown.filter((element) => element.closest(".dialog"));
+  const rest = shown.filter((element) => !element.closest(".dialog") && inView(element));
+  const controls = [...dialog, ...rest].slice(0, 70).map(describe).filter((control) => control.id || control.label);
+  const factNodes = [
+    ...document.querySelectorAll("[data-kiwi-fact]"),
+    ...document.querySelectorAll("h1, #stage, #amount, #quote-message, #readiness, #filter-count, .warning, .pill"),
+  ].filter(isShown);
+  const seen = new Set<string>();
+  const facts: { id: string; text: string }[] = [];
+  for (const element of factNodes) {
+    const text = ((element as HTMLElement).innerText || "").replace(/\s+/g, " ").trim().slice(0, 200);
+    const id = element.getAttribute("data-kiwi-fact") || element.id || "";
+    const key = `${id}:${text}`;
+    if (!text || seen.has(key)) continue;
+    seen.add(key);
+    facts.push({ id, text });
+    if (facts.length >= 16) break;
+  }
   return { ok: true, path: location.pathname + location.search, title: document.title, controls, facts };
 }
 

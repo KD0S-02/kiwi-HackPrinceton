@@ -26,7 +26,7 @@ type Props = {
   method?: "POST" | "PATCH";
   fields: Field[];
   icon?: IconName;
-  variant?: "primary" | "ghost";
+  variant?: "primary" | "ghost" | "soft-danger";
   description?: string;
   hidden?: Record<string, string | number>;
   submit?: string;
