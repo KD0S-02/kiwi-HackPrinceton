@@ -2,14 +2,14 @@ import { execFile } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { app, BrowserWindow, desktopCapturer, globalShortcut, ipcMain, nativeImage, screen, session, shell, systemPreferences } from "electron";
+import { app, BrowserWindow, clipboard, desktopCapturer, globalShortcut, ipcMain, nativeImage, screen, session, shell, systemPreferences } from "electron";
 import { uIOhook, UiohookKey } from "uiohook-napi";
 import { AssemblyAI, StreamingTranscriber } from "assemblyai";
 import { ask, primeCache, type Stop } from "../../scripts/ask.ts";
-import { askPage, startBridge } from "./bridge.ts";
+import { askPage, pageInFront, startBridge } from "./bridge.ts";
 import { ensureFieldnote } from "./fieldnote.ts";
 import { route } from "./router.ts";
-import { chromeTabs, openChromeTab, prefetchChromeTabs } from "./chrome.ts";
+import { activateApp, chromeTabs, frontWindow, openChromeTab, prefetchChromeTabs } from "./chrome.ts";
 import { requiredEnv } from "../../scripts/load-env.ts";
 import { lookupUser } from "../../scripts/lookup-user.ts";
 
@@ -98,6 +98,75 @@ async function warmCache() {
   }
 }
 
+// The app the user is working in. Kiwi's own window does not count, so a question typed
+// into Kiwi still knows it is about the PDF or email behind it.
+let lastFront = { app: "", title: "" };
+
+async function updateFront() {
+  const front = await frontWindow();
+  if (front.app && !/^(kiwi|electron)$/i.test(front.app)) lastFront = front;
+  return lastFront;
+}
+
+function watchFront() {
+  setInterval(() => void updateFront(), 2000);
+}
+
+const screenWords = /\b(this|these|that|here|screen|pdf|docs?|document|file|e-?mail|mail|inbox|message|thread|sheet|spreadsheet|slides?|deck|written|says?|said|read|summar\w*|tl;?dr|reply|respond|draft|rewrite|edit|translate|explain|paste|insert|write)\b/i;
+
+async function captureScreen() {
+  const cursor = screen.getCursorScreenPoint();
+  const display = screen.getDisplayNearestPoint(cursor);
+  const scale = Math.min(display.scaleFactor, 1600 / display.size.width);
+  const panelWasVisible = panel.isVisible();
+  panel.hide();
+  overlay.hide();
+  await wait(160);
+  try {
+    const sources = await desktopCapturer.getSources({
+      types: ["screen"],
+      thumbnailSize: { width: Math.round(display.size.width * scale), height: Math.round(display.size.height * scale) },
+    });
+    const source = sources.find((item) => item.display_id === String(display.id)) ?? sources[0];
+    if (!source || source.thumbnail.isEmpty()) return undefined;
+    return source.thumbnail.toJPEG(75).toString("base64");
+  } catch {
+    return undefined;
+  } finally {
+    if (panelWasVisible) panel.showInactive();
+    overlay.showInactive();
+  }
+}
+
+const inputHelper = path.join(here, "input", "kiwi-input");
+
+function runInput(args: string[]) {
+  return new Promise<void>((resolve, reject) => {
+    execFile(inputHelper, args, (error) => (error ? reject(error) : resolve()));
+  });
+}
+
+async function pasteDraft(stop: Stop) {
+  const text = stop.text || stop.note || "";
+  if (!text) {
+    send("answer", stop.say);
+    return;
+  }
+  clipboard.writeText(text);
+  if (!stop.allow) {
+    send("answer", "It's copied. Press Command-V where you want it.");
+    return;
+  }
+  if (lastFront.app) await activateApp(lastFront.app);
+  await wait(300);
+  try {
+    await runInput(["paste"]);
+    send("answer", stop.say || `Pasted it into ${lastFront.app || "the app in front"}.`);
+  } catch {
+    send("answer", "It's copied. Press Command-V where you want it.");
+  }
+}
+
 function refusal(stop: Stop) {
   if (!stop.allow) return "";
   if (stop.kind === "click" && /confirm-delete/i.test(stop.target)) {
@@ -159,6 +228,18 @@ function onlyAskedOwner(question: string, target: string) {
   return `url:${path}${rest ? `?${rest}` : ""}`;
 }
 
+// A written answer stays in Kiwi's window. It pastes only when asked, and it leaves the
+// current app only when the question asks to open or show something.
+function keepWritingHere(question: string, stop: Stop): Stop {
+  if (stop.target === "paste" && !/\b(paste|insert|type (it|this)|put (it|this)|write (it|this) (in|into|there|here)|fill)\b/i.test(question)) {
+    return { ...stop, kind: "show", allow: false, target: "none", note: stop.note || stop.text };
+  }
+  if (stop.note && /^(url|tab):/i.test(stop.target ?? "") && !/\b(open|show|take|go|find|pull up|bring up|where)\b/i.test(question)) {
+    return { ...stop, kind: "show", allow: false, target: "none" };
+  }
+  return stop;
+}
+
 function urlOf(target: string) {
   const path = target.replace(/^url:/i, "").trim();
   return path.startsWith("/") ? path : `/${path}`;
@@ -173,8 +254,13 @@ async function playStop(stop: Stop) {
   const blocked = refusal(stop);
   const target = stop.target.trim();
 
+  if (stop.note) send("note", stop.note);
   if (!target || target === "none") {
     send("answer", stop.say);
+    return;
+  }
+  if (target === "paste") {
+    await pasteDraft(stop);
     return;
   }
 
@@ -247,11 +333,14 @@ async function answerQuestion(question: string) {
   transcript = "";
   send("status", { busy: true, label: "Looking" });
   send("partial", question);
+  send("note", "");
   point(null);
   try {
-    const context = await screenContext();
+    const [context, front] = await Promise.all([screenContext(), updateFront()]);
     if (current !== runId) return;
-    const quick = route(question, context.controls, context.tabs, context.facts);
+    const onFieldnote = front.app === "Google Chrome" && pageInFront();
+    const aboutScreen = !onFieldnote && screenWords.test(question);
+    const quick = aboutScreen ? undefined : route(question, context.controls, context.tabs, context.facts);
     if (quick) {
       await playStop(quick);
       history.push(`User: ${question}`, `Kiwi: ${quick.say}`);
@@ -260,12 +349,19 @@ async function answerQuestion(question: string) {
     }
     const prior = history.slice(-4).join("\n");
     const asked = prior ? `Earlier:\n${prior}\n\n${question}` : question;
-    const result = await ask({ question: asked, screenContext: context.text });
+    const shot = aboutScreen ? await captureScreen() : undefined;
+    if (current !== runId) return;
+    const frontLine = front.app ? `FRONT APP ${front.app}${front.title ? ` — ${front.title}` : ""}\n` : "";
+    const result = await ask({
+      question: asked,
+      screenContext: `${frontLine}${shot ? "SCREEN attached\n" : ""}${context.text}`,
+      ...(shot ? { imagePngBase64: shot, imageMime: "image/jpeg" as const } : {}),
+    });
     if (current !== runId) return;
     if (result.stops.length === 0) throw new Error("Kiwi did not return a stop.");
     for (const stop of result.stops) {
       if (current !== runId) return;
-      await playStop({ ...stop, target: onlyAskedOwner(question, stop.target ?? "") });
+      await playStop(keepWritingHere(question, { ...stop, target: onlyAskedOwner(question, stop.target ?? "") }));
     }
     const last = result.stops.at(-1);
     if (last && /^url:/i.test(last.target ?? "") && /\b(why|where|how|can'?t|cannot)\b/i.test(question) && current === runId) {
@@ -273,8 +369,9 @@ async function answerQuestion(question: string) {
       const follow = route(question, landed.controls, landed.tabs, landed.facts);
       if (follow) await playStop(follow);
     }
-    history.push(`User: ${question}`, `Kiwi: ${result.stops.map((stop) => stop.say).join(" ")}`);
-    timing(question, "model", started);
+    const notes = result.stops.map((stop) => stop.note).filter(Boolean).join("\n").slice(0, 1500);
+    history.push(`User: ${question}`, `Kiwi: ${result.stops.map((stop) => stop.say).join(" ")}${notes ? `\nKiwi wrote: ${notes}` : ""}`);
+    timing(question, shot ? "model+screen" : "model", started);
   } catch (error) {
     if (current !== runId) return;
     send("answer", error instanceof Error ? error.message : String(error));
@@ -549,9 +646,10 @@ app.whenReady().then(async () => {
     const bounds = panel.getBounds();
     writeFileSync(path.join(app.getPath("userData"), "panel-position.json"), JSON.stringify({ x: bounds.x, y: bounds.y }));
   });
+  ipcMain.on("copy", (_event, text: string) => clipboard.writeText(String(text)));
   ipcMain.on("fit", (_event, height: number) => {
     if (panel.isDestroyed()) return;
-    const next = Math.max(140, Math.min(340, Math.round(height)));
+    const next = Math.max(140, Math.min(620, Math.round(height)));
     const bounds = panel.getBounds();
     if (bounds.height !== next) panel.setSize(bounds.width, next);
   });
@@ -578,6 +676,7 @@ app.whenReady().then(async () => {
   startBridge();
   watchKeys();
   watchCursor();
+  watchFront();
   void askPermissions();
   void warmCache();
   if (process.env.KIWI_SHOT) {

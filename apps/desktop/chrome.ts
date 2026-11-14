@@ -171,3 +171,33 @@ export async function reloadChromeTab(urlPart: string) {
     return "";
   }
 }
+
+// The app and window title in front, read through System Events.
+export async function frontWindow() {
+  try {
+    const output = await osascript(
+      `tell application "System Events"
+        set frontProcess to first application process whose frontmost is true
+        set appName to name of frontProcess
+        set windowName to ""
+        try
+          set windowName to name of front window of frontProcess
+        end try
+        return appName & tab & windowName
+      end tell`,
+      1200,
+    );
+    const [app = "", title = ""] = output.split("\t");
+    return { app, title };
+  } catch {
+    return { app: "", title: "" };
+  }
+}
+
+export async function activateApp(name: string) {
+  try {
+    await osascript(`tell application ${quoted(name)} to activate`, 1500);
+  } catch {
+    // The paste still goes to whatever has focus.
+  }
+}

@@ -20,6 +20,11 @@
     .hint { margin-top: 8px; color: #9ca3af; font-size: 12px; }
     .partial { min-height: 0; margin-top: 6px; color: #d1d5db; }
     .answer { margin-top: 4px; color: white; }
+    .note { display: none; margin-top: 10px; background: #1f2937; border-radius: 12px; -webkit-app-region: no-drag; }
+    .note.on { display: block; }
+    .note pre { margin: 0; padding: 10px 12px; max-height: 380px; overflow: auto; white-space: pre-wrap; word-wrap: break-word; font: 12.5px/1.5 Inter, "Segoe UI", sans-serif; color: #e5e7eb; user-select: text; }
+    .note footer { display: flex; justify-content: flex-end; gap: 6px; padding: 0 8px 8px; }
+    .note button { padding: 6px 10px; font-size: 12px; background: #374151; }
     .spinner { width: 12px; height: 12px; border: 2px solid #374151; border-top-color: #86efac; border-radius: 50%; display: none; animation: spin .7s linear infinite; }
     .spinner.on { display: inline-block; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -41,6 +46,13 @@
     <div class="hint">Hold Control + Option to talk. Drag this bar to move Kiwi.</div>
     <div class="partial" id="partial"></div>
     <div class="answer" id="answer"></div>
+    <div class="note" id="note">
+      <pre id="note-text"></pre>
+      <footer>
+        <button type="button" id="note-close">Close</button>
+        <button type="button" id="note-copy">Copy</button>
+      </footer>
+    </div>
   </div>
   <script>
     const status = document.getElementById("status");
@@ -70,6 +82,22 @@
     });
     window.kiwi.on("partial", (text) => { partial.textContent = text; fit(); });
     window.kiwi.on("answer", (text) => { answer.textContent = text; fit(); });
+    const note = document.getElementById("note");
+    const noteText = document.getElementById("note-text");
+    window.kiwi.on("note", (text) => {
+      noteText.textContent = text || "";
+      note.classList.toggle("on", Boolean(text));
+      fit();
+    });
+    document.getElementById("note-copy").addEventListener("click", (event) => {
+      window.kiwi.copy(noteText.textContent);
+      event.target.textContent = "Copied";
+      setTimeout(() => { event.target.textContent = "Copy"; }, 1400);
+    });
+    document.getElementById("note-close").addEventListener("click", () => {
+      note.classList.remove("on");
+      fit();
+    });
     window.kiwi.on("listening", (on) => {
       recording = on;
       talk.classList.toggle("live", on);

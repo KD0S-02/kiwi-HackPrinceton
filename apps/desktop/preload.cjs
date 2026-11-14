@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld("kiwi", {
   talkCancel: () => ipcRenderer.invoke("talk-cancel"),
   audio: (bytes) => ipcRenderer.send("audio", bytes),
   fit: (height) => ipcRenderer.send("fit", height),
+  copy: (text) => ipcRenderer.send("copy", text),
   on: (channel, listener) => {
     const wrapped = (_event, payload) => listener(payload);
     ipcRenderer.on(channel, wrapped);

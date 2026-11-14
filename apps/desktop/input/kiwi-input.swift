@@ -3,9 +3,20 @@ import Foundation
 
 // kiwi-input click <x> <y>     global screen points, top-left origin
 // kiwi-input type <text>
+// kiwi-input paste             Command-V into whatever has focus
 let arguments = CommandLine.arguments
 guard arguments.count >= 3 else {
-  FileHandle.standardError.write("usage: kiwi-input click x y | type text\n".data(using: .utf8)!)
+  if CommandLine.arguments.count == 2 && CommandLine.arguments[1] == "paste" {
+    let source = CGEventSource(stateID: .hidSystemState)
+    for down in [true, false] {
+      let key = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: down)
+      key?.flags = .maskCommand
+      key?.post(tap: .cghidEventTap)
+      usleep(30_000)
+    }
+    exit(0)
+  }
+  FileHandle.standardError.write("usage: kiwi-input click x y | type text | paste\n".data(using: .utf8)!)
   exit(2)
 }
 

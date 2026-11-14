@@ -82,7 +82,9 @@ Every record type also has its own list page with a search box and a filter for 
 
 ### Staying on Fieldnote
 
-**Scope.** Kiwi only answers questions about Fieldnote and Sparsh's job: accounts, buyers, deals, quotes, discounts, orders, cases, supply, the company and its rules. General questions, chat, coding, and anything about another app, document, PDF, email or website get one line back ("I only help with Fieldnote and your sales work.") and nothing moves. Work questions asked while you are somewhere else are still answered, from Fieldnote. Kiwi does not take screenshots, so it never sees the other document.
+**Scope.** Kiwi helps with Fieldnote and with any work thing on your screen: a PDF, an email, a doc, a spreadsheet or a website about customers, suppliers, products, prices or orders. Ask "summarize this pdf", "what's the new fryer oil price here", "what does this email want from me" or "draft a reply saying yes". When the question is about what's in front of you and Fieldnote isn't the front window, Kiwi takes one screenshot (with its own windows hidden) and reads it. It declines only what is clearly not work, like sports, jokes, poems or what to watch tonight ("That's outside work, so I'll pass.").
+
+**Written answers.** Summaries, lists and drafts open in a box in Kiwi's window, which grows to fit, with **Copy** and **Close** buttons. Kiwi says one short line out loud. To put a draft where your cursor is, ask "paste it in": Kiwi copies it, switches back to the app you were in and presses Command-V. It pastes only when you ask and never sends an email or message for you. A written answer stays put unless you ask Kiwi to open or show something.
 
 **Getting to Fieldnote from anywhere.** Before Kiwi points at or opens anything, `apps/desktop/fieldnote.ts` puts a live, signed-in Fieldnote page in front:
 
@@ -100,7 +102,7 @@ Every record type also has its own list page with a search box and a filter for 
 
 If a question needs a page you are not on ("why can't I send the Harbor Diner quote"), Kiwi opens that page first, then points at the answer on it. Owner filters are only kept when you say whose records you want, so "show me open cases" means everyone's.
 
-Tests: `npx tsx scripts/check-chrome.ts` runs the scenarios in the table against your real Chrome (quit Kiwi first). `npx tsx scripts/check-scope.ts` asks twelve in-scope and out-of-scope questions with a PDF and a Google Doc open.
+Tests: `npx tsx scripts/check-chrome.ts` runs the scenarios in the table against your real Chrome (quit Kiwi first). `npx tsx scripts/check-scope.ts` asks twelve in-scope and out-of-scope questions from outside Fieldnote. `npx tsx scripts/check-screen.ts` reads a supplier price sheet and a supplier email from images (`/tmp/kiwi-sheet.png`, `/tmp/kiwi-email.png`; render any PDF with `qlmanage -t -s 1600 -o /tmp file.pdf`) and checks summaries, numbers, drafts, pasting and declines.
 
 ### Kiwi and the CRM
 
@@ -144,7 +146,7 @@ The script signs the app with a requirement that names only the bundle id (`com.
 
 ### macOS permissions (why Kiwi must be launched with `npm run kiwi`)
 
-Kiwi needs **Accessibility** (global Control + Option), **Microphone**, and **Automation** for Google Chrome (switching tabs and windows). It still asks for **Screen Recording**, but no longer uses it: Kiwi reads the Fieldnote page through the bridge, never your screen.
+Kiwi needs **Accessibility** (global Control + Option), **Microphone**, and **Automation** for Google Chrome (switching tabs and windows). **Screen Recording** is used only when you ask about something on screen outside Fieldnote; Fieldnote itself is always read through the bridge.
 
 macOS gives a process the permissions of the app that launched it. If Kiwi is started from a Cursor or Terminal window, the prompts name that app and Kiwi never appears in the list. `npm run kiwi` starts the bundle through macOS (`open -n`), so Kiwi is its own app and the prompts name **Kiwi**. After allowing Screen Recording, quit and reopen Kiwi once. If you re-sign the app, macOS may ask again. To start clean: `tccutil reset All com.fieldnote.kiwi`.
 

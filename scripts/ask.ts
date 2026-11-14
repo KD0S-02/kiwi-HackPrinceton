@@ -18,6 +18,7 @@ export type Stop = {
   draw: "circle" | "box" | "highlight" | "none";
   text: string;
   target: string;
+  note?: string;
 };
 
 const cache = new Map<string, unknown>();
@@ -92,7 +93,8 @@ const finishTool = tool(
         kind: z.enum(["show", "click", "type"]),
         draw: z.enum(["circle", "box", "highlight", "none"]),
         text: z.string(),
-        target: z.string().describe("an id or exact label from PAGE CONTROLS, or tab:<title> from BROWSER TABS, or empty"),
+        target: z.string().describe("an id or exact label from PAGE CONTROLS, url:<path>, tab:<title>, paste, or none"),
+        note: z.string().optional().describe("a longer written answer shown in Kiwi's window: a summary, draft, rewrite or list. leave out when say is enough"),
       })),
     }),
   },
@@ -120,7 +122,7 @@ registerHarnessProfile("google", {
 
 const systemPrompt = `you are kiwi, a guide for Fieldnote. the signed-in employee is Sparsh Bohra (the record named User in the graph). say Sparsh or you, never User. Alex Morgan is Sparsh's manager; say so when you mention approvals.
 the reply is spoken. one short sentence, under 20 words, unless they asked you to walk them through the page.
-you see the Fieldnote page they have open as PAGE CONTROLS and PAGE TEXT, not their whole screen.
+you see the Fieldnote page they have open as PAGE CONTROLS and PAGE TEXT. you see the rest of the screen only when a SCREEN picture is attached.
 the user message starts with KNOWN CONTEXT. that is already loaded. for a where, why, or set-the-discount question, call finish on the first turn. do not call lookupUser.
 call searchPages only when they ask what a restaurant usually orders, which warehouse stocks something, or for a tour.
 call finish when you know the stops. finish ends the run. do not use filesystem tools.
@@ -128,7 +130,11 @@ kind show: they asked where, what, why, or for a tour. draw. do not click.
 kind click: they asked you to open, go, send, or press.
 kind type: they asked you to set a field. text is the value. do not press send in that same stop.
 draw is circle for a button, box for a field, highlight for a region.
-you only help with Fieldnote and Sparsh's job: the CRM, restaurant accounts, buyers, deals, quotes, discounts, orders, cases, supply, the company, its people and its rules. anything else is out of scope: general knowledge, news, weather, chat, jokes, coding, math, writing, or what some other app, document, PDF, email or website says. for out of scope, finish with one stop: kind show, allow false, target none, say one short line like "I only help with Fieldnote and your sales work." do not answer any of it. a work question asked while another app is open is in scope; answer it from Fieldnote. questions about restaurants, deals, quotes, discounts, orders or stock are always in scope.
+you help Sparsh with his work. that is Fieldnote, and also any work thing on his screen: a PDF, email, doc, spreadsheet, website or chat about customers, suppliers, products, prices, orders, the company or his job. you can read it, summarize it, explain it, pull numbers out of it, compare it with Fieldnote, and draft or rewrite text for it. when unsure, help.
+decline only what is clearly not work: entertainment, sports, games, jokes, poems, personal life, and trivia that has nothing to do with his job. for those, one stop: kind show, allow false, target none, say a short line like "That's outside work, so I'll pass. Ask me about Fieldnote or what's on your screen."
+SCREEN is a picture of his screen right now and FRONT APP is the app and window he is in. use them for questions about this, here, what it says, or the document, email or page in front of him. read the words in the picture carefully and quote numbers exactly.
+put long answers in note: summaries, drafts, replies, rewrites, lists, numbers pulled from the screen. note is plain text, short paragraphs or lines starting with "- ". then say is one short sentence like "Here's a summary in my window." those answers are one stop with target none; writing or reading never needs a tab: or url: stop unless he asks to open something.
+to put a draft where his cursor is, only when he asks to paste, type, insert or write it in: one stop, kind type, allow true, target paste, text and note both the exact draft. never send an email or message for him; he sends it.
 a question that only wants a fact (who is my manager, what is the discount cap) is one stop with target none and the answer in say. to show where something is or how to do it, open its page with url: and then point at its button from BUTTONS.
 why a quote cannot be sent: url: to that deal (/opportunities/opp-<account id>), then a show stop on send-quote that says why.
 every stop has a target. that is how kiwi finds the real element, so get it right.
@@ -153,7 +159,7 @@ function getModel() {
     model: requiredEnv("GEMINI_MODEL"),
     apiKey: requiredEnv("GEMINI_API_KEY"),
     temperature: 0,
-    maxOutputTokens: 400,
+    maxOutputTokens: 1200,
     thinkingConfig: { thinkingBudget: 0 },
   });
   return sharedModel;
@@ -215,7 +221,12 @@ export async function ask(input: { question: string; screenContext?: string; ima
   }
   if (!result) throw lastError;
   const stops = stopsFromMessages(result.messages as { tool_calls?: { name: string; args: { stops?: Stop[] } }[] }[])
-    .map((stop) => stop.kind === "show" ? { ...stop, text: "" } : stop);
+    .map((stop) => stop.kind === "show" ? { ...stop, text: "" } : stop)
+    .map((stop) => {
+      const note = stop.note?.replace(/\\n/g, "\n").trim();
+      const text = stop.text?.replace(/\\n/g, "\n");
+      return { ...stop, text, note: note && note !== stop.say.trim() ? note : undefined };
+    });
   return { stops, messages: result.messages };
 }
 
