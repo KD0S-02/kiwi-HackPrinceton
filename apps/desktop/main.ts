@@ -9,7 +9,7 @@ import { ask, clearSignedIn, primeCache, type Stop } from "../../scripts/ask.ts"
 import { askPage, onPageAction, onPageHover, pageInFront, pagePath, startBridge } from "./bridge.ts";
 import { ensureFieldnote } from "./fieldnote.ts";
 import { route } from "./router.ts";
-import { StepBuffer, goalReached, prepareStops, stepAligned } from "./steps.ts";
+import { StepBuffer, accountRequest, accountStillToDo, goalReached, prepareStops, stepAligned } from "./steps.ts";
 import { adjustOwner, personByEmail, personById, type Person } from "../fieldnote/lib/people.ts";
 import { nav } from "../fieldnote/lib/data.ts";
 import { activateApp, chromeTabs, frontWindow, openChromeTab, prefetchChromeTabs } from "./chrome.ts";
@@ -79,13 +79,30 @@ function showOnOverlay(channel: string, payload: unknown) {
   if (!overlay.isDestroyed()) overlay.webContents.send(channel, payload);
 }
 
-function point(payload: { x: number; y: number; say: string } | null) {
+let trail: string[] = [];
+let holdingTrail = false;
+
+function point(payload: { x: number; y: number; say: string; look?: "arrow" | "hand" } | null) {
   if (followTimer) clearTimeout(followTimer);
   followCursor = payload === null;
   showOnOverlay("point", payload);
-  if (payload) {
-    returnToCursor(4500);
-  }
+  if (payload && !holdingTrail && payload.look !== "arrow") returnToCursor(4500);
+}
+
+function pushStep(line: string) {
+  if (!line || trail[trail.length - 1] === line) return;
+  trail.push(line);
+  holdingTrail = true;
+  if (followTimer) clearTimeout(followTimer);
+  followCursor = false;
+  send("step", line);
+  showOnOverlay("trail", { steps: trail, summary: "" });
+}
+
+function pushSummary(line: string) {
+  if (!line) return;
+  send("summary", line);
+  showOnOverlay("trail", { steps: trail, summary: line });
 }
 
 function returnToCursor(delayMs: number) {
@@ -307,10 +324,86 @@ function urlOf(target: string) {
   return path.startsWith("/") ? path : `/${path}`;
 }
 
+const pageNames: Record<string, string> = {
+  "/": "Home",
+  "/orders": "Fulfillment",
+  "/supply": "Supply",
+  "/accounts": "Accounts",
+  "/pipeline": "Pipeline",
+  "/approvals": "Approvals",
+  "/cases": "Cases",
+  "/company": "Company",
+  "/products": "Products",
+  "/purchase-orders": "Purchase orders",
+};
+
+function words(value: string) {
+  const text = decodeURIComponent(value).replace(/\+/g, " ").replace(/-/g, " ");
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+}
+
+function pageName(pathname: string) {
+  if (pageNames[pathname]) return pageNames[pathname];
+  const piece = pathname.split("/").filter(Boolean).pop() ?? "that page";
+  return piece.replace(/-/g, " ");
+}
+
+function isAction(stop: Stop) {
+  const target = stop.target.trim();
+  return Boolean(stop.allow && target && target !== "none" && target !== "paste" && stop.kind !== "show");
+}
+
+function told(stop: Stop) {
+  const target = stop.target.trim();
+  if (/^url:/i.test(target)) {
+    const [pathname, query = ""] = urlOf(target).split("?");
+    const name = pageName(pathname);
+    const params = [...new URLSearchParams(query).entries()];
+    if (params.length === 0) return `Opened ${name}.`;
+    const sets = params.map(([key, value]) => `${key.replace(/Id$/, "")} to ${words(value)}`).join(" and ");
+    return `Opened ${name} and set ${sets}.`;
+  }
+  if (/^tab:/i.test(target)) return `Switched to ${target.slice(4).trim()}.`;
+  const name = (stop.label || target).replace(/^filter-/, "").replace(/-/g, " ");
+  if (stop.kind === "type") return `Entered ${stop.text} in ${name}.`;
+  return `Clicked ${name}.`;
+}
+
+function wrapUp(question: string, played: Stop[]) {
+  if (accountRequest(question) && accountStillToDo(question, played)) return "";
+  const actions = played.filter(isAction);
+  if (actions.length === 0) return "";
+  const last = actions[actions.length - 1];
+  if (last.say?.trim().endsWith("?")) return "";
+  if (/^url:/i.test(last.target)) {
+    const [pathname, query = ""] = urlOf(last.target).split("?");
+    const params = [...new URLSearchParams(query).entries()];
+    const warehouse = params.find(([key]) => key === "warehouse")?.[1];
+    if (pathname === "/orders" && warehouse) return `These are the orders from ${words(warehouse)}.`;
+    if (pathname === "/supply" && warehouse) return `This is the stock at ${words(warehouse)}.`;
+    if (params.length === 0) return `You're on ${pageName(pathname)} now.`;
+    return `You're on ${pageName(pathname)}, with that filter on.`;
+  }
+  if (last.kind === "type") return "The fields are filled in.";
+  if (/submit|save/i.test(last.target)) return "That's saved.";
+  if (/^approve-/.test(last.target)) return "That's approved.";
+  if (/^reject-/.test(last.target)) return "That's rejected.";
+  if (/new-account-submit/.test(last.target)) return "The restaurant is created.";
+  return "That's done.";
+}
+
+function narration(stop: Stop) {
+  if (/^url:/i.test(stop.target.trim())) return told(stop);
+  const say = stop.say?.trim() ?? "";
+  if (say) return /[.!?]$/.test(say) ? say : `${say}.`;
+  return told(stop);
+}
+
 async function playStop(stop: Stop) {
-  const fly = (screenX: number, screenY: number, say = stop.say) => {
-    point({ ...overlayPoint(screenX, screenY), say });
-    send("answer", say);
+  const line = narration(stop);
+  const fly = (screenX: number, screenY: number) => {
+    const action = isAction(stop);
+    point({ ...overlayPoint(screenX, screenY), say: action ? line : stop.say, ...(action ? { look: "arrow" as const } : {}) });
   };
   const doing = stop.allow && stop.kind !== "show";
   const blocked = refusal(stop);
@@ -358,13 +451,12 @@ async function playStop(stop: Stop) {
   }
 
   if (/^url:/i.test(target)) {
-    send("answer", stop.say);
     const opened = await askPage({ op: "navigate", url: urlOf(target) }, 22000);
     if (!opened?.ok) {
-      send("answer", opened?.error ?? "Fieldnote did not open that page.");
+      pushStep(opened?.error ?? "Fieldnote did not open that page.");
       return;
     }
-    // Prefer the filter that the URL set (filter-warehouse), not the whole wide bar.
+    // A filtered URL points at that filter. A plain page open does not point at the bar.
     let spot: Awaited<ReturnType<typeof askPage>> | undefined;
     const query = urlOf(target).split("?")[1] ?? "";
     for (const key of new URLSearchParams(query).keys()) {
@@ -372,32 +464,36 @@ async function playStop(stop: Stop) {
       if (spot?.ok && spot.rect) break;
       spot = undefined;
     }
-    if (!spot?.ok) spot = await askPage({ op: "locate", target: "filters" }, 600);
-    if (!spot?.ok) spot = await askPage({ op: "locate", target: "results" }, 600);
+    if (query && !spot?.ok) spot = await askPage({ op: "locate", target: "results" }, 600);
     if (spot?.ok && spot.rect) fly(spot.rect.x, spot.rect.y);
-    returnToCursor(2200);
+    pushStep(line);
     await wait(1200);
     return;
   }
 
   const found = await askPage({ op: "locate", target }, 800);
   if (!found?.ok || !found.rect) {
-    send("answer", `${stop.say} I couldn't find ${stop.label || target} on this page, though.`);
+    pushStep(`Couldn't find ${stop.label || target} on this page.`);
     return;
   }
   fly(found.rect.x, found.rect.y);
   if (!doing) {
+    send("answer", stop.say);
     await wait(1200);
     return;
   }
   if (blocked) {
-    send("answer", blocked);
+    pushStep(blocked);
     return;
   }
   await wait(550);
   const done = await askPage({ op: "act", target, kind: stop.kind, text: stop.text }, 800);
-  if (!done?.ok) send("answer", done?.error ?? "The page did not answer.");
-  returnToCursor(1100);
+  if (done?.rect) fly(done.rect.x, done.rect.y);
+  if (!done?.ok) {
+    pushStep(done?.error ?? "The page did not answer.");
+    return;
+  }
+  pushStep(line);
   await wait(300);
 }
 
@@ -433,6 +529,13 @@ async function runChain(
       const local = prepareStops(question, [], page.controls).filter(
         (stop) => !failed.has(stop.target) && !played.some((done) => done.kind === stop.kind && done.target === stop.target && done.text === stop.text),
       );
+      if (accountRequest(question)) {
+        if (local.length > 0) {
+          buffer.push(local);
+          continue;
+        }
+        break;
+      }
       if (local.some((stop) => stop.target === "new-account" || stop.target.startsWith("new-account-"))) {
         buffer.push(local);
         continue;
@@ -453,7 +556,8 @@ async function runChain(
       rejected = undefined;
       const stops = prepareStops(question, result.stops, page.controls)
         .slice(0, 3)
-        .map((stop) => keepWritingHere(question, { ...stop, say: ownSentence(stop.say ?? ""), target: ownerTarget(question, stop.target ?? "") }));
+        .map((stop) => keepWritingHere(question, { ...stop, say: ownSentence(stop.say ?? ""), target: ownerTarget(question, stop.target ?? "") }))
+        .filter((stop) => !failed.has(stop.target) && !played.some((done) => done.kind === stop.kind && done.target === stop.target && done.text === stop.text));
       if (stops.length === 0) {
         if (played.length === 0) throw new Error("Kiwi did not return a stop.");
         break;
@@ -463,6 +567,13 @@ async function runChain(
     }
     const step = buffer.takeNext();
     if (!step) continue;
+    if (/^url:/i.test(step.target)) {
+      const [pathname, query = ""] = urlOf(step.target).split("?");
+      if (!query && pagePath().split("?")[0] === pathname) {
+        played.push(step);
+        continue;
+      }
+    }
     if (!stepAligned(step, page.controls)) {
       // A click that opens a dialog lands before the fields exist. Read the page once more.
       page = await screenContext();
@@ -582,6 +693,8 @@ async function answerQuestion(question: string, doIt = false) {
   send("answer", "");
   send("note", "");
   send("offer", "");
+  trail = [];
+  holdingTrail = false;
   point(null);
   try {
     const skills = listSkills(skillsDirectory);
@@ -605,6 +718,7 @@ async function answerQuestion(question: string, doIt = false) {
     const quick = aboutScreen || doIt ? undefined : route(question, context.controls, context.tabs, context.facts);
     if (quick) {
       await playStop(quick);
+      if (current === runId) pushSummary(wrapUp(question, [quick]));
       history.push(`User: ${question}`, `Kiwi: ${quick.say}`);
       timing(question, "local", started);
       if (current === runId) sendOffer(question, [quick], doIt);
@@ -625,6 +739,7 @@ async function answerQuestion(question: string, doIt = false) {
       const status = (landed.facts ?? []).filter((fact) => fact.id === "quote-message" || fact.id === "readiness").map((fact) => fact.text);
       if (status.length > 0) send("answer", status.join(" "));
     }
+    if (current === runId) pushSummary(wrapUp(question, played));
     const notes = played.map((stop) => stop.note).filter(Boolean).join("\n").slice(0, 1500);
     history.push(`User: ${question}`, `Kiwi: ${played.map((stop) => stop.say).join(" ")}${notes ? `\nKiwi wrote: ${notes}` : ""}`);
     timing(question, shot ? "model+screen" : "model", started);
