@@ -152,6 +152,11 @@ textarea { resize: vertical; }
 .split, .offices { grid-template-columns: 1fr 1fr; }
 .book-layout { grid-template-columns: 1.6fr .8fr; }
 .triple, .warehouses { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+.place-switch { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+.place-switch a { display: inline-flex; align-items: baseline; gap: 6px; padding: 7px 12px; border-radius: 9px; border: 1px solid var(--line); background: #fff; color: var(--ink); font-size: 13px; font-weight: 550; }
+.place-switch a:hover { border-color: #b2c3f7; color: var(--brand); }
+.place-switch a.on { border-color: var(--brand); background: #eef2ff; color: var(--brand); }
+.place-switch em { color: var(--bad); font-style: normal; font-size: 12px; font-weight: 500; }
 
 /* ---------- tables ---------- */
 .scroll { max-height: 400px; overflow: auto; border-radius: 8px; }
