@@ -140,6 +140,7 @@ Kiwi keeps Clicky's interaction: hold Control + Option to talk, a buddy that fol
 ### Not done yet
 
 - **Voice and permissions are untested end to end.** The code exists, but nobody has yet held Control + Option on a real session and heard it answer back.
+- **Finding and pressing controls.** Fieldnote pages run a small bridge (`components/KiwiBridge.tsx`) that connects to Kiwi on `ws://127.0.0.1:4555`. Before each ask, Kiwi collects the page's visible controls (ids, labels, disabled state) and Chrome's tab titles, and the agent answers with a `target`, not just pixels. Kiwi then locates the real element, flies to its exact position, and clicks or types through the DOM. Chrome tabs are switched with AppleScript, which asks once for Automation permission. Screen pixels are only a fallback for things outside Fieldnote. `scripts/check-bridge.ts` and `scripts/check-targets.ts` test this.
 - **Clicking and typing are new and lightly tested.** Kiwi now presses and types through `apps/desktop/input/kiwi-input` (a small Swift helper that posts mouse and key events, using Kiwi's Accessibility permission). It only acts when you ask it to open, press or set something and the rule allows it. It refuses to type a discount over 15.
 - **No spoken replies.** Kiwi answers on screen only. There is no text to speech.
 - **No permission card.** Kiwi has no "OK to do this for you?" step before an action.

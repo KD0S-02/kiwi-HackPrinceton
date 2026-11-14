@@ -6,6 +6,8 @@ import { app, BrowserWindow, desktopCapturer, globalShortcut, ipcMain, nativeIma
 import { uIOhook, UiohookKey } from "uiohook-napi";
 import { AssemblyAI, StreamingTranscriber } from "assemblyai";
 import { ask, primeCache, type Stop } from "../../scripts/ask.ts";
+import { askPage, pageIsOpen, startBridge } from "./bridge.ts";
+import { chromeTabs, openChromeTab } from "./chrome.ts";
 import { requiredEnv } from "../../scripts/load-env.ts";
 import { lookupUser } from "../../scripts/lookup-user.ts";
 
@@ -121,33 +123,106 @@ function runInput(args: string[]) {
 
 function refusal(stop: Stop) {
   if (!stop.allow) return "";
-  if (stop.kind === "type" && /discount/i.test(stop.label) && Number(stop.text) > 15) {
+  if (stop.kind === "type" && /discount/i.test(`${stop.label} ${stop.target}`) && Number(stop.text) > 15) {
     return "I won't type a discount over 15. Your manager, Alex Morgan, has to approve that.";
   }
   return "";
 }
 
-async function act(stop: Stop, screenX: number, screenY: number) {
-  if (stop.kind === "show" || !stop.allow) {
-    await new Promise((resolve) => setTimeout(resolve, stop.kind === "show" ? 1200 : 600));
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function screenContext() {
+  const [page, tabs] = await Promise.all([askPage({ op: "inventory" }, 500), chromeTabs()]);
+  const lines: string[] = [];
+  if (tabs.length > 0) {
+    lines.push(`BROWSER TABS ${JSON.stringify(tabs.map((tab) => tab.title))}`);
+  }
+  if (page?.ok && page.controls) {
+    const controls = page.controls.map((control) => ({
+      id: control.id || undefined,
+      label: control.label,
+      ...(control.disabled ? { disabled: true } : {}),
+    }));
+    lines.push(`PAGE CONTROLS on Fieldnote ${page.path} ${JSON.stringify(controls)}`);
+  }
+  return lines.join("\n");
+}
+
+type Place = { toOverlay: (screenX: number, screenY: number) => { x: number; y: number } };
+
+async function playStop(stop: Stop, guess: { x: number; y: number }, place: Place) {
+  const fly = (screenX: number, screenY: number, say = stop.say) => {
+    point({ ...place.toOverlay(screenX, screenY), say });
+    send("answer", say);
+  };
+  const doing = stop.allow && stop.kind !== "show";
+  const blocked = refusal(stop);
+  const target = stop.target.trim();
+
+  if (/^tab:/i.test(target)) {
+    fly(guess.x, guess.y);
+    if (!doing || blocked) {
+      if (blocked) send("answer", blocked);
+      await wait(1200);
+      return;
+    }
+    await wait(500);
+    const opened = await openChromeTab(target).catch((error: Error) => {
+      send("answer", `Chrome would not switch tabs: ${error.message}. Allow Kiwi to control Google Chrome in Privacy & Security, Automation.`);
+      return "";
+    });
+    if (!opened) {
+      send("answer", `I could not find a tab called ${target.slice(4)}.`);
+      return;
+    }
+    await wait(450);
+    const landed = await askPage({ op: "inventory" }, 500);
+    if (landed?.ok) send("answer", `${stop.say}`);
     return;
   }
-  const blocked = refusal(stop);
+
+  if (target && pageIsOpen()) {
+    const found = await askPage({ op: "locate", target }, 600);
+    if (found?.ok && found.rect) {
+      fly(found.rect.x, found.rect.y);
+      if (!doing) {
+        await wait(1200);
+        return;
+      }
+      if (blocked) {
+        send("answer", blocked);
+        return;
+      }
+      await wait(650);
+      const done = await askPage({ op: "act", target, kind: stop.kind, text: stop.text }, 800);
+      if (!done?.ok) send("answer", done?.error ?? "The page did not answer.");
+      await wait(400);
+      return;
+    }
+  }
+
+  fly(guess.x, guess.y);
+  if (!doing) {
+    await wait(1200);
+    return;
+  }
   if (blocked) {
     send("answer", blocked);
     return;
   }
-  await new Promise((resolve) => setTimeout(resolve, 700));
+  await wait(700);
   try {
-    await runInput(["click", screenX.toFixed(0), screenY.toFixed(0)]);
+    await runInput(["click", guess.x.toFixed(0), guess.y.toFixed(0)]);
     if (stop.kind === "type" && stop.text) {
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await wait(150);
       await runInput(["type", stop.text]);
     }
   } catch (error) {
     send("answer", `I couldn't press it: ${error instanceof Error ? error.message : String(error)}`);
   }
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await wait(400);
 }
 
 async function answerQuestion(question: string) {
@@ -157,23 +232,24 @@ async function answerQuestion(question: string) {
   send("partial", question);
   point(null);
   try {
-    const shot = await captureScreen();
+    const [shot, context] = await Promise.all([captureScreen(), screenContext()]);
     if (current !== runId) return;
     const prior = history.slice(-4).join("\n");
     const asked = prior ? `Earlier:\n${prior}\n\n${question}` : question;
-    const result = await ask({ question: asked, imagePngBase64: shot.base64, imageMime: "image/jpeg" });
+    const result = await ask({ question: asked, screenContext: context, imagePngBase64: shot.base64, imageMime: "image/jpeg" });
     if (current !== runId) return;
     if (result.stops.length === 0) throw new Error("Kiwi did not return a stop.");
     overlay.setBounds(shot.display.bounds);
     const placed = overlay.getBounds();
     overlay.showInactive();
+    const place: Place = { toOverlay: (screenX, screenY) => ({ x: screenX - placed.x, y: screenY - placed.y }) };
     for (const stop of result.stops) {
       if (current !== runId) return;
-      const screenX = shot.display.bounds.x + (stop.x / shot.width) * shot.display.bounds.width;
-      const screenY = shot.display.bounds.y + (stop.y / shot.height) * shot.display.bounds.height;
-      point({ x: screenX - placed.x, y: screenY - placed.y, say: stop.say });
-      send("answer", stop.say);
-      await act(stop, screenX, screenY);
+      const guess = {
+        x: shot.display.bounds.x + (stop.x / shot.width) * shot.display.bounds.width,
+        y: shot.display.bounds.y + (stop.y / shot.height) * shot.display.bounds.height,
+      };
+      await playStop({ ...stop, target: stop.target ?? "" }, guess, place);
     }
     history.push(`User: ${question}`, `Kiwi: ${result.stops.map((stop) => stop.say).join(" ")}`);
   } catch (error) {
@@ -471,6 +547,7 @@ app.whenReady().then(async () => {
   });
   const icon = nativeImage.createFromPath(path.join(here, "kiwi.png"));
   if (!icon.isEmpty()) app.dock.setIcon(icon);
+  startBridge();
   watchKeys();
   watchCursor();
   void askPermissions();

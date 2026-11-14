@@ -16,6 +16,7 @@ export type Stop = {
   kind: "show" | "click" | "type";
   draw: "circle" | "box" | "highlight" | "none";
   text: string;
+  target: string;
 };
 
 const cache = new Map<string, unknown>();
@@ -90,6 +91,7 @@ const finishTool = tool(
         kind: z.enum(["show", "click", "type"]),
         draw: z.enum(["circle", "box", "highlight", "none"]),
         text: z.string(),
+        target: z.string().describe("an id or exact label from PAGE CONTROLS, or tab:<title> from BROWSER TABS, or empty"),
       })),
     }),
   },
@@ -125,7 +127,12 @@ kind show: they asked where, what, why, or for a tour. draw. do not click.
 kind click: they asked you to open, go, send, or press.
 kind type: they asked you to set a field. text is the value. do not press send in that same stop.
 draw is circle for a button, box for a field, highlight for a region.
-pixels come from the picture. tab names come from lookupUser.
+every stop has a target. that is how kiwi finds the real element, so get it right.
+if the message has PAGE CONTROLS, target is the id of a control in that list, or its label exactly as written. prefer the id.
+to switch to a browser tab from BROWSER TABS, target is tab: and then that tab's title, and kind is click.
+if the thing is not in PAGE CONTROLS or BROWSER TABS, target is empty and x and y are your best guess from the picture.
+x and y are always your guess from the picture. kiwi uses them only when the target is empty or not found.
+a disabled control cannot be clicked. say why instead.
 if a rule is allow false, finish with kind show. say why. never type a discount over 15. never click send while the picture shows a discount over 15.
 a tour is several show stops. before finish on a tour, call searchPages once so the stops follow the written page.
 a where question is one show stop with allow false. you are pointing, not doing it.`;
@@ -159,8 +166,8 @@ function knownContext(): string {
   return `KNOWN CONTEXT ${JSON.stringify({ user: userRecord, pages })}\n`;
 }
 
-export async function ask(input: { question: string; imagePngBase64?: string; imageMime?: "image/png" | "image/jpeg" }) {
-  const question = `${knownContext()}${input.question}`;
+export async function ask(input: { question: string; screenContext?: string; imagePngBase64?: string; imageMime?: "image/png" | "image/jpeg" }) {
+  const question = `${knownContext()}${input.screenContext ? `${input.screenContext}\n` : ""}${input.question}`;
   const mime = input.imageMime ?? "image/png";
   const content = input.imagePngBase64
     ? [

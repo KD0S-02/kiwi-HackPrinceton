@@ -12,6 +12,7 @@ plutil -replace CFBundleName -string Kiwi $plist
 plutil -replace CFBundleDisplayName -string Kiwi $plist
 plutil -replace CFBundleIdentifier -string com.fieldnote.kiwi $plist
 plutil -replace NSMicrophoneUsageDescription -string "Kiwi uses the microphone while you hold Control and Option." $plist
+plutil -replace NSAppleEventsUsageDescription -string "Kiwi switches Chrome tabs when you ask it to open one." $plist
 plutil -replace NSScreenCaptureUsageDescription -string "Kiwi looks at your screen so it can point at buttons in Fieldnote." $plist
 cp apps/desktop/kiwi.icns dist/Kiwi.app/Contents/Resources/electron.icns
 mkdir -p dist/Kiwi.app/Contents/Resources/app
