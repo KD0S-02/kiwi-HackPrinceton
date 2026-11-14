@@ -78,6 +78,7 @@
     .note pre { margin: 0; padding: 12px 40px 12px 14px; max-height: 380px; overflow: auto; white-space: pre-wrap; word-wrap: break-word; font: 12.5px/1.5 Inter, "Segoe UI", sans-serif; color: #e5e7eb; user-select: text; }
     .note #note-close { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; padding: 0; border-radius: 8px; background: transparent; color: #9ca3af; }
     .note #note-close:hover { background: #374151; color: white; }
+    .note.single #note-close { top: 50%; transform: translateY(-50%); }
     .offer { display: none; align-items: center; gap: 10px; padding: 0 40px 12px 14px; color: #e5e7eb; }
     .offer.on { display: flex; }
     .note pre:empty + .offer { padding-top: 12px; }
@@ -175,6 +176,8 @@
     const offer = document.getElementById("offer");
     function showNote() {
       note.classList.toggle("on", Boolean(noteText.textContent) || offer.classList.contains("on"));
+      note.classList.remove("single");
+      note.classList.toggle("single", note.classList.contains("on") && note.offsetHeight <= 56);
       fit();
     }
     window.kiwi.on("note", (text) => {
