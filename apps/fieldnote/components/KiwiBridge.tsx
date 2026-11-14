@@ -29,15 +29,28 @@ function isShown(element: Element) {
   return style.visibility !== "hidden" && style.display !== "none";
 }
 
+// "the Fieldnote logo in the sidebar" and "Fieldnote logo, home" are the same control.
+function normalize(text: string) {
+  const noise = /^(the|a|an|logo|icon|sidebar|button|link|in|on|menu)$/;
+  return text.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter((word) => word && !noise.test(word)).join(" ");
+}
+
 function find(target: string) {
   const exact = document.getElementById(target) ?? document.querySelector(`[data-kiwi="${CSS.escape(target)}"]`);
   if (exact && isShown(exact)) return exact as HTMLElement;
-  const wanted = target.trim().toLowerCase();
+  const wanted = normalize(target);
+  if (!wanted && /logo|brand/i.test(target)) {
+    const brand = document.querySelector("#brand, a.brand");
+    if (brand && isShown(brand)) return brand as HTMLElement;
+  }
+  if (!wanted) return undefined;
   const candidates = [...document.querySelectorAll(clickable)].filter(isShown) as HTMLElement[];
+  const name = (element: HTMLElement) => normalize(labelOf(element));
   return (
-    candidates.find((element) => labelOf(element).toLowerCase() === wanted) ??
-    candidates.find((element) => labelOf(element).toLowerCase().startsWith(wanted)) ??
-    candidates.find((element) => labelOf(element).toLowerCase().includes(wanted))
+    candidates.find((element) => name(element) === wanted) ??
+    candidates.find((element) => name(element).startsWith(wanted)) ??
+    candidates.find((element) => wanted.startsWith(name(element)) && name(element).length > 3) ??
+    candidates.find((element) => name(element).includes(wanted))
   );
 }
 
@@ -161,9 +174,22 @@ async function handle(request: Request, push: (href: string) => void) {
     element.focus();
     const problem = setValue(element, request.text ?? "");
     if (problem) return { ok: false, error: problem, rect: screenRect(element) };
-  } else {
-    element.click();
+    return { ok: true, rect: screenRect(element) };
   }
+  if (element instanceof HTMLAnchorElement) {
+    const href = element.getAttribute("href") || "";
+    let sameOrigin = false;
+    try {
+      sameOrigin = new URL(href, location.href).origin === location.origin;
+    } catch {
+      sameOrigin = false;
+    }
+    if (sameOrigin && href && !href.startsWith("#")) {
+      const moved = await navigate(href, push);
+      return { ...moved, rect: screenRect(element) };
+    }
+  }
+  element.click();
   return { ok: true, rect: screenRect(element) };
 }
 

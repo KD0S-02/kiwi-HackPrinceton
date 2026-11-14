@@ -56,7 +56,7 @@ export async function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="shell">
       <aside className="sidebar">
-        <a className="brand" href="/">
+        <a className="brand" id="brand" href="/" aria-label="Fieldnote logo, home">
           <Logo size={36} />
           <div>
             <strong>Fieldnote</strong>

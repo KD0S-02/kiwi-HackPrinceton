@@ -69,5 +69,6 @@ export function siteMap() {
     "every other list: New, Export, Open, Edit, Delete. /company: Roster, Export roster. /profile: Log out.",
   );
   lines.push("account ids are the restaurant name in kebab case, like harbor-diner. deal pages are /opportunities/opp-<account id>. account pages are /accounts/<account id>.");
+  lines.push("home is /. the sidebar Fieldnote logo is the control id brand. click brand to go home.");
   return lines.join("\n");
 }

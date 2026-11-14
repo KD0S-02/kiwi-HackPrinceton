@@ -1,6 +1,7 @@
 import { route } from "../apps/desktop/router.ts";
 
 const controls = [
+  { id: "brand", label: "Fieldnote logo, home", kind: "a", disabled: false },
   { id: "", label: "Home", kind: "a", disabled: false },
   { id: "", label: "Accounts", kind: "a", disabled: false },
   { id: "", label: "Pipeline", kind: "a", disabled: false },
@@ -28,6 +29,10 @@ for (const question of [
   "what does Harbor Diner usually order?",
   "where do I log a cycle count",
   "how do I log a cycle count",
+  "click the Fieldnote logo",
+  "go back home by clicking the logo",
+  "where is the logo",
+  "click the logo and tell me what's urgent",
 ]) {
   const started = performance.now();
   const stop = route(question, controls, tabs, [{ id: "quote-message", text: "An account executive stops at 15 percent. Your manager, Alex Morgan, has to approve the rest." }]);

@@ -114,6 +114,18 @@ try {
   await sleep(1800);
   now = await page();
   check("warehouse card filters supply", now.path.includes("warehouse=chicago-dry"), `${now.path} · ${now.count}`);
+
+  await askPage({ op: "navigate", url: "/pipeline?stage=Proposal" }, 8000);
+  acted = await askPage({ op: "act", target: "Fieldnote logo", kind: "click" }, 8000);
+  await sleep(400);
+  now = await page();
+  check("Fieldnote logo click goes home", Boolean(acted?.ok) && now.path === "/", `${now.path} ${acted?.error ?? ""}`);
+
+  await askPage({ op: "navigate", url: "/supply" }, 8000);
+  acted = await askPage({ op: "act", target: "logo", kind: "click" }, 8000);
+  await sleep(400);
+  now = await page();
+  check("logo click goes home", Boolean(acted?.ok) && now.path === "/", `${now.path} ${acted?.error ?? ""}`);
 } catch (error) {
   failures += 1;
   console.log("failed", error instanceof Error ? error.message : error);

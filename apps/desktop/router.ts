@@ -42,6 +42,17 @@ export function route(
     return undefined;
   }
   const show = all.some((word) => ["where", "show", "find", "point", "whats", "see", "how"].includes(word));
+  // "click the Fieldnote logo" is the sidebar home control. A second request in the same
+  // sentence ("and tell me what's urgent") still goes to the model.
+  const aside = ["and", "then", "also", "plus", "after", "what", "why", "tell", "explain", "how", "which"];
+  const wantsLogo = all.includes("logo") && all.some((word) => ["click", "press", "go", "back", "home", "open", "take"].includes(word) || word.startsWith("click"));
+  if (wantsLogo && !all.some((word) => aside.includes(word))) {
+    const brand = controls.find((control) => control.id === "brand")
+      ?? controls.find((control) => /fieldnote/i.test(control.label) && /logo|home|sales cloud/i.test(control.label));
+    if (brand) {
+      return { screen: 0, x: 0, y: 0, draw: "circle", text: "", label: brand.label, say: "Back home.", allow: true, kind: "click", target: brand.id || brand.label };
+    }
+  }
   const filtering = ["only", "with", "over", "under", "more", "less", "than", "which", "list", "filter", "filtered", "sort", "sorted", "by", "from",
     "closed", "paid", "delivered", "pending", "picking", "received", "low", "mine", "everyone", "proposal", "qualify", "commit",
     "new", "create", "add", "edit", "delete", "remove", "rename", "update", "cases", "invoices", "shipments", "products", "suppliers", "deals"];

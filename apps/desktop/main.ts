@@ -231,10 +231,14 @@ function onlyAskedOwner(question: string, target: string) {
 // A written answer stays in Kiwi's window. It pastes only when asked, and it leaves the
 // current app only when the question asks to open or show something.
 function keepWritingHere(question: string, stop: Stop): Stop {
-  if (stop.target === "paste" && !/\b(paste|insert|type (it|this)|put (it|this)|write (it|this) (in|into|there|here)|fill)\b/i.test(question)) {
+  const askedToPaste = /\b(paste|insert|type (it|this)|put (it|this)|write (it|this) (in|into|there|here)|fill)\b/i.test(question);
+  if (stop.target === "paste" && !askedToPaste) {
     return { ...stop, kind: "show", allow: false, target: "none", note: stop.note || stop.text };
   }
-  if (stop.note && /^(url|tab):/i.test(stop.target ?? "") && !/\b(open|show|take|go|find|pull up|bring up|where)\b/i.test(question)) {
+  // A draft stays in the window. Asking to also open, click, go home, or filter still navigates.
+  const writingOnly = /\b(draft|rewrite|summarize|summary|reply|poem)\b/i.test(question)
+    && !/\b(open|show|take|go|find|click|back|home|logo|page|filter|where|pull|bring)\b/i.test(question);
+  if (stop.note && writingOnly && /^(url|tab):/i.test(stop.target ?? "")) {
     return { ...stop, kind: "show", allow: false, target: "none" };
   }
   return stop;

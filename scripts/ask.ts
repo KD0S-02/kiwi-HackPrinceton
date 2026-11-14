@@ -134,6 +134,9 @@ you help Sparsh with his work. that is Fieldnote, and also any work thing on his
 decline only what is clearly not work: entertainment, sports, games, jokes, poems, personal life, and trivia that has nothing to do with his job. for those, one stop: kind show, allow false, target none, say a short line like "That's outside work, so I'll pass. Ask me about Fieldnote or what's on your screen."
 SCREEN is a picture of his screen right now and FRONT APP is the app and window he is in. use them for questions about this, here, what it says, or the document, email or page in front of him. read the words in the picture carefully and quote numbers exactly.
 put long answers in note: summaries, drafts, replies, rewrites, lists, numbers pulled from the screen. note is plain text, short paragraphs or lines starting with "- ". then say is one short sentence like "Here's a summary in my window." those answers are one stop with target none; writing or reading never needs a tab: or url: stop unless he asks to open something.
+a longer question still gets every part he asked for, in order, one stop each. a note never replaces a click or a page he asked for. generic questions (what should I do, catch me up, what's urgent, what needs a decision, explain this page) are work: answer from PAGE TEXT and KNOWN CONTEXT, usually target none, with the detail in note.
+going home: the sidebar Fieldnote logo is the control id brand. when he says home, back, the start, the main page, or the logo, one click stop on brand. that is the logo, not the Home nav item. url:/ is the same page when he did not ask you to click.
+when he also asks what, why, or who, the answer is already in PAGE TEXT or KNOWN CONTEXT. put that answer in the note of the same stop. never say you will check, look, or come back.
 to put a draft where his cursor is, only when he asks to paste, type, insert or write it in: one stop, kind type, allow true, target paste, text and note both the exact draft. never send an email or message for him; he sends it.
 a question that only wants a fact (who is my manager, what is the discount cap) is one stop with target none and the answer in say. to show where something is or how to do it, open its page with url: and then point at its button from BUTTONS.
 why a quote cannot be sent: url: to that deal (/opportunities/opp-<account id>), then a show stop on send-quote that says why.
@@ -220,14 +223,36 @@ export async function ask(input: { question: string; screenContext?: string; ima
     }
   }
   if (!result) throw lastError;
-  const stops = stopsFromMessages(result.messages as { tool_calls?: { name: string; args: { stops?: Stop[] } }[] }[])
+  let stops = tidyStops(stopsFromMessages(result.messages as { tool_calls?: { name: string; args: { stops?: Stop[] } }[] }[]));
+  // "Let me check" never comes back. Ask once more, with the facts already in front of it.
+  if (lean && dodged(stops)) {
+    const nudge = "Answer every part now from PAGE TEXT. Keep any click he asked for. Put the facts in note. Do not say you will check or look.";
+    const nudged = typeof content === "string"
+      ? `${content}\n${nudge}`
+      : [{ type: "text", text: `${question}\n${nudge}` }, ...content.slice(1)];
+    const reply = await getModel().bindTools([finishTool], { tool_choice: "finish" }).invoke([
+      { role: "system", content: systemPrompt },
+      { role: "user", content: nudged },
+    ]);
+    stops = tidyStops(stopsFromMessages([reply] as { tool_calls?: { name: string; args: { stops?: Stop[] } }[] }[]));
+  }
+  return { stops, messages: result.messages };
+}
+
+function tidyStops(stops: Stop[]) {
+  return stops
     .map((stop) => stop.kind === "show" ? { ...stop, text: "" } : stop)
     .map((stop) => {
       const note = stop.note?.replace(/\\n/g, "\n").trim();
       const text = stop.text?.replace(/\\n/g, "\n");
       return { ...stop, text, note: note && note !== stop.say.trim() ? note : undefined };
     });
-  return { stops, messages: result.messages };
+}
+
+function dodged(stops: Stop[]) {
+  const said = stops.map((stop) => stop.say).join(" ");
+  const wrote = stops.map((stop) => stop.note ?? "").join("");
+  return /let me (check|look|see|find)|i'?ll (check|look|see)|right back/i.test(said) && wrote.length < 40;
 }
 
 function stopsFromMessages(messages: { tool_calls?: { name: string; args: { stops?: Stop[] } }[] }[]): Stop[] {
