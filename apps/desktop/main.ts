@@ -24,6 +24,9 @@ const keyterms = [
 let panel: BrowserWindow;
 let overlay: BrowserWindow;
 let transcriber: StreamingTranscriber | undefined;
+let transcriberOpen = false;
+let pendingAudio: Buffer[] = [];
+let listenTimer: NodeJS.Timeout | undefined;
 let listening = false;
 let transcript = "";
 let runId = 0;
@@ -144,6 +147,8 @@ async function startTalking() {
   listening = true;
   send("listening", true);
   send("status", { busy: true, label: "Listening" });
+  if (listenTimer) clearTimeout(listenTimer);
+  listenTimer = setTimeout(() => void stopTalking(), 30_000);
   const client = new AssemblyAI({ apiKey: requiredEnv("ASSEMBLYAI_API_KEY") });
   const next = client.streaming.transcriber({
     sampleRate: 16_000,
@@ -159,25 +164,58 @@ async function startTalking() {
   next.on("error", (error) => {
     send("answer", error instanceof Error ? error.message : String(error));
   });
+  next.on("close", () => {
+    if (transcriber === next) transcriberOpen = false;
+  });
   transcriber = next;
+  transcriberOpen = false;
+  pendingAudio = [];
   try {
     await next.connect();
   } catch (error) {
     listening = false;
     transcriber = undefined;
+    pendingAudio = [];
     send("listening", false);
     send("status", { busy: false, label: "Ready" });
     throw error;
   }
+  if (transcriber !== next) {
+    await next.close();
+    return;
+  }
+  transcriberOpen = true;
+  for (const chunk of pendingAudio) sendAudioSafely(next, chunk);
+  pendingAudio = [];
+}
+
+function sendAudioSafely(target: StreamingTranscriber, chunk: Buffer) {
+  try {
+    target.sendAudio(chunk);
+  } catch {
+    transcriberOpen = false;
+  }
+}
+
+async function closeTranscriber(current: StreamingTranscriber | undefined) {
+  transcriberOpen = false;
+  pendingAudio = [];
+  if (!current) return;
+  try {
+    await Promise.race([current.close(), new Promise((resolve) => setTimeout(resolve, 1500))]);
+  } catch {
+    // The socket was already gone; the transcript we have is what we use.
+  }
 }
 
 async function stopTalking() {
+  if (listenTimer) clearTimeout(listenTimer);
   if (!listening) return;
   listening = false;
   send("listening", false);
   const current = transcriber;
   transcriber = undefined;
-  await current?.close();
+  await closeTranscriber(current);
   const question = transcript.trim();
   if (!question) {
     send("status", { busy: false, label: "Ready" });
@@ -188,12 +226,13 @@ async function stopTalking() {
 }
 
 async function cancelTalking() {
+  if (listenTimer) clearTimeout(listenTimer);
   listening = false;
   transcript = "";
   send("listening", false);
   const current = transcriber;
   transcriber = undefined;
-  await current?.close();
+  await closeTranscriber(current);
   send("status", { busy: false, label: "Ready" });
 }
 
@@ -312,6 +351,12 @@ function watchCursor() {
   }, 32);
 }
 
+process.on("uncaughtException", (error) => {
+  writeFileSync("/tmp/kiwi-error.log", `${new Date().toISOString()} ${error.stack ?? error.message}\n`, { flag: "a" });
+  void cancelTalking();
+  send("answer", "Voice dropped. Hold Control + Option to try again.");
+});
+
 app.setName("Kiwi");
 app.whenReady().then(async () => {
   session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
@@ -365,12 +410,8 @@ app.whenReady().then(async () => {
   });
   globalShortcut.register("Escape", () => {
     runId += 1;
-    listening = false;
-    void transcriber?.close();
-    transcriber = undefined;
     point(null);
-    send("listening", false);
-    send("status", { busy: false, label: "Ready" });
+    void cancelTalking();
   });
   ipcMain.handle("ask", (_event, question: string) => answerQuestion(question));
   ipcMain.handle("talk-start", () => startTalking());
@@ -378,7 +419,12 @@ app.whenReady().then(async () => {
   ipcMain.handle("talk-cancel", () => cancelTalking());
   ipcMain.on("audio", (_event, bytes: ArrayBuffer) => {
     if (!listening || !transcriber) return;
-    transcriber.sendAudio(Buffer.from(bytes));
+    const chunk = Buffer.from(bytes);
+    if (!transcriberOpen) {
+      if (pendingAudio.length < 100) pendingAudio.push(chunk);
+      return;
+    }
+    sendAudioSafely(transcriber, chunk);
   });
   const icon = nativeImage.createFromPath(path.join(here, "kiwi.png"));
   if (!icon.isEmpty()) app.dock.setIcon(icon);
@@ -401,6 +447,6 @@ app.whenReady().then(async () => {
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
   if (keysWatching) uIOhook.stop();
-  void transcriber?.close();
+  void closeTranscriber(transcriber);
 });
 app.on("window-all-closed", () => app.quit());
