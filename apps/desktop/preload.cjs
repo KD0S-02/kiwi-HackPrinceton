@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("kiwi", {
   ask: (question) => ipcRenderer.invoke("ask", question),
+  doIt: (question) => ipcRenderer.invoke("do-it", question),
   talkStart: (press) => ipcRenderer.invoke("talk-start", press),
   talkStop: (press) => ipcRenderer.invoke("talk-stop", press),
   talkCancel: () => ipcRenderer.invoke("talk-cancel"),

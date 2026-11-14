@@ -3,15 +3,20 @@ import path from "node:path";
 
 export type RecordMode = "idle" | "recording" | "paused";
 
-type Beat = {
+export type Beat = {
   at: string;
   where: string;
   app: string;
   title: string;
   shot?: string;
+  action?: "click" | "type";
+  target?: string;
+  label?: string;
+  text?: string;
+  control?: string;
 };
 
-type Run = {
+export type Run = {
   id: string;
   personId: string;
   personName: string;
@@ -74,6 +79,21 @@ export function createRecorder(options: {
     publish();
   }
 
+  // A click or a typed value on the Fieldnote page. Recorded in order with the page changes.
+  function action(step: { action: "click" | "type"; id: string; label: string; text: string; control?: string; path: string }) {
+    if (!run || mode !== "recording") return;
+    const last = run.beats.at(-1);
+    const target = step.id || step.label;
+    if (!target) return;
+    if (step.action === "type" && last?.action === "type" && last.target === target) {
+      last.text = step.text;
+    } else {
+      run.beats.push({ at: new Date().toISOString(), where: step.path, app: "Google Chrome", title: "", action: step.action, target, label: step.label, text: step.text || undefined, control: step.control });
+    }
+    save();
+    publish();
+  }
+
   function start(person: { id: string; name: string }) {
     if (mode !== "idle") return mode;
     run = {
@@ -127,7 +147,7 @@ export function createRecorder(options: {
     return saved;
   }
 
-  return { start, pause, resume, stop, mode: () => mode };
+  return { start, pause, resume, stop, action, mode: () => mode };
 }
 
 export function nameRun(directory: string, id: string, title: string, note: string) {
@@ -137,4 +157,5 @@ export function nameRun(directory: string, id: string, title: string, note: stri
   run.note = note;
   run.status = "draft";
   writeFileSync(file, JSON.stringify(run, null, 2));
+  return run;
 }

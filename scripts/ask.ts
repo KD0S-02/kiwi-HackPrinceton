@@ -20,6 +20,8 @@ export type Stop = {
   text: string;
   target: string;
   note?: string;
+  offer?: boolean;
+  choices?: { label: string; ask: string }[];
 };
 
 const cache = new Map<string, unknown>();
@@ -110,6 +112,11 @@ const finishTool = tool(
         text: z.string(),
         target: z.string().describe("an id or exact label from PAGE CONTROLS, url:<path>, tab:<title>, paste, or none"),
         note: z.string().optional().describe("a longer written answer shown in Kiwi's window: a summary, draft, rewrite or list. leave out when say is enough"),
+        choices: z.array(z.object({
+          label: z.string().describe("1 to 4 words for the button, like Open cases"),
+          ask: z.string().describe("the plain request kiwi runs if he picks it, like show me open cases"),
+        })).describe("when say ends by asking him which of some real places or actions he wants, one entry per option. empty otherwise"),
+        offer: z.boolean().optional().describe("true only when this stop explains how to do something Fieldnote really can do and kiwi could do it for him by clicking or typing. false when the page or feature does not exist, the answer is a fact, or you are asking him which one he means"),
       })),
     }),
   },
@@ -153,6 +160,7 @@ kind show: they asked where, what, why, or for a tour. draw. do not click.
 kind click: they asked you to open, go, send, or press.
 kind type: they asked you to set a field. text is the value. do not press send in that same stop.
 draw is circle for a button, box for a field, highlight for a region.
+in say, use the plain verb for what each step does: open, go to, choose, set, search, fill in, switch to, add, press. do not start every step with click.
 you help ${name} with his work. that is Fieldnote, and also any work thing on his screen: a PDF, email, doc, spreadsheet, website or chat about customers, suppliers, products, prices, orders, the company or his job. you can read it, summarize it, explain it, pull numbers out of it, compare it with Fieldnote, and draft or rewrite text for it. when unsure, help.
 decline only what is clearly not work: entertainment, sports, games, jokes, poems, personal life, and trivia that has nothing to do with his job. for those, one stop: kind show, allow false, target none, say a short line like "That's outside work, so I'll pass. Ask me about Fieldnote or what's on your screen."
 SCREEN is a picture of his screen right now and FRONT APP is the app and window he is in. use them for questions about this, here, what it says, or the document, email or page in front of him. read the words in the picture carefully and quote numbers exactly.
@@ -173,6 +181,7 @@ a disabled control cannot be clicked. say why instead.
 if a rule is allow false, finish with kind show. say why. never type a discount over 15. never click send while the discount is over 15.
 a tour is several show stops. before finish on a tour, call searchPages once so the stops follow the written page.
 a where question is one show stop with allow false. you are pointing, not doing it.
+never invent a page or feature. SITE MAP and PAGE CONTROLS are everything Fieldnote has. if he asks for a page or feature that is not there (for example a discounts page), do not open a guess. one show stop, target none, offer false: say in one short sentence that it does not exist and end with a question that names the one or two closest real places, like \"There's no discounts page. Do you want the Pipeline, where deals over the cap show, or a specific deal's discount?\". the say must end with a question mark, and choices lists each option it names, like [{"label":"Open Pipeline","ask":"take me to the pipeline"},{"label":"Deals over the cap","ask":"which of my deals have a discount over the cap"}]. a question with no choices leaves him stuck. never just say something is missing: always ask about the closest real places, even loose ones, like Invoices or Cases for a refund. do the same when a request fits more than one thing and you cannot tell which he wants. when a how-to answer is about something Fieldnote can really do and he is allowed to do it himself, set offer true on that stop. if it needs anyone's approval, is over a limit, is switched off, or he is not allowed to do it, offer is false.
 to show a list, a page, or a filtered view ("show me open cases", "only ${name}'s deals in Proposal", "low oil stock in Chicago"), finish with one stop: kind click, allow true, target url: then the path and query, built only from SITE MAP params and values. say what is on screen in a few words, like "Here are the open cases." ${mineLine(person)} who, which and list questions about records are url stops too, like "who in sales is in the west" is url:/people?department=sales&territoryId=west, and "which open cases are delivery complaints" is url:/cases?status=open&kind=delivery+complaint with no ownerId.
 to create, edit, or delete a record, use two stops: a click stop with url: for the right list, then a click stop on its button (New account, New opportunity, New order, New case, New purchase order, Edit, Delete). ${name} fills in and confirms the dialog. never click confirm-delete.
 to set a discount, even from another page, one finish with three stops and no pause: click url:/opportunities/opp-<account id>, type target discount with text the number only (15, not 15%), click target save-discount. do not ask him to continue. never type a discount over 15.
@@ -280,7 +289,9 @@ function tidyStops(stops: Stop[]) {
     .map((stop) => {
       const note = stop.note?.replace(/\\n/g, "\n").trim();
       const text = stop.text?.replace(/\\n/g, "\n");
-      return { ...stop, text, note: note && note !== stop.say.trim() ? note : undefined };
+      // A short one-line note beside a plain answer only repeats it. Keep the box for real writing.
+      const repeats = stop.target?.trim() !== "paste" && Boolean(note) && !note!.includes("\n") && note!.length <= 260;
+      return { ...stop, text, note: note && note !== stop.say.trim() && !repeats ? note : undefined };
     });
 }
 

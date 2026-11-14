@@ -27,6 +27,39 @@ const lists: [string, string, string, string[]][] = [
   ["/people", "employees.json", "the company roster", ["role", "department", "territoryId"]],
 ];
 
+const fixedPages = ["/", "/accounts", "/pipeline", "/orders", "/supply", "/company", "/profile", "/search"];
+
+// True when Fieldnote has a page at this path. Query strings do not matter.
+export function knownPath(target: string) {
+  const route = (target.split(/[?#]/)[0] || "/").replace(/\/+$/, "") || "/";
+  if (fixedPages.includes(route)) return true;
+  if (/^\/(accounts|opportunities)\/[a-z0-9-]+$/.test(route)) return true;
+  return lists.some(([list]) => route === list || new RegExp(`^${list}/[a-z0-9-]+$`).test(route));
+}
+
+const placeNames: [string, string][] = [
+  ["Accounts", "/accounts"],
+  ["Pipeline", "/pipeline"],
+  ["Fulfillment", "/orders"],
+  ["Orders", "/orders"],
+  ["Supply", "/supply"],
+  ["Company", "/company"],
+  ...lists.map(([route]) => [route.slice(1).replace(/-/g, " ").replace(/^./, (letter) => letter.toUpperCase()), route] as [string, string]),
+];
+
+// Real Fieldnote pages named in a sentence, in the order they appear.
+export function placesIn(text: string) {
+  let rest = text.toLowerCase();
+  const found: { name: string; path: string; at: number }[] = [];
+  for (const [name, route] of [...placeNames].sort((a, b) => b[0].length - a[0].length)) {
+    const match = new RegExp(`\\b${name.toLowerCase().replace(/s$/, "")}s?\\b`).exec(rest);
+    if (!match) continue;
+    rest = rest.slice(0, match.index) + " ".repeat(match[0].length) + rest.slice(match.index + match[0].length);
+    if (!found.some((place) => place.path === route)) found.push({ name, path: route, at: match.index });
+  }
+  return found.sort((a, b) => a.at - b.at).map(({ name, path: route }) => ({ name, path: route }));
+}
+
 export function siteMap() {
   const files: FilterFiles = {
     employees: read("employees.json").map((row) => (row.id === "user" ? { ...row, name: "Sparsh Bohra" } : row)),
