@@ -68,15 +68,15 @@ export const pageFilters: PageFilters[] = [
 
 export type FilterFiles = Partial<Record<"employees" | "territories" | "warehouses" | "products" | "suppliers" | "accounts", Row[]>>;
 
-export function optionsFor(filter: FilterDef, files: FilterFiles): FilterOption[] {
+export function optionsFor(filter: FilterDef, files: FilterFiles, viewer: { id: string; book: "own" | "team" | "company" } = { id: "user", book: "own" }): FilterOption[] {
   if (filter.options) return filter.options;
   const named = (rows: Row[] = []) => rows.map((row) => ({ value: String(row.id), label: String(row.name) }));
   switch (filter.source) {
     case "owners":
       return [
-        { value: "mine", label: "Only mine" },
+        { value: "mine", label: viewer.book === "company" ? "Whole company" : viewer.book === "team" ? "Team book" : "Only mine" },
         ...(files.employees ?? [])
-          .filter((row) => row.role === "account executive" && row.id !== "user")
+          .filter((row) => row.role === "account executive" && row.id !== viewer.id)
           .map((row) => ({ value: String(row.id), label: String(row.name) })),
       ];
     case "territories":
@@ -101,9 +101,9 @@ export function filtersFor(path: string) {
 // Generic list pages (/contacts, /cases, /invoices ...) filter on any of these columns.
 export const listFilterColumns = ["status", "stage", "kind", "family", "category", "role", "department", "ownerId", "accountId", "warehouseId", "territoryId", "supplierId", "officeId"];
 
-export function ownerMatches(ownerId: unknown, owner: string) {
+export function ownerMatches(ownerId: unknown, owner: string, viewer: { id: string; book: "own" | "team" | "company" } = { id: "user", book: "own" }) {
   if (!owner || owner === "all") return true;
-  if (owner === "mine") return ownerId === "user";
+  if (owner === "mine") return viewer.book === "own" ? ownerId === viewer.id : true;
   return ownerId === owner;
 }
 

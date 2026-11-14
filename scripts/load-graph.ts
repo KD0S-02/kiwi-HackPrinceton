@@ -99,6 +99,18 @@ try {
     `MATCH (person:Person {id: "alex-morgan"}), (role:Role {id: "manager"})
      CREATE (person)-[:HAS_ROLE]->(role)`,
   );
+  await runWrite(session, `CREATE (:Role {id: "senior-account-executive", name: "senior account executive"})`);
+  await runWrite(session, `CREATE (:Role {id: "owner", name: "owner"})`);
+  await runWrite(
+    session,
+    `MATCH (person:Person {id: "krishna-das"}), (role:Role {id: "owner"})
+     CREATE (person)-[:HAS_ROLE]->(role)`,
+  );
+  await runWrite(
+    session,
+    `MATCH (person:Person {id: "shail-shah"}), (role:Role {id: "senior-account-executive"})
+     CREATE (person)-[:HAS_ROLE]->(role)`,
+  );
   await runWrite(
     session,
     `CREATE (:Rule {id: "discount-cap", tool: "fieldnote", action: "discount", scope: $scope, allow: false})
@@ -106,7 +118,11 @@ try {
      WITH 1 AS _
      MATCH (role:Role {id: "account-executive"}), (discount:Rule {id: "discount-cap"}), (send:Rule {id: "send-quote"})
      CREATE (role)-[:HAS_RULE]->(discount)
-     CREATE (role)-[:HAS_RULE]->(send)`,
+     CREATE (role)-[:HAS_RULE]->(send)
+     WITH 1 AS _
+     MATCH (senior:Role {id: "senior-account-executive"}), (discountAgain:Rule {id: "discount-cap"}), (sendAgain:Rule {id: "send-quote"})
+     CREATE (senior)-[:HAS_RULE]->(discountAgain)
+     CREATE (senior)-[:HAS_RULE]->(sendAgain)`,
     { scope: `${rules.discountCapPercent} percent`, sendScope: rules.sendQuote },
   );
 

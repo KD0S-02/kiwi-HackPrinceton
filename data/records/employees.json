@@ -18,11 +18,29 @@
     "officeId": "jersey-city"
   },
   {
+    "id": "krishna-das",
+    "name": "Krishna Das",
+    "role": "owner",
+    "department": "sales",
+    "reportsTo": null,
+    "territoryId": "northeast",
+    "officeId": "jersey-city"
+  },
+  {
     "id": "user",
     "name": "Sparsh Bohra",
     "role": "account executive",
     "department": "sales",
-    "reportsTo": "alex-morgan",
+    "reportsTo": "shail-shah",
+    "territoryId": "northeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "shail-shah",
+    "name": "Shail Shah",
+    "role": "senior account executive",
+    "department": "sales",
+    "reportsTo": "krishna-das",
     "territoryId": "northeast",
     "officeId": "jersey-city"
   },

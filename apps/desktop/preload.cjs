@@ -8,6 +8,14 @@ contextBridge.exposeInMainWorld("kiwi", {
   audio: (bytes) => ipcRenderer.send("audio", bytes),
   fit: (height) => ipcRenderer.send("fit", height),
   copy: (text) => ipcRenderer.send("copy", text),
+  session: () => ipcRenderer.invoke("session"),
+  signIn: (email) => ipcRenderer.invoke("sign-in", email),
+  signOut: () => ipcRenderer.invoke("sign-out"),
+  recordStart: () => ipcRenderer.invoke("record-start"),
+  recordPause: () => ipcRenderer.invoke("record-pause"),
+  recordResume: () => ipcRenderer.invoke("record-resume"),
+  recordStop: () => ipcRenderer.invoke("record-stop"),
+  recordName: (id, title, note) => ipcRenderer.invoke("record-name", id, title, note),
   on: (channel, listener) => {
     const wrapped = (_event, payload) => listener(payload);
     ipcRenderer.on(channel, wrapped);

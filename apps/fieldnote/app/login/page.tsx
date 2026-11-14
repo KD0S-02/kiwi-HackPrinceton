@@ -1,7 +1,7 @@
 import { Logo } from "../../components/Logo";
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
-  const { next = "/" } = await searchParams;
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
+  const { next = "/", error } = await searchParams;
   return (
     <div className="login-screen">
       <section className="login-hero">
@@ -12,7 +12,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </div>
         <div className="login-points">
           <span>One book of restaurants, with every buyer and usual order</span>
-          <span>Quotes that stop at the discount cap until your manager, Alex Morgan, signs off</span>
+          <span>Quotes that stop at the discount cap until your manager signs off</span>
           <span>Stock by warehouse, so you know what can ship</span>
         </div>
       </section>
@@ -24,7 +24,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <label className="field">Work email<input name="email" defaultValue="sparsh.bohra@fieldnote.com" autoComplete="username" /></label>
           <label className="field">Password<input name="password" type="password" defaultValue="fieldnote" autoComplete="current-password" /></label>
           <button className="btn primary wide" type="submit">Sign in</button>
-          <p className="login-foot">Sparsh Bohra · Account executive · Jersey City · manager: Alex Morgan</p>
+          {error ? <p className="warning">{error}</p> : null}
+          <p className="login-foot">sparsh.bohra@fieldnote.com · your book, manager Shail Shah</p>
+          <p className="login-foot">shail.shah@fieldnote.com · senior, reviews the team, manager Krishna Das</p>
+          <p className="login-foot">krishna.das@fieldnote.com · owner, no manager</p>
         </form>
       </section>
     </div>

@@ -1,4 +1,6 @@
-import { currentUser, loadNames, readRecords, readRules } from "../../../lib/data";
+import { loadNames, readRecords, readRules } from "../../../lib/data";
+import { seesAll } from "../../../lib/people";
+import { signedInUser } from "../../../lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -9,9 +11,10 @@ export default async function ProfilePage() {
     readRules(),
     loadNames(),
   ]);
-  const me = employees.find((row) => row.id === "user");
-  const reports = employees.filter((row) => row.reportsTo === "user");
-  const mine = accounts.filter((row) => row.ownerId === "user");
+  const person = await signedInUser();
+  const me = employees.find((row) => row.id === person.id);
+  const reports = employees.filter((row) => row.reportsTo === person.id);
+  const mine = seesAll(person) ? accounts : accounts.filter((row) => row.ownerId === person.id);
 
   return (
     <section>
@@ -26,16 +29,16 @@ export default async function ProfilePage() {
       </div>
       <div className="profile">
         <section className="panel profile-card">
-          <span className="avatar">{currentUser.initials}</span>
-          <h2>{String(me?.name ?? currentUser.name)}</h2>
-          <p className="empty">{String(me?.role ?? "")} · {nameOf(me?.officeId)}</p>
-          <p className="empty">{currentUser.email}</p>
+          <span className="avatar">{person.initials}</span>
+          <h2>{String(me?.name ?? person.name)}</h2>
+          <p className="empty">{String(me?.role ?? person.role)} · {nameOf(me?.officeId)}</p>
+          <p className="empty">{person.email}</p>
         </section>
         <div style={{ display: "grid", gap: 16 }}>
           <section className="panel">
             <h2 style={{ marginBottom: 8 }}>Work</h2>
             <dl className="facts">
-              <dt>Manager</dt><dd>{nameOf(me?.reportsTo)}</dd>
+              <dt>Manager</dt><dd>{person.managerName || "None"}</dd>
               <dt>Territory</dt><dd>{nameOf(me?.territoryId)}</dd>
               <dt>Office</dt><dd>{nameOf(me?.officeId)}</dd>
               <dt>Restaurants</dt><dd>{mine.length}</dd>
@@ -45,8 +48,8 @@ export default async function ProfilePage() {
           <section className="panel">
             <h2 style={{ marginBottom: 8 }}>What you can do</h2>
             <dl className="facts">
-              <dt>Send a quote</dt><dd>On your own opportunities</dd>
-              <dt>Discount</dt><dd>Up to {rules.discountCapPercent} percent. Your manager, Alex Morgan, approves anything higher.</dd>
+              <dt>Send a quote</dt><dd>{person.book === "company" ? "You see every quote. You don't send a rep's quote." : seesAll(person) ? "You review the team's quotes. You don't send them." : "On your own opportunities"}</dd>
+              <dt>Discount</dt><dd>{person.approverName ? `Up to ${rules.discountCapPercent} percent. ${person.approverName} approves anything higher.` : `Anything over ${rules.discountCapPercent} percent stops with you.`}</dd>
             </dl>
           </section>
         </div>

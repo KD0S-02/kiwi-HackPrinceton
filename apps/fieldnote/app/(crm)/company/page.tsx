@@ -1,5 +1,6 @@
 import { ExportLink } from "../../../components/ExportLink";
 import { loadNames, money, readRecords } from "../../../lib/data";
+import { signedInUser } from "../../../lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,7 @@ export default async function CompanyPage() {
     const deals = opportunities.filter((deal) => book.some((account) => account.id === deal.accountId));
     return { territory, book: book.length, deals: deals.length, amount: deals.reduce((sum, deal) => sum + Number(deal.amount), 0) };
   });
+  const viewer = await signedInUser();
   const widest = Math.max(...byTerritory.map((row) => row.amount), 1);
 
   return (
@@ -24,7 +26,7 @@ export default async function CompanyPage() {
       <div className="page-head">
         <div>
           <h1>Company</h1>
-          <p>{employees.length} people in {offices.length} offices. Sparsh Bohra reports to Alex Morgan (manager), who reports to Sam Ortiz (VP of Sales).</p>
+          <p>{employees.length} people in {offices.length} offices. {viewer.managerName ? `${viewer.name} reports to ${viewer.managerName}.` : `${viewer.name} owns Fieldnote.`}</p>
         </div>
         <div className="actions">
           <a className="btn ghost" href="/people">Roster</a>
@@ -63,7 +65,7 @@ export default async function CompanyPage() {
               <div className="panel-head"><h2>{String(office.name)}</h2><span>{people.length} people</span></div>
               <div className="scroll tall">
                 {people.map((person) => (
-                  <div className={person.id === "user" ? "person you" : "person"} key={String(person.id)}>
+                  <div className={person.id === viewer.id ? "person you" : "person"} key={String(person.id)}>
                     <span className="avatar">{String(person.name).slice(0, 1)}</span>
                     <div>
                       <strong>{String(person.name)}</strong>

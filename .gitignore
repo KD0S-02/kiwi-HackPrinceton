@@ -9,3 +9,4 @@ out/
 *.tsbuildinfo
 next-env.d.ts
 apps/desktop/input/kiwi-input
+data/runs/

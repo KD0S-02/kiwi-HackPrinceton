@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { ActionButton } from "../../../../components/ActionButton";
 import { DeleteButton } from "../../../../components/DeleteButton";
 import { loadNames, money, readRecords, readRules, tone } from "../../../../lib/data";
+import { quoteNotes } from "../../../../lib/quote";
+import { signedInUser } from "../../../../lib/session";
 import { DiscountEditor } from "./discount-editor";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +19,7 @@ export default async function OpportunityPage({
 }) {
   const { id } = await params;
   const { tab = "overview" } = await searchParams;
-  const [opportunities, accounts, employees, rules, lineItems, products, activity, approvals, nameOf] = await Promise.all([
+  const [opportunities, accounts, employees, rules, lineItems, products, activity, approvals, cases, nameOf] = await Promise.all([
     readRecords("opportunities.json"),
     readRecords("accounts.json"),
     readRecords("employees.json"),
@@ -26,6 +28,7 @@ export default async function OpportunityPage({
     readRecords("products.json"),
     readRecords("activity.json"),
     readRecords("approvals.json"),
+    readRecords("cases.json"),
     loadNames(),
   ]);
   const opportunity = opportunities.find((row) => row.id === id);
@@ -33,7 +36,8 @@ export default async function OpportunityPage({
   const account = accounts.find((row) => row.id === opportunity.accountId);
   const owner = employees.find((row) => row.id === opportunity.ownerId);
   const discountPercent = Number(opportunity.discountPercent);
-  const ownerOk = opportunity.ownerId === "user";
+  const person = await signedInUser();
+  const ownerOk = opportunity.ownerId === person.id;
   const withinCap = discountPercent <= rules.discountCapPercent;
   const items = lineItems.filter((row) => row.opportunityId === id);
   const notes = activity.filter((row) => row.opportunityId === id).reverse();
@@ -95,7 +99,11 @@ export default async function OpportunityPage({
         <div className="highlight"><span>Owner</span><strong>{String(owner?.name ?? "—")}</strong></div>
         <div className="highlight"><span>Stage</span><strong id="stage">{String(opportunity.stage)}</strong></div>
         <div className="highlight"><span>Amount</span><strong id="amount">{money(opportunity.amount)}</strong></div>
-        <DiscountEditor opportunityId={id} discountPercent={discountPercent} sendAllowed={withinCap} ownerOk={ownerOk} cap={rules.discountCapPercent} />
+        <DiscountEditor opportunityId={id} discountPercent={discountPercent} sendAllowed={withinCap} ownerOk={ownerOk} cap={rules.discountCapPercent} approverName={person.approverName} />
+        <p id="readiness">{quoteNotes({
+          products: items.length,
+          cases: cases.filter((row) => row.accountId === opportunity.accountId).map((row) => ({ kind: String(row.kind), status: String(row.status) })),
+        })}</p>
       </div>
 
       <nav className="tabs">
@@ -116,7 +124,8 @@ export default async function OpportunityPage({
               <dt>Usual order</dt><dd>{String(account?.usualOrder ?? "—")}</dd>
               <dt>Territory</dt><dd>{nameOf(account?.territoryId)}</dd>
               <dt>Warehouse</dt><dd>{nameOf(account?.warehouseId)}</dd>
-              <dt>Manager</dt><dd>Alex Morgan (your manager)</dd>
+              {person.managerName ? <><dt>Your manager</dt><dd>{person.managerName}</dd></> : null}
+              <dt>Discount approver</dt><dd>{person.approverName || "You"}</dd>
             </dl>
           </section>
           <section className="panel">
@@ -133,7 +142,7 @@ export default async function OpportunityPage({
               />
             </div>
             <div className="next-steps">
-              {!ownerOk ? <div className="step alert">Only {String(owner?.name)} can send this quote.</div> : withinCap ? <div className="step">The discount is within the cap. Send the quote when the buyer is ready.</div> : <div className="step alert">Bring the discount to {rules.discountCapPercent} percent or under, or ask your manager, Alex Morgan, to approve it.</div>}
+              {!ownerOk ? <div className="step alert">Only {String(owner?.name)} can send this quote.</div> : withinCap ? <div className="step">The discount is within the cap. Send the quote when the buyer is ready.</div> : <div className="step alert">{person.approverName ? `Bring the discount to ${rules.discountCapPercent} percent or under, or ask ${person.approverName} to approve it.` : `Bring the discount to ${rules.discountCapPercent} percent or under. You approve anything over the cap.`}</div>}
             </div>
             {notes.length > 0 ? (
               <ul className="timeline" style={{ marginTop: 18 }}>
@@ -228,10 +237,10 @@ export default async function OpportunityPage({
               icon="check"
               label="Request approval"
               title="Request approval"
-              description="Your manager, Alex Morgan, gets the request."
+              description={person.approverName ? `${person.approverName} gets the request.` : "This stops with you."}
               endpoint="/api/records/approvals"
               hidden={{ opportunityId: id }}
-              success="Request sent to Alex Morgan."
+              success={person.approverName ? `Request sent to ${person.approverName}.` : "This stops with you."}
               fields={[{ name: "kind", label: "What needs approval", type: "select", options: [{ value: "discount", label: "Discount over the cap" }, { value: "pricing exception", label: "Pricing exception" }] }]}
             />
           </div>

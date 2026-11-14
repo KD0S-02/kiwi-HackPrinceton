@@ -5,19 +5,70 @@
   <style>
     html, body { margin: 0; background: transparent; color: white; font: 13px/1.4 Inter, "Segoe UI", sans-serif; overflow: hidden; }
     .pill { margin: 0; background: rgba(17, 24, 39, 0.72); -webkit-backdrop-filter: blur(28px) saturate(1.4); backdrop-filter: blur(28px) saturate(1.4); border-radius: 18px; padding: 12px 14px 10px; }
-    .row { display: flex; align-items: center; gap: 8px; -webkit-app-region: drag; cursor: grab; }
+    .pill.out { padding: 22px 20px 18px; }
+    .pill.out .brand { flex-direction: row; align-items: center; gap: 10px; }
+    .pill.out .logo { width: 32px; height: 32px; }
+    .pill.out .brand-copy { align-items: flex-start; }
+    .pill.out .brand-copy strong { font-size: 22px; line-height: 1; }
+    .row { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 28px; -webkit-app-region: drag; cursor: grab; }
+    .pill.signed .row { justify-content: flex-start; }
+    .pill.signed .brand { align-items: center; }
+    .pill.signed .brand-copy { align-items: flex-start; }
+    .pill.signed .brand-copy strong,
+    .pill.signed .brand-copy small { line-height: 1.15; }
+    .pill.signed .brand-copy small { font-size: 11px; }
+    .pill.signed .sign-in { display: none !important; }
     .row:active { cursor: grabbing; }
-    .logo { width: 28px; height: 28px; }
+    .brand { display: flex; align-items: center; gap: 8px; }
+    .brand-copy { display: flex; flex-direction: column; align-items: center; }
+    .brand-copy small { color: #9ca3af; font-size: 11px; }
+    .brand-copy small:empty { display: none; }
+    .logo { width: 28px; height: 28px; display: block; }
+    .pill.signed .logo { width: 36px; height: 36px; }
+    .logo.spin { animation: spin 1s linear infinite; }
     strong { font-size: 14px; letter-spacing: -0.01em; }
-    .status { margin-left: auto; color: #9ca3af; font-size: 12px; }
+    .corner { position: absolute; right: 0; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 8px; -webkit-app-region: no-drag; }
+    .status { display: none; color: #9ca3af; font-size: 12px; }
+    .status.on { display: inline; }
     .status.busy { color: #86efac; }
-    form { display: flex; gap: 8px; margin-top: 12px; -webkit-app-region: no-drag; }
+    .rec { display: none; align-items: center; gap: 6px; }
+    .pill.signed .rec { display: flex; }
+    #sign-out { display: none; width: 30px; height: 30px; padding: 0; border-radius: 8px; background: rgba(15, 23, 42, 0.62); color: #e5e7eb; line-height: 0; }
+    #sign-out.on { display: inline-flex; align-items: center; justify-content: center; }
+    #sign-out svg { display: block; }
+    .icon[hidden] { display: none !important; }
+    .icon.record, .icon.stop { width: 36px; height: 36px; padding: 0; flex: none; color: #fecaca; }
+    .icon.record { border-radius: 999px; background: rgba(127, 29, 29, 0.45); }
+    .icon.stop { border-radius: 10px; background: rgba(127, 29, 29, 0.28); }
+    .sign-in { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 14px; -webkit-app-region: no-drag; }
+    .sign-in[hidden] { display: none !important; }
+    .sign-in input { flex: none; align-self: stretch; width: auto; }
+    .sign-in button { flex: none; background: #1f6b32; min-width: 140px; }
+    .tagline { margin: 2px 8px 8px; text-align: center; color: #d1d5db; font-size: 13px; line-height: 1.45; }
+    .workspace { display: none; }
+    .workspace.on { display: block; }
+    #form { display: block; margin-top: 12px; -webkit-app-region: no-drag; }
+    .ask { display: flex; align-items: center; gap: 8px; }
+    .search { flex: 1; min-width: 0; display: flex; align-items: center; background: #1f2937; border-radius: 10px; }
+    .search input { background: transparent; padding-right: 2px; }
+    .enter { flex: none; width: 30px; height: 30px; margin: 3px; padding: 0; border-radius: 8px; background: transparent; color: #d1d5db; }
+    .talk { width: 36px; height: 36px; padding: 0; border-radius: 10px; background: #1f2937; color: white; }
+    .talk.live { background: #b42318; }
+    .session-error { color: #fca5a5; font-size: 12px; text-align: center; }
+    .session-error:not(:empty) { margin-top: 6px; }
     input { flex: 1; min-width: 0; border: 0; border-radius: 10px; padding: 10px 12px; background: #1f2937; color: white; font: inherit; }
-    button { border: 0; border-radius: 10px; padding: 10px 12px; background: #1f6b32; color: white; font: inherit; cursor: pointer; -webkit-app-region: no-drag; }
-    button.talk { background: #1f2937; }
-    button.talk.live { background: #b42318; }
-    .hint, .partial, .answer { -webkit-app-region: no-drag; }
+    button { border: 0; border-radius: 10px; padding: 10px 12px; background: #1f6b32; color: white; font: inherit; cursor: pointer; -webkit-app-region: no-drag; display: inline-flex; align-items: center; justify-content: center; }
+    .hint, .partial, .answer { -webkit-app-region: no-drag; margin-left: 0; padding-left: 0; }
     .hint { margin-top: 8px; color: #9ca3af; font-size: 12px; }
+    .name-run { display: none; flex-direction: column; gap: 8px; margin-top: 10px; -webkit-app-region: no-drag; }
+    .name-run.on { display: flex; }
+    .name-run p { margin: 0; color: #e5e7eb; }
+    .name-run input, .name-run textarea { flex: none; width: 100%; box-sizing: border-box; background: #1f2937; color: white; border: 0; border-radius: 10px; padding: 10px 12px; font: inherit; }
+    .name-run textarea { min-height: 68px; resize: none; }
+    .name-run .save-row { display: flex; justify-content: flex-end; }
+    .name-run button { background: #1f6b32; }
+    .name-run .miss { color: #fca5a5; font-size: 12px; }
+    .name-run .miss:empty { display: none; }
     .partial { min-height: 0; margin-top: 6px; color: #d1d5db; }
     .answer { margin-top: 4px; color: white; }
     .note { display: none; margin-top: 10px; background: #1f2937; border-radius: 12px; -webkit-app-region: no-drag; }
@@ -25,25 +76,53 @@
     .note pre { margin: 0; padding: 10px 12px; max-height: 380px; overflow: auto; white-space: pre-wrap; word-wrap: break-word; font: 12.5px/1.5 Inter, "Segoe UI", sans-serif; color: #e5e7eb; user-select: text; }
     .note footer { display: flex; justify-content: flex-end; gap: 6px; padding: 0 8px 8px; }
     .note button { padding: 6px 10px; font-size: 12px; background: #374151; }
-    .spinner { width: 12px; height: 12px; border: 2px solid #374151; border-top-color: #86efac; border-radius: 50%; display: none; animation: spin .7s linear infinite; }
-    .spinner.on { display: inline-block; }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-  <div class="pill" id="pill">
+  <div class="pill out" id="pill">
     <div class="row">
-      <img class="logo" src="kiwi.svg" alt="" />
-      <strong>Kiwi</strong>
-      <span class="spinner" id="spinner"></span>
-      <span class="status" id="status">Ready</span>
+      <div class="brand">
+        <img class="logo" src="kiwi.svg" alt="" />
+        <div class="brand-copy">
+          <strong id="brand-title">Kiwi</strong>
+          <small id="brand-role"></small>
+        </div>
+      </div>
+      <div class="corner">
+        <span class="status" id="status"></span>
+        <button type="button" id="sign-out" aria-label="Log out"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(1.2 0)"><path d="M9 6H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/><path d="M13 16l4-4-4-4"/><path d="M9 12h8"/></g></svg></button>
+      </div>
     </div>
-    <form id="form">
-      <input id="question" placeholder="Where is Send Quote?" />
-      <button type="submit">Ask</button>
-      <button class="talk" id="talk" type="button">Talk</button>
+    <form class="sign-in" id="sign-in">
+      <p class="tagline">Your guide for the work on screen.</p>
+      <input id="email" type="text" placeholder="Work email" autocomplete="username" spellcheck="false" />
+      <button type="submit">SSO login</button>
     </form>
-    <div class="hint">Hold Control + Option to talk. Drag this bar to move Kiwi.</div>
+    <div class="session-error" id="session-error"></div>
+    <div class="workspace" id="workspace">
+    <form id="form">
+      <div class="ask">
+        <label class="search">
+          <input id="question" placeholder="Where is Send Quote?" />
+          <button class="enter" type="submit" aria-label="Ask"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 10l-5 5 5 5"/><path d="M4 15h11a5 5 0 0 0 0-10H9"/></svg></button>
+        </label>
+        <button class="talk" id="talk" type="button" aria-label="Talk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg></button>
+        <div class="rec" id="rec">
+          <button type="button" class="icon record" id="record" aria-label="Record"><svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><circle cx="6" cy="6" r="5"/></svg></button>
+          <button type="button" class="icon record" id="pause" aria-label="Pause" hidden><svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="1.5" width="2.6" height="9" rx="0.6"/><rect x="7.4" y="1.5" width="2.6" height="9" rx="0.6"/></svg></button>
+          <button type="button" class="icon stop" id="stop-record" aria-label="Stop" hidden><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><rect x="1" y="1" width="8" height="8" rx="1.5"/></svg></button>
+        </div>
+      </div>
+    </form>
+    <div class="hint">Hold Control + Option to talk.</div>
+    <form class="name-run" id="name-run">
+      <p id="run-count">Name this recording.</p>
+      <input id="run-title" type="text" placeholder="Title" autocomplete="off" spellcheck="false" />
+      <textarea id="run-note" placeholder="Note" spellcheck="true"></textarea>
+      <div class="miss" id="run-miss"></div>
+      <div class="save-row"><button type="submit">Save</button></div>
+    </form>
     <div class="partial" id="partial"></div>
     <div class="answer" id="answer"></div>
     <div class="note" id="note">
@@ -53,14 +132,15 @@
         <button type="button" id="note-copy">Copy</button>
       </footer>
     </div>
+    </div>
   </div>
   <script>
     const status = document.getElementById("status");
-    const spinner = document.getElementById("spinner");
     const partial = document.getElementById("partial");
     const answer = document.getElementById("answer");
     const talk = document.getElementById("talk");
-    let recording = false;
+    let micOn = false;
+    let recordMode = "idle";
     let audio = null;
     let holdGeneration = 0;
 
@@ -70,9 +150,11 @@
     }
 
     function setBusy(busy, label) {
-      spinner.classList.toggle("on", busy);
-      status.textContent = label;
-      status.classList.toggle("busy", busy);
+      const working = busy && label && label !== "Ready";
+      document.querySelector(".logo").classList.toggle("spin", working && label !== "Listening");
+      status.textContent = working ? label : "";
+      status.classList.toggle("on", working);
+      status.classList.toggle("busy", working);
     }
 
     window.kiwi.on("status", (payload) => {
@@ -99,9 +181,8 @@
       fit();
     });
     window.kiwi.on("listening", (on) => {
-      recording = on;
+      micOn = on;
       talk.classList.toggle("live", on);
-      talk.textContent = on ? "Stop" : "Talk";
       if (on) answer.textContent = "";
     });
     window.kiwi.on("cancel", () => {
@@ -110,6 +191,12 @@
     });
     window.kiwi.on("hold", async (down) => {
       if (down) {
+        await sessionReady;
+        if (!signedIn) {
+          document.getElementById("session-error").textContent = "Sign in with your work email first.";
+          fit();
+          return;
+        }
         const generation = ++holdGeneration;
         try {
           await ensureMic();
@@ -125,10 +212,55 @@
       window.kiwi.talkStop();
     });
 
-    document.getElementById("form").addEventListener("submit", (event) => {
+    let signedIn = null;
+    const sessionReady = window.kiwi.session().then(showSession);
+    function showSession(person) {
+      signedIn = person;
+      document.getElementById("pill").classList.toggle("out", !person);
+      document.getElementById("pill").classList.toggle("signed", Boolean(person));
+      document.getElementById("sign-in").hidden = Boolean(person);
+      document.getElementById("workspace").classList.toggle("on", Boolean(person));
+      document.getElementById("sign-out").classList.toggle("on", Boolean(person));
+      document.getElementById("brand-title").textContent = person ? "Kiwi · Fieldnote" : "Kiwi";
+      document.getElementById("brand-role").textContent = person ? `${person.name} (${person.role})` : "";
+      if (person) document.getElementById("session-error").textContent = "";
+      else {
+        answer.textContent = "";
+        partial.textContent = "";
+        note.classList.remove("on");
+        hideNaming();
+      }
+      fit();
+    }
+    window.kiwi.on("session", showSession);
+    document.getElementById("sign-in").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const email = document.getElementById("email").value;
+      const result = await window.kiwi.signIn(email);
+      if (!result.ok) {
+        document.getElementById("session-error").textContent = result.error;
+        fit();
+        return;
+      }
+      showSession(result);
+    });
+    document.getElementById("sign-out").addEventListener("click", async () => {
+      await window.kiwi.signOut();
+      showSession(null);
+      document.getElementById("email").value = "";
+    });
+
+    document.getElementById("form").addEventListener("submit", async (event) => {
       event.preventDefault();
       const question = document.getElementById("question").value.trim();
       if (!question) return;
+      await sessionReady;
+      if (!signedIn) {
+        document.getElementById("session-error").textContent = "Sign in with your work email first.";
+        fit();
+        return;
+      }
+      document.getElementById("session-error").textContent = "";
       partial.textContent = question;
       window.kiwi.ask(question);
     });
@@ -142,7 +274,7 @@
       const mute = context.createGain();
       mute.gain.value = 0;
       processor.onaudioprocess = (event) => {
-        if (!recording) return;
+        if (!micOn) return;
         const input = event.inputBuffer.getChannelData(0);
         const ratio = context.sampleRate / 16000;
         const length = Math.floor(input.length / ratio);
@@ -160,8 +292,63 @@
       return audio;
     }
 
+    let pendingRun = "";
+    function hideNaming() {
+      pendingRun = "";
+      document.getElementById("name-run").classList.remove("on");
+      document.getElementById("run-miss").textContent = "";
+    }
+    function showRecord(state) {
+      recordMode = state.mode;
+      document.getElementById("record").hidden = state.mode === "recording";
+      document.getElementById("pause").hidden = state.mode !== "recording";
+      document.getElementById("stop-record").hidden = state.mode === "idle";
+      fit();
+    }
+    window.kiwi.on("record", showRecord);
+    document.getElementById("record").addEventListener("click", async () => {
+      if (!signedIn) return;
+      hideNaming();
+      if (recordMode === "paused") await window.kiwi.recordResume();
+      else await window.kiwi.recordStart();
+    });
+    document.getElementById("pause").addEventListener("click", () => window.kiwi.recordPause());
+    document.getElementById("stop-record").addEventListener("click", async () => {
+      const saved = await window.kiwi.recordStop();
+      if (!saved || !saved.ok) return;
+      pendingRun = saved.id;
+      document.getElementById("run-title").value = "";
+      document.getElementById("run-note").value = "";
+      document.getElementById("run-miss").textContent = "";
+      document.getElementById("run-count").textContent = saved.beats
+        ? `${saved.beats} ${saved.beats === 1 ? "moment" : "moments"}. Add a title and a note.`
+        : "Nothing on screen changed. Add a title and a note.";
+      document.getElementById("name-run").classList.add("on");
+      document.getElementById("run-title").focus();
+      fit();
+    });
+    document.getElementById("name-run").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const title = document.getElementById("run-title").value.trim();
+      const note = document.getElementById("run-note").value.trim();
+      if (!title) {
+        document.getElementById("run-miss").textContent = "Add a title.";
+        fit();
+        return;
+      }
+      const result = await window.kiwi.recordName(pendingRun, title, note);
+      if (!result.ok) {
+        document.getElementById("run-miss").textContent = "Could not save that.";
+        fit();
+        return;
+      }
+      hideNaming();
+      answer.textContent = "Saved.";
+      fit();
+    });
+
     talk.addEventListener("click", async () => {
-      if (recording) {
+      if (micOn) {
         window.kiwi.talkStop();
         return;
       }
@@ -175,6 +362,7 @@
     });
 
     fit();
+    requestAnimationFrame(fit);
   </script>
 </body>
 </html>

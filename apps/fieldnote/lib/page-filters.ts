@@ -1,5 +1,6 @@
 import { readRecords } from "./data";
 import { filtersFor, optionsFor, type FilterFiles } from "./filters";
+import { signedInUser } from "./session";
 
 export async function filterFiles(): Promise<FilterFiles> {
   const [employees, territories, warehouses, products, suppliers] = await Promise.all([
@@ -13,8 +14,8 @@ export async function filterFiles(): Promise<FilterFiles> {
 }
 
 export async function loadFilters(path: string, params: Record<string, string | string[] | undefined>) {
-  const files = await filterFiles();
-  const filters = filtersFor(path).map((filter) => ({ ...filter, choices: optionsFor(filter, files) }));
+  const [files, person] = await Promise.all([filterFiles(), signedInUser()]);
+  const filters = filtersFor(path).map((filter) => ({ ...filter, choices: optionsFor(filter, files, person) }));
   const values: Record<string, string> = {};
   for (const filter of filters) {
     const raw = params[filter.name];

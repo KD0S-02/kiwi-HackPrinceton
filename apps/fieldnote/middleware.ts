@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import directory from "./lib/sign-in.json";
+
+const people = new Set(directory.map((person) => person.id));
 
 export function middleware(request: NextRequest) {
-  const signedIn = request.cookies.get("fieldnote_session")?.value === "user";
+  const signedIn = people.has(request.cookies.get("fieldnote_session")?.value ?? "");
   const isLogin = request.nextUrl.pathname === "/login";
   if (!signedIn && !isLogin) {
     const loginUrl = request.nextUrl.clone();

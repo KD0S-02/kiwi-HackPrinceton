@@ -1,3 +1,4 @@
+import { personById } from "../apps/fieldnote/lib/people.ts";
 import { openSession } from "./graph-session.ts";
 
 export type UserLookup = {
@@ -9,7 +10,33 @@ export type UserLookup = {
   org: { manager: string | null; territory: string | null; office: string | null };
 };
 
+function localPerson(userId: string): UserLookup | undefined {
+  const person = personById(userId);
+  if (!person) return undefined;
+  return {
+    id: person.id,
+    name: person.name,
+    role: person.role,
+    rules: [
+      { tool: "fieldnote", action: "discount", scope: "15 percent", allow: false },
+      { tool: "fieldnote", action: "send quote", scope: "own opportunities", allow: true },
+    ],
+    screens: [],
+    org: { manager: person.managerName || null, territory: person.territory, office: person.office },
+  };
+}
+
 export async function lookupUser(userId: string): Promise<UserLookup> {
+  try {
+    return await lookupFromGraph(userId);
+  } catch (error) {
+    const local = localPerson(userId);
+    if (local) return local;
+    throw error;
+  }
+}
+
+async function lookupFromGraph(userId: string): Promise<UserLookup> {
   const { session, close } = openSession();
   try {
     const result = await session.run(

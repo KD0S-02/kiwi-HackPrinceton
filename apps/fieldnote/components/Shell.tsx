@@ -2,7 +2,9 @@ import { headers } from "next/headers";
 import { Icon, type IconName } from "./Icon";
 import { Menu } from "./Menu";
 import { Logo } from "./Logo";
-import { currentUser, loadNames, nav, readRecords } from "../lib/data";
+import { loadNames, nav, readRecords } from "../lib/data";
+import { seesAll } from "../lib/people";
+import { signedInUser } from "../lib/session";
 
 const icons: Record<string, IconName> = {
   "/": "home",
@@ -39,6 +41,7 @@ function isCurrent(pathname: string, href: string) {
 
 export async function Shell({ children }: { children: React.ReactNode }) {
   const pathname = (await headers()).get("x-pathname") ?? "/";
+  const person = await signedInUser();
   const [approvals, cases, nameOf] = await Promise.all([
     readRecords("approvals.json"),
     readRecords("cases.json"),
@@ -46,10 +49,10 @@ export async function Shell({ children }: { children: React.ReactNode }) {
   ]);
   const alerts = [
     ...approvals
-      .filter((row) => row.requestedBy === "user" && row.status === "pending")
-      .map((row) => ({ id: String(row.id), href: `/opportunities/${row.opportunityId}`, title: `${nameOf(row.opportunityId)} is waiting on Alex Morgan (your manager)`, detail: "Discount approval pending" })),
+      .filter((row) => row.requestedBy === person.id && row.status === "pending")
+      .map((row) => ({ id: String(row.id), href: `/opportunities/${row.opportunityId}`, title: `${nameOf(row.opportunityId)} is waiting on ${person.approverName || "you"}`, detail: "Discount approval pending" })),
     ...cases
-      .filter((row) => row.ownerId === "user" && row.status === "open")
+      .filter((row) => row.status === "open" && (seesAll(person) || row.ownerId === person.id))
       .map((row) => ({ id: String(row.id), href: `/accounts/${row.accountId}`, title: `${nameOf(row.accountId)}: ${row.kind}`, detail: "Open case" })),
   ];
 
@@ -73,9 +76,9 @@ export async function Shell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
         <div className="sidebar-card">
-          <strong>Northeast</strong>
-          <span>Jersey City office</span>
-          <span>Your manager: Alex Morgan</span>
+          <strong>{person.territory}</strong>
+          <span>{person.office} office</span>
+          <span>{person.managerName ? `Your manager: ${person.managerName}` : "Owner"}</span>
         </div>
       </aside>
       <div className="workspace">
@@ -95,8 +98,8 @@ export async function Shell({ children }: { children: React.ReactNode }) {
               ))}
             </div>
           </Menu>
-          <Menu className="user-btn" label="Account menu" trigger={<><span className="avatar">{currentUser.initials}</span><span className="who"><strong>{currentUser.name}</strong><small>Account executive</small></span></>}>
-            <div className="menu-head">{currentUser.email}</div>
+          <Menu className="user-btn" label="Account menu" trigger={<><span className="avatar">{person.initials}</span><span className="who"><strong>{person.name}</strong><small>{person.role}</small></span></>}>
+            <div className="menu-head">{person.email}</div>
             <a className="menu-item" href="/profile"><Icon name="user" size={15} />Your profile</a>
             <a className="menu-item" href="/company"><Icon name="users" size={15} />Company directory</a>
             <form action="/api/logout" method="post">
