@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <style>
-    html, body { margin: 0; background: transparent; color: white; font: 13px/1.4 Inter, "Segoe UI", sans-serif; }
-    .pill { margin: 10px; background: #111827; border-radius: 18px; padding: 12px 14px 10px; box-shadow: 0 16px 40px rgba(0,0,0,.28); }
+    html, body { margin: 0; background: transparent; color: white; font: 13px/1.4 Inter, "Segoe UI", sans-serif; overflow: hidden; }
+    .pill { margin: 0; background: rgba(17, 24, 39, 0.72); -webkit-backdrop-filter: blur(28px) saturate(1.4); backdrop-filter: blur(28px) saturate(1.4); border-radius: 18px; padding: 12px 14px 10px; }
     .row { display: flex; align-items: center; gap: 8px; -webkit-app-region: drag; cursor: grab; }
     .row:active { cursor: grabbing; }
     .logo { width: 28px; height: 28px; }
@@ -65,7 +65,7 @@
     let holdGeneration = 0;
 
     function fit() {
-      const height = Math.ceil(document.getElementById("pill").getBoundingClientRect().height) + 20;
+      const height = Math.ceil(document.getElementById("pill").getBoundingClientRect().height);
       window.kiwi.fit(height);
     }
 
