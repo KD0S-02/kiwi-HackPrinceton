@@ -1,12 +1,17 @@
 import { ActionButton } from "../../../components/ActionButton";
+import { DeleteButton } from "../../../components/DeleteButton";
 import { ExportLink } from "../../../components/ExportLink";
+import { FilterBar } from "../../../components/FilterBar";
 import { loadNames, readRecords } from "../../../lib/data";
+import { ownerMatches, textMatches } from "../../../lib/filters";
+import { loadFilters } from "../../../lib/page-filters";
 
 export const dynamic = "force-dynamic";
 
-export default async function AccountsPage({ searchParams }: { searchParams: Promise<{ q?: string; scope?: string }> }) {
-  const { q = "", scope = "all" } = await searchParams;
-  const needle = q.trim().toLowerCase();
+export default async function AccountsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const params = await searchParams;
+  if (params.scope && !params.owner) params.owner = params.scope;
+  const { filters, values } = await loadFilters("/accounts", params);
   const [accounts, contacts, territories, warehouses, nameOf] = await Promise.all([
     readRecords("accounts.json"),
     readRecords("contacts.json"),
@@ -15,11 +20,13 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
     loadNames(),
   ]);
   const mine = accounts.filter((row) => row.ownerId === "user");
-  const pool = scope === "mine" ? mine : accounts;
-  const filtered = pool.filter((row) => {
-    if (!needle) return true;
-    return [row.name, row.buyerName, row.usualOrder, nameOf(row.territoryId), nameOf(row.warehouseId)].some((value) => String(value ?? "").toLowerCase().includes(needle));
-  });
+  const filtered = accounts.filter((row) =>
+    ownerMatches(row.ownerId, values.owner)
+    && (!values.territory || row.territoryId === values.territory)
+    && (!values.warehouse || row.warehouseId === values.warehouse)
+    && textMatches(values.q, [row.name, row.buyerName, row.usualOrder, nameOf(row.territoryId), nameOf(row.warehouseId)]));
+  const territoryOptions = territories.map((row) => ({ value: String(row.id), label: String(row.name) }));
+  const warehouseOptions = warehouses.map((row) => ({ value: String(row.id), label: String(row.name) }));
   const myContacts = contacts.filter((contact) => mine.some((account) => account.id === contact.accountId));
 
   return (
@@ -53,8 +60,8 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
               { name: "name", label: "Restaurant name", required: true, placeholder: "Taylor Bistro" },
               { name: "buyerName", label: "Buyer", placeholder: "Sam Lee" },
               { name: "usualOrder", label: "Usual order", placeholder: "napkins, fryer oil, and gloves" },
-              { name: "territoryId", label: "Territory", type: "select", options: territories.map((row) => ({ value: String(row.id), label: String(row.name) })) },
-              { name: "warehouseId", label: "Warehouse", type: "select", options: warehouses.map((row) => ({ value: String(row.id), label: String(row.name) })) },
+              { name: "territoryId", label: "Territory", type: "select", options: territoryOptions },
+              { name: "warehouseId", label: "Warehouse", type: "select", options: warehouseOptions },
             ]}
           />
         </div>
@@ -78,7 +85,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
           </div>
         </section>
         <aside className="panel">
-          <div className="panel-head"><h2>Buyers</h2><span>{myContacts.length}</span></div>
+          <div className="panel-head"><h2>Buyers</h2><a href="/contacts">All contacts →</a></div>
           <div className="scroll tall">
             {myContacts.map((contact) => (
               <a className="person" key={String(contact.id)} href={`/accounts/${contact.accountId}`}>
@@ -93,23 +100,16 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
         </aside>
       </div>
 
-      <section className="panel">
+      <section className="panel" data-kiwi="results">
         <div className="panel-head">
           <h2>All restaurants</h2>
-          <form className="toolbar" action="/accounts">
-            <input name="q" defaultValue={q} placeholder="Search name, buyer, warehouse" />
-            <select name="scope" defaultValue={scope}>
-              <option value="all">Everyone</option>
-              <option value="mine">Only mine</option>
-            </select>
-            <button className="btn ghost" type="submit">Search</button>
-          </form>
         </div>
+        <FilterBar path="/accounts" filters={filters} values={values} shown={filtered.length} total={accounts.length} noun="restaurants" />
         <div className="scroll tall">
           <table>
-            <thead><tr><th>Restaurant</th><th>Buyer</th><th>Territory</th><th>Owner</th><th>Warehouse</th><th>Usual order</th></tr></thead>
+            <thead><tr><th>Restaurant</th><th>Buyer</th><th>Territory</th><th>Owner</th><th>Warehouse</th><th>Usual order</th><th></th></tr></thead>
             <tbody>
-              {filtered.length === 0 ? <tr><td colSpan={6} className="empty">Nothing matches that search.</td></tr> : filtered.map((row) => (
+              {filtered.length === 0 ? <tr><td colSpan={7} className="empty">Nothing matches those filters.</td></tr> : filtered.map((row) => (
                 <tr key={String(row.id)}>
                   <td><a href={`/accounts/${row.id}`}>{row.name}</a></td>
                   <td>{row.buyerName}</td>
@@ -117,6 +117,26 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
                   <td>{nameOf(row.ownerId)}</td>
                   <td>{nameOf(row.warehouseId)}</td>
                   <td>{row.usualOrder}</td>
+                  <td>
+                    <div className="row-actions">
+                      <ActionButton
+                        small
+                        icon="edit"
+                        label="Edit"
+                        title={`Edit ${String(row.name)}`}
+                        endpoint={`/api/records/accounts/${row.id}`}
+                        method="PATCH"
+                        fields={[
+                          { name: "name", label: "Restaurant name", value: String(row.name), required: true },
+                          { name: "buyerName", label: "Buyer", value: String(row.buyerName ?? "") },
+                          { name: "usualOrder", label: "Usual order", value: String(row.usualOrder ?? "") },
+                          { name: "territoryId", label: "Territory", type: "select", value: String(row.territoryId), options: territoryOptions },
+                          { name: "warehouseId", label: "Warehouse", type: "select", value: String(row.warehouseId), options: warehouseOptions },
+                        ]}
+                      />
+                      <DeleteButton small endpoint={`/api/records/accounts/${row.id}`} name={String(row.name)} />
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>

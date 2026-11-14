@@ -28,3 +28,14 @@ export async function PATCH(request: Request, context: { params: Promise<{ modul
   await writeRecords(type.file, rows);
   return NextResponse.json({ id });
 }
+
+export async function DELETE(_request: Request, context: { params: Promise<{ module: string; id: string }> }) {
+  const { module: moduleKey, id } = await context.params;
+  const type = recordTypes[moduleKey];
+  if (!type?.deletable) return fail("That record cannot be deleted here.", 404);
+  const rows = await readRecords(type.file);
+  const kept = rows.filter((row) => row.id !== id);
+  if (kept.length === rows.length) return fail("Record not found.", 404);
+  await writeRecords(type.file, kept);
+  return NextResponse.json({ id });
+}

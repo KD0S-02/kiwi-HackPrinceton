@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requiredEnv } from "./load-env.ts";
 import { lookupUser } from "./lookup-user.ts";
 import { searchPages } from "./search-pages.ts";
+import { siteMap } from "./site-map.ts";
 
 export type Stop = {
   screen: number;
@@ -136,7 +137,10 @@ PAGE TEXT is what the Fieldnote page says right now, like the discount warning. 
 a disabled control cannot be clicked. say why instead.
 if a rule is allow false, finish with kind show. say why. never type a discount over 15. never click send while the picture shows a discount over 15.
 a tour is several show stops. before finish on a tour, call searchPages once so the stops follow the written page.
-a where question is one show stop with allow false. you are pointing, not doing it.`;
+a where question is one show stop with allow false. you are pointing, not doing it.
+to show a list, a page, or a filtered view ("show me open cases", "only Sparsh's deals in Proposal", "low oil stock in Chicago"), finish with one stop: kind click, allow true, target url: then the path and query, built only from SITE MAP params and values. say what is on screen in a few words, like "Here are the open cases." "my", "mine" and "Sparsh's" mean owner=mine on /accounts and /pipeline and ownerId=user on other lists. on /pipeline, owner=all means everyone. add an owner filter only when the question says my, mine, or names a person. who, which and list questions about records are url stops too, like "who in sales is in the west" is url:/people?department=sales&territoryId=west, and "which open cases are delivery complaints" is url:/cases?status=open&kind=delivery+complaint with no ownerId.
+to create, edit, or delete a record, use two stops: a click stop with url: for the right list, then a click stop on its button (New account, New opportunity, New order, New case, New purchase order, Edit, Delete). Sparsh fills in and confirms the dialog. never click confirm-delete.
+${siteMap()}`;
 
 let sharedAgent: ReturnType<typeof createDeepAgent> | undefined;
 let sharedModel: ChatGoogleGenerativeAI | undefined;
@@ -172,39 +176,6 @@ function knownContext(): string {
   return `KNOWN CONTEXT ${JSON.stringify({ user: userRecord, pages })}\n`;
 }
 
-// Gemini sometimes sits on a request for several seconds. If a call is slow,
-// send the same call again and take whichever answers first.
-const hedgeAfterMs = [1500];
-
-function hedged<T>(run: () => Promise<T>): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    let settled = false;
-    let failures = 0;
-    let launched = 1;
-    const finish = (value: T) => {
-      if (settled) return;
-      settled = true;
-      timer.clear();
-      resolve(value);
-    };
-    const fail = (error: unknown) => {
-      failures += 1;
-      if (!settled && failures === launched) {
-        settled = true;
-        timer.clear();
-        reject(error);
-      }
-    };
-    run().then(finish, fail);
-    const timers = hedgeAfterMs.map((delay) => setTimeout(() => {
-      if (settled) return;
-      launched += 1;
-      run().then(finish, fail);
-    }, delay));
-    const timer = { clear: () => timers.forEach(clearTimeout) };
-  });
-}
-
 export async function ask(input: { question: string; screenContext?: string; imagePngBase64?: string; imageMime?: "image/png" | "image/jpeg" }) {
   const question = `${knownContext()}${input.screenContext ? `${input.screenContext}\n` : ""}${input.question}`;
   const mime = input.imageMime ?? "image/png";
@@ -218,7 +189,7 @@ export async function ask(input: { question: string; screenContext?: string; ima
   // before the user record is cached still need the agent's lookup tools.
   const lean = Boolean(cache.get("user:user"))
     && Boolean(input.screenContext?.includes("PAGE CONTROLS"))
-    && !/\b(tour|walk|guide|explain|how do|usually|order|orders|history|buy|bought|stock|inventory|tell me about|last)\b/i.test(input.question);
+    && !/\b(tour|walk|guide|explain|how do|usually|history|bought|tell me about)\b/i.test(input.question);
   const run = lean
     ? async () => {
         const reply = await getModel()
@@ -231,7 +202,7 @@ export async function ask(input: { question: string; screenContext?: string; ima
   let lastError: unknown;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {
-      result = await hedged(run);
+      result = await run();
       break;
     } catch (error) {
       lastError = error;

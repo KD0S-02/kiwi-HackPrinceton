@@ -66,17 +66,28 @@ A Next.js 15 app styled like a real SaaS CRM, with a login screen (any password 
 | Screen | Purpose |
 |---|---|
 | Home | Greeting, KPI cards, "needs a decision" card, pipeline by stage, deals, open cases |
-| Accounts / Account detail | Restaurant list with search, and a per-restaurant page |
-| Pipeline | Opportunities by stage, waiting-on-manager list, export |
+| Accounts / Account detail | Restaurant list filtered by search, owner, territory and warehouse, plus a per-restaurant page |
+| Pipeline | Opportunities by stage, filtered by search, stage, owner, discount (over or within the cap) and minimum amount |
 | Opportunity | Stage path, Owner / Stage / Amount / Discount cards, Send Quote, tabs for Overview, Products, Activity, Approvals |
-| Fulfillment | Orders with filter tabs, invoices, shipments, cases |
-| Supply | Warehouses with stock bars, thinnest stock, purchase orders |
+| Fulfillment | Orders filtered by status, warehouse, search and amount, plus invoices, shipments and cases |
+| Supply | Warehouse cards (click one to filter), a stock table filtered by warehouse, family and low stock, and purchase orders |
 | Company | Pipeline by territory and a scrollable roster per office |
 | Search, Profile | Global search, and your profile and permissions |
 
-Older URLs (`/contacts`, `/invoices`, `/products`, and so on) redirect to the clubbed screens.
+Every record type also has its own list page with a search box and a filter for each column (`/contacts`, `/quotes`, `/approvals`, `/invoices`, `/shipments`, `/cases`, `/products`, `/suppliers`, `/purchase-orders`, `/inventory`, `/warehouses`, `/people`). The main screens link to them, and they keep the main screen highlighted in the nav.
 
-Working mock buttons: Clone, Change owner, Add product, Edit line, Log activity, Request approval, Save discount, Send Quote, New order, New purchase order, Cycle count, and CSV exports. They write to the JSON records through a generic, allow-listed record API. The discount can only change through its own route, and Send Quote checks both ownership and the 15 percent cap on the server.
+**Filters live in the URL.** `/pipeline?owner=all&stage=Proposal` opens the pipeline already filtered. Dropdowns apply as soon as you pick, the search box applies as you type, and "Clear filters" resets. The definitions are in `apps/fieldnote/lib/filters.ts`, and Kiwi reads the same file to build links, so the two cannot drift.
+
+**Create, edit and delete work everywhere.** New account, opportunity, order, case and purchase order; Edit on every row and record page; Delete with a confirmation box; plus Clone, Change owner, Add product, Edit line, Log activity, Request approval, Save discount, Send Quote, Cycle count, Follow and CSV exports. They write to the JSON records through an allow-listed record API (`GET` pages, `POST`, `PATCH`, `DELETE`). Approvals and stock lines cannot be deleted. The discount can only change through its own route, and Send Quote checks both ownership and the 15 percent cap on the server.
+
+### Kiwi and the CRM
+
+Kiwi gets a site map of every list, filter and allowed value (`scripts/site-map.ts`). "Show me open delivery-complaint cases" becomes one stop with target `url:/cases?status=open&kind=delivery+complaint`. Kiwi brings the Fieldnote tab forward, opens that URL in the page through the bridge (no reload), and points at the filter bar. On the current page it can also choose dropdown options and type in the search box. For create, edit and delete it opens the dialog and leaves the final click to you; it never presses the confirm button on Delete.
+
+Tests:
+
+- `npx tsx scripts/check-crm.ts` drives headless Chrome through the bridge and checks URL filters, filter controls, and the New, Edit and Delete dialogs. Quit Kiwi first, because it holds the bridge port.
+- `npx tsx scripts/check-filters.ts` asks Gemini a dozen list questions and checks that each URL renders.
 
 ## Run it
 
@@ -128,7 +139,7 @@ On top of that, each question takes the fastest path that can answer it:
 - **Local router** (`apps/desktop/router.ts`, under 1 ms). "Where is X", "open X", "switch to the Fieldnote tab" and "why can't I send the quote" are answered from the live page controls, the page's own warning text and the Chrome tab list, with no model call.
 - **Lean model call.** Other questions about the page on screen get one forced `finish` call with the page controls as text, without a screenshot or the agent loop. This usually takes 0.6 to 1.5 s.
 - **Full agent.** Data questions ("what does Harbor Diner usually order") and tours use the deepagents loop with its lookup tools.
-- **Hedged requests.** Gemini sometimes sits on a request for several seconds. If a call has not answered after 1.5 s, Kiwi sends the same call again and uses whichever answers first.
+- **Free-tier limit.** The Gemini free tier allows 15 requests a minute for this model. Past that, calls are throttled or rejected, which shows up as multi-second answers. A paid key removes most of the latency spikes.
 - **Going back to Fieldnote.** Before pointing, Kiwi brings the Fieldnote Chrome window and tab to the front, which switches macOS desktops if you moved away. The Chrome tab list is fetched as soon as you start holding the keys. Timings go to `/tmp/kiwi-timing.log`.
 
 Rejected on purpose: Redis (nothing to share across processes), putting the whole graph in the prompt (slow and noisy), and Pinecone on the click path.

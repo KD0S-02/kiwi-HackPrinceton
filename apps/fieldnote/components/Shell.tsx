@@ -13,7 +13,25 @@ const icons: Record<string, IconName> = {
   "/company": "users",
 };
 
+const parents: Record<string, string> = {
+  "/contacts": "/accounts",
+  "/quotes": "/pipeline",
+  "/approvals": "/pipeline",
+  "/invoices": "/orders",
+  "/shipments": "/orders",
+  "/cases": "/orders",
+  "/products": "/supply",
+  "/price-books": "/supply",
+  "/inventory": "/supply",
+  "/warehouses": "/supply",
+  "/suppliers": "/supply",
+  "/purchase-orders": "/supply",
+  "/people": "/company",
+};
+
 function isCurrent(pathname: string, href: string) {
+  const section = Object.entries(parents).find(([child]) => pathname === child || pathname.startsWith(`${child}/`))?.[1];
+  if (section) return section === href;
   if (href === "/") return pathname === "/";
   if (href === "/pipeline") return pathname === "/pipeline" || pathname.startsWith("/opportunities");
   return pathname === href || pathname.startsWith(`${href}/`);

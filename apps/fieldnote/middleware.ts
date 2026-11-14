@@ -14,20 +14,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/", request.url));
   }
   const clubbed: Record<string, string> = {
-    "/contacts": "/accounts",
     "/opportunities": "/pipeline",
-    "/quotes": "/pipeline",
-    "/approvals": "/pipeline",
-    "/invoices": "/orders",
-    "/shipments": "/orders",
-    "/cases": "/orders",
-    "/products": "/supply",
-    "/price-books": "/supply",
-    "/inventory": "/supply",
-    "/warehouses": "/supply",
-    "/suppliers": "/supply",
-    "/purchase-orders": "/supply",
-    "/people": "/company",
     "/reports": "/company",
   };
   const destination = clubbed[request.nextUrl.pathname];

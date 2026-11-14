@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { ActionButton } from "../../../../components/ActionButton";
+import { DeleteButton } from "../../../../components/DeleteButton";
 import { FollowButton } from "../../../../components/FollowButton";
 import { loadNames, money, readRecords, tone } from "../../../../lib/data";
 
@@ -58,6 +59,7 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
               { name: "warehouseId", label: "Warehouse", type: "select", value: String(account.warehouseId), options: warehouses.map((row) => ({ value: String(row.id), label: String(row.name) })) },
             ]}
           />
+          <DeleteButton endpoint={`/api/records/accounts/${id}`} name={String(account.name)} redirect="/accounts" />
           <ActionButton
             variant="primary"
             icon="note"

@@ -40,6 +40,10 @@ export function route(
     return undefined;
   }
   const show = all.some((word) => ["where", "show", "find", "point", "whats", "see"].includes(word));
+  const filtering = ["only", "with", "over", "under", "more", "less", "than", "which", "list", "filter", "filtered", "sort", "sorted", "by", "from",
+    "closed", "paid", "delivered", "pending", "picking", "received", "low", "mine", "everyone", "proposal", "qualify", "commit",
+    "new", "create", "add", "edit", "delete", "remove", "rename", "update", "cases", "invoices", "shipments", "products", "suppliers", "deals"];
+  if (all.some((word) => filtering.includes(word)) || (show && all.includes("open"))) return undefined;
   const click = all.some((word) => ["open", "go", "take", "click", "press", "switch", "navigate", "bring"].includes(word));
   if (!show && !click) return undefined;
 

@@ -124,6 +124,9 @@ function runInput(args: string[]) {
 
 function refusal(stop: Stop) {
   if (!stop.allow) return "";
+  if (stop.kind === "click" && /confirm-delete/i.test(stop.target)) {
+    return "I opened it, but deleting is your call. Press Delete if you're sure.";
+  }
   if (stop.kind === "type" && /discount/i.test(`${stop.label} ${stop.target}`) && Number(stop.text) > 15) {
     return "I won't type a discount over 15. Your manager, Alex Morgan, has to approve that.";
   }
@@ -146,6 +149,8 @@ async function screenContext() {
       id: control.id || undefined,
       label: control.label,
       ...(control.disabled ? { disabled: true } : {}),
+      ...(control.value ? { value: control.value } : {}),
+      ...(control.options ? { options: control.options } : {}),
     }));
     lines.push(`PAGE CONTROLS on Fieldnote ${page?.path} ${JSON.stringify(listed)}`);
     if (page?.facts?.length) lines.push(`PAGE TEXT ${JSON.stringify(page.facts)}`);
@@ -180,6 +185,25 @@ async function playStop(stop: Stop, guess: { x: number; y: number } | undefined)
   const doing = stop.allow && stop.kind !== "show";
   const blocked = refusal(stop);
   const target = stop.target.trim();
+
+  if (/^url:/i.test(target)) {
+    if (!pageIsOpen()) {
+      send("answer", "Open Fieldnote in Chrome first, then ask me again.");
+      return;
+    }
+    await bringPageForward();
+    send("answer", stop.say);
+    const opened = await askPage({ op: "navigate", url: target.slice(4).trim() }, 6500);
+    if (!opened?.ok) {
+      send("answer", opened?.error ?? "Fieldnote did not open that page.");
+      return;
+    }
+    let spot = await askPage({ op: "locate", target: "filters" }, 600);
+    if (!spot?.ok) spot = await askPage({ op: "locate", target: "results" }, 600);
+    if (spot?.ok && spot.rect) fly(spot.rect.x, spot.rect.y);
+    await wait(1200);
+    return;
+  }
 
   if (/^tab:/i.test(target)) {
     send("answer", stop.say);

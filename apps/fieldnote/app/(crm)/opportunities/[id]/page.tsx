@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { ActionButton } from "../../../../components/ActionButton";
+import { DeleteButton } from "../../../../components/DeleteButton";
 import { loadNames, money, readRecords, readRules, tone } from "../../../../lib/data";
 import { DiscountEditor } from "./discount-editor";
 
@@ -80,6 +81,7 @@ export default async function OpportunityPage({
             fields={[{ name: "ownerId", label: "New owner", type: "select", value: String(opportunity.ownerId), options: owners.map((row) => ({ value: String(row.id), label: `${String(row.name)} · ${String(row.role)}` })) }]}
           />
           <a className="btn ghost" href={`/accounts/${opportunity.accountId}`}>View account</a>
+          <DeleteButton endpoint={`/api/records/opportunities/${id}`} name={String(opportunity.name)} redirect="/pipeline" />
         </div>
       </div>
 

@@ -1,5 +1,9 @@
 import { notFound } from "next/navigation";
-import { columnLabel, modules, readRecords } from "../../../../lib/data";
+import { ActionButton } from "../../../../components/ActionButton";
+import { DeleteButton } from "../../../../components/DeleteButton";
+import { FollowButton } from "../../../../components/FollowButton";
+import { columnLabel, modules, readRecords, recordTypes } from "../../../../lib/data";
+import { choiceLists, formFields } from "../../../../lib/record-fields";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +14,10 @@ export default async function ModuleDetailPage({ params }: { params: Promise<{ m
   const rows = await readRecords(moduleConfig.file);
   const row = rows.find((candidate) => candidate.id === id);
   if (!row) notFound();
+  const type = recordTypes[moduleKey];
+  const choices = await choiceLists();
+  const title = String(row.name ?? row.id);
+  const accountId = moduleKey === "accounts" ? id : typeof row.accountId === "string" ? row.accountId : undefined;
   const [employees, warehouses, territories, accounts] = await Promise.all([
     readRecords("employees.json"),
     readRecords("warehouses.json"),
@@ -27,9 +35,28 @@ export default async function ModuleDetailPage({ params }: { params: Promise<{ m
           <h1>{String(row.name ?? row.id)}</h1>
         </div>
         <div className="actions">
-          <button className="ghost" type="button">Edit</button>
-          <button className="ghost" type="button">Follow</button>
-          <button className="primary" type="button">Log activity</button>
+          <FollowButton id={`${moduleKey}-${id}`} />
+          {type && type.patchable.length > 0 ? (
+            <ActionButton
+              icon="edit"
+              label="Edit"
+              title={`Edit ${title}`}
+              endpoint={`/api/records/${moduleKey}/${id}`}
+              method="PATCH"
+              fields={formFields(type.patchable, choices, rows, row)}
+            />
+          ) : null}
+          {type?.deletable ? <DeleteButton endpoint={`/api/records/${moduleKey}/${id}`} name={title} redirect={`/${moduleKey}`} /> : null}
+          <ActionButton
+            variant="primary"
+            icon="note"
+            label="Log activity"
+            title="Log activity"
+            description={`A note on ${title} that your team can see.`}
+            endpoint="/api/records/activity"
+            hidden={accountId ? { accountId } : {}}
+            fields={[{ name: "text", label: "Note", type: "textarea", required: true, placeholder: `Called about ${title}.` }]}
+          />
         </div>
       </div>
       <div className="highlights">

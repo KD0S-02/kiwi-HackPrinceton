@@ -27,6 +27,7 @@ export default async function CompanyPage() {
           <p>{employees.length} people in {offices.length} offices. Sparsh Bohra reports to Alex Morgan (manager), who reports to Sam Ortiz (VP of Sales).</p>
         </div>
         <div className="actions">
+          <a className="btn ghost" href="/people">Roster</a>
           <ExportLink name="people" label="Export roster" />
         </div>
       </div>

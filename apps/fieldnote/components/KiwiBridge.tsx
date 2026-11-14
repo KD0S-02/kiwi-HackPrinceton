@@ -1,19 +1,22 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 
-type Request = { id: number; op: "inventory" | "locate" | "act"; target?: string; kind?: "show" | "click" | "type"; text?: string };
+type Request = { id: number; op: "inventory" | "locate" | "act" | "navigate"; target?: string; kind?: "show" | "click" | "type"; text?: string; url?: string };
 
 const clickable = "a[href], button, input, select, textarea, [role=tab], [role=button], [data-kiwi]";
 
 function labelOf(element: Element) {
   const html = element as HTMLElement;
   const input = element as HTMLInputElement;
+  if (element instanceof HTMLSelectElement || element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+    return (element.getAttribute("aria-label") || input.placeholder || element.getAttribute("title") || element.name || "").replace(/\s+/g, " ").trim().slice(0, 60);
+  }
   return (
     element.getAttribute("aria-label") ||
     html.innerText ||
     input.value ||
-    input.placeholder ||
     element.getAttribute("title") ||
     ""
   ).replace(/\s+/g, " ").trim().slice(0, 60);
@@ -60,39 +63,91 @@ function flash(element: HTMLElement) {
   }, 2400);
 }
 
+function choose(select: HTMLSelectElement, text: string) {
+  const wanted = text.trim().toLowerCase();
+  const options = [...select.options];
+  const option =
+    options.find((item) => item.value.toLowerCase() === wanted || item.label.toLowerCase() === wanted) ??
+    options.find((item) => item.label.toLowerCase().includes(wanted) || item.value.toLowerCase().includes(wanted));
+  if (!option) return `${labelOf(select)} has no option called ${text}.`;
+  Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")?.set?.call(select, option.value);
+  select.dispatchEvent(new Event("change", { bubbles: true }));
+  return "";
+}
+
 function setValue(element: HTMLElement, text: string) {
+  if (element instanceof HTMLSelectElement) return choose(element, text);
   const input = element as HTMLInputElement;
   const prototype = element instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
   Object.getOwnPropertyDescriptor(prototype, "value")?.set?.call(input, text);
   input.dispatchEvent(new Event("input", { bubbles: true }));
   input.dispatchEvent(new Event("change", { bubbles: true }));
+  return "";
 }
 
-function handle(request: Request) {
-  if (request.op === "inventory") {
-    const controls = ([...document.querySelectorAll(clickable)].filter(isShown) as HTMLElement[])
-      .filter((element) => {
-        const rect = element.getBoundingClientRect();
-        return rect.bottom > 0 && rect.top < window.innerHeight;
-      })
-      .slice(0, 70)
-      .map((element) => {
-        const input = element as HTMLInputElement & { disabled?: boolean };
-        return {
-          id: element.id || element.dataset.kiwi || "",
-          label: labelOf(element),
-          kind: element.tagName.toLowerCase(),
-          disabled: Boolean(input.disabled),
-        };
-      })
-      .filter((control) => control.id || control.label);
-    const facts = [...document.querySelectorAll("h1, #stage, #amount, #quote-message, .warning, .pill")]
-      .filter(isShown)
-      .slice(0, 12)
-      .map((element) => ({ id: element.id || "", text: labelOf(element) }))
-      .filter((fact) => fact.text);
-    return { ok: true, path: location.pathname, title: document.title, controls, facts };
+function describe(element: HTMLElement) {
+  const input = element as HTMLInputElement & { disabled?: boolean };
+  const control: { id: string; label: string; kind: string; disabled: boolean; value?: string; options?: string[] } = {
+    id: element.id || element.dataset.kiwi || "",
+    label: labelOf(element),
+    kind: element.tagName.toLowerCase(),
+    disabled: Boolean(input.disabled),
+  };
+  if (element instanceof HTMLSelectElement) {
+    control.value = element.selectedOptions[0]?.label ?? "";
+    control.options = [...element.options].slice(0, 16).map((option) => option.label);
+  } else if ((element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) && element.value) {
+    control.value = element.value.slice(0, 60);
   }
+  return control;
+}
+
+function inventory() {
+  const controls = ([...document.querySelectorAll(clickable)].filter(isShown) as HTMLElement[])
+    .filter((element) => {
+      const rect = element.getBoundingClientRect();
+      return rect.bottom > 0 && rect.top < window.innerHeight;
+    })
+    .slice(0, 70)
+    .map(describe)
+    .filter((control) => control.id || control.label);
+  const facts = [...document.querySelectorAll("h1, #stage, #amount, #quote-message, #filter-count, .warning, .pill")]
+    .filter(isShown)
+    .slice(0, 12)
+    .map((element) => ({ id: element.id || "", text: labelOf(element) }))
+    .filter((fact) => fact.text);
+  return { ok: true, path: location.pathname + location.search, title: document.title, controls, facts };
+}
+
+function waitFor(check: () => boolean, timeoutMs: number) {
+  return new Promise<boolean>((resolve) => {
+    const started = Date.now();
+    const tick = () => {
+      if (check()) resolve(true);
+      else if (Date.now() - started > timeoutMs) resolve(false);
+      else setTimeout(tick, 40);
+    };
+    tick();
+  });
+}
+
+async function navigate(url: string, push: (href: string) => void) {
+  const target = new URL(url, location.href);
+  if (target.origin !== location.origin) return { ok: false, error: "Kiwi only opens Fieldnote pages." };
+  const wanted = target.pathname + target.search;
+  if (location.pathname + location.search !== wanted) {
+    push(wanted);
+    const arrived = await waitFor(() => location.pathname + location.search === wanted, 6000);
+    if (!arrived) return { ok: false, error: "That page took too long to open." };
+  }
+  await new Promise((resolve) => setTimeout(resolve, 120));
+  window.scrollTo({ top: 0 });
+  return { ok: true };
+}
+
+async function handle(request: Request, push: (href: string) => void) {
+  if (request.op === "inventory") return inventory();
+  if (request.op === "navigate") return navigate(request.url ?? "/", push);
   const element = request.target ? find(request.target) : undefined;
   if (!element) return { ok: false, error: `No control called ${request.target} on this page.` };
   element.scrollIntoView({ block: "center", inline: "nearest" });
@@ -104,7 +159,8 @@ function handle(request: Request) {
   flash(element);
   if (request.kind === "type") {
     element.focus();
-    setValue(element, request.text ?? "");
+    const problem = setValue(element, request.text ?? "");
+    if (problem) return { ok: false, error: problem, rect: screenRect(element) };
   } else {
     element.click();
   }
@@ -112,11 +168,16 @@ function handle(request: Request) {
 }
 
 export function KiwiBridge() {
+  const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
+
   useEffect(() => {
     let socket: WebSocket | undefined;
     let retry: ReturnType<typeof setTimeout> | undefined;
     let stopped = false;
-    const state = () => ({ type: "state", visible: document.visibilityState === "visible", focused: document.hasFocus(), path: location.pathname, url: location.href });
+    const push = (href: string) => routerRef.current.push(href, { scroll: false });
+    const state = () => ({ type: "state", visible: document.visibilityState === "visible", focused: document.hasFocus(), path: location.pathname + location.search, url: location.href, agent: navigator.userAgent });
     const report = () => {
       if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(state()));
     };
@@ -124,11 +185,11 @@ export function KiwiBridge() {
       if (stopped) return;
       socket = new WebSocket("ws://127.0.0.1:4555");
       socket.onopen = report;
-      socket.onmessage = (event) => {
+      socket.onmessage = async (event) => {
         const request = JSON.parse(String(event.data)) as Request;
         let reply: Record<string, unknown>;
         try {
-          reply = handle(request);
+          reply = await handle(request, push);
         } catch (error) {
           reply = { ok: false, error: error instanceof Error ? error.message : String(error) };
         }
