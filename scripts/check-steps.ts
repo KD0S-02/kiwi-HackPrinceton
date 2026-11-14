@@ -1,5 +1,5 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { prepareStops, stillToDo } from "../apps/desktop/steps.ts";
+import { StepBuffer, goalReached, prepareStops, stepAligned, stillToDo } from "../apps/desktop/steps.ts";
 import { ask, primeCache, type Stop } from "./ask.ts";
 import { requiredEnv } from "./load-env.ts";
 import { lookupUser } from "./lookup-user.ts";
@@ -36,6 +36,25 @@ const localOk = score(repaired, true).ok && stillToDo(question, repaired) === fa
   && stillToDo(question, [repaired[0]]) === true;
 console.log(`${localOk ? "pass" : "FAIL"} local repair opens the deal, types 15, and saves\n     ${summary(repaired)}`);
 if (!localOk) process.exit(1);
+
+const blank = { screen: 0, x: 0, y: 0, draw: "circle" as const, say: "", allow: true, text: "" };
+const openDeal = { ...blank, label: "Harbor Diner", kind: "click" as const, target: "url:/opportunities/opp-harbor-diner" };
+const typeDiscount = { ...blank, label: "Discount", kind: "type" as const, target: "discount", text: "15" };
+const saveDiscount = { ...blank, label: "Save", kind: "click" as const, target: "save-discount" };
+const buffer = new StepBuffer();
+buffer.push([openDeal, typeDiscount, saveDiscount, { ...blank, label: "Extra", kind: "show", target: "none" }]);
+const queued = [buffer.takeNext(), buffer.takeNext(), buffer.takeNext(), buffer.takeNext()];
+const bufferOk = queued[0]?.target === openDeal.target && queued[1]?.target === "discount" && queued[2]?.target === "save-discount" && queued[3] === undefined;
+const homeAligned = stepAligned(openDeal, homeControls) && !stepAligned(typeDiscount, homeControls);
+const dealControls = [{ id: "discount", label: "Discount" }, { id: "save-discount", label: "Save" }];
+const dealAligned = stepAligned(typeDiscount, dealControls) && stepAligned(saveDiscount, dealControls);
+const discountDone = goalReached(question, [openDeal, typeDiscount, saveDiscount], true) && !goalReached(question, [openDeal], true);
+const listDone = goalReached("show me open cases", [{ ...blank, label: "Cases", kind: "click", target: "url:/cases?status=open" }], true);
+if (!bufferOk || !homeAligned || !dealAligned || !discountDone || !listDone) {
+  console.log("FAIL buffer", { bufferOk, homeAligned, dealAligned, discountDone, listDone });
+  process.exit(1);
+}
+console.log("pass buffer keeps plan order, drops a step that is not on the page, and stops when the goal is met");
 
 primeCache(await lookupUser("user"), [
   { source: "discount-policy.md", text: "An account executive may discount up to 15 percent and may send a quote on their own opportunities." },
