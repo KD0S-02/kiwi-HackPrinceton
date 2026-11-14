@@ -50,8 +50,20 @@ const dealControls = [{ id: "discount", label: "Discount" }, { id: "save-discoun
 const dealAligned = stepAligned(typeDiscount, dealControls) && stepAligned(saveDiscount, dealControls);
 const discountDone = goalReached(question, [openDeal, typeDiscount, saveDiscount], true) && !goalReached(question, [openDeal], true);
 const listDone = goalReached("show me open cases", [{ ...blank, label: "Cases", kind: "click", target: "url:/cases?status=open" }], true);
-if (!bufferOk || !homeAligned || !dealAligned || !discountDone || !listDone) {
-  console.log("FAIL buffer", { bufferOk, homeAligned, dealAligned, discountDone, listDone });
+const tara = "can I add a new restaurant called Tara?";
+const taraClosed = prepareStops(tara, [{ ...blank, label: "New account", kind: "show", target: "new-account" }], homeControls);
+const taraOpen = prepareStops(tara, [], [{ id: "new-account-name", label: "Restaurant name" }, { id: "new-account-submit", label: "Create account" }]);
+const taraZip = "add a restaurant called Tara Bistro at 07302";
+const taraCreate = prepareStops(taraZip, [], [{ id: "new-account-name", label: "Restaurant name", value: "Tara Bistro" }, { id: "new-account-zip", label: "ZIP code" }, { id: "new-account-submit", label: "Create account" }]);
+const howTo = prepareStops("how do I add a new restaurant called Tara?", [{ ...blank, label: "New account", kind: "show", target: "new-account" }], homeControls);
+const accountOk = taraClosed.map((stop) => stop.target).join(",") === "url:/accounts,new-account"
+  && taraOpen[0]?.target === "new-account-name" && taraOpen[0]?.text === "Tara" && /zip/i.test(taraOpen[0]?.say ?? "") && taraOpen.length === 1
+  && taraCreate.map((stop) => `${stop.kind}:${stop.target}:${stop.text}`).join(",") === "type:new-account-zip:07302,click:new-account-submit:"
+  && !goalReached(tara, taraClosed, true)
+  && goalReached(tara, taraOpen, true)
+  && howTo.length === 1 && howTo[0]?.target === "new-account";
+if (!bufferOk || !homeAligned || !dealAligned || !discountDone || !listDone || !accountOk) {
+  console.log("FAIL buffer", { bufferOk, homeAligned, dealAligned, discountDone, listDone, accountOk });
   process.exit(1);
 }
 console.log("pass buffer keeps plan order, drops a step that is not on the page, and stops when the goal is met");
