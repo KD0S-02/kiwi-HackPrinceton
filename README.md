@@ -140,7 +140,7 @@ Kiwi keeps Clicky's interaction: hold Control + Option to talk, a buddy that fol
 ### Not done yet
 
 - **Voice and permissions are untested end to end.** The code exists, but nobody has yet held Control + Option on a real session and heard it answer back.
-- **Kiwi does not click or type yet.** It points and explains. The `click` and `type` stops are returned by the agent but not executed.
+- **Clicking and typing are new and lightly tested.** Kiwi now presses and types through `apps/desktop/input/kiwi-input` (a small Swift helper that posts mouse and key events, using Kiwi's Accessibility permission). It only acts when you ask it to open, press or set something and the rule allows it. It refuses to type a discount over 15.
 - **No spoken replies.** Kiwi answers on screen only. There is no text to speech.
 - **No permission card.** Kiwi has no "OK to do this for you?" step before an action.
 - **Tours** return stops, but only the first stop is shown. There is no step-through.
@@ -150,7 +150,7 @@ Kiwi keeps Clicky's interaction: hold Control + Option to talk, a buddy that fol
 
 ### Further scope of improvement
 
-- Execute clicks and typing through the OS (Accessibility API), gated by the same rules the agent already follows, with a confirmation card.
+- A confirmation card before Kiwi clicks or types, and click targets from the accessibility tree instead of a vision guess.
 - Spoken answers: stream text to speech like Clicky does with ElevenLabs.
 - Multi-stop tours with next and back, and an on-screen progress dot trail.
 - Stream the model response so the first words show while the answer is still being produced.

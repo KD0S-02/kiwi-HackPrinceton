@@ -1,10 +1,11 @@
+import { execFile } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { app, BrowserWindow, desktopCapturer, globalShortcut, ipcMain, nativeImage, screen, session, shell, systemPreferences } from "electron";
 import { uIOhook, UiohookKey } from "uiohook-napi";
 import { AssemblyAI, StreamingTranscriber } from "assemblyai";
-import { ask, primeCache } from "../../scripts/ask.ts";
+import { ask, primeCache, type Stop } from "../../scripts/ask.ts";
 import { requiredEnv } from "../../scripts/load-env.ts";
 import { lookupUser } from "../../scripts/lookup-user.ts";
 
@@ -110,6 +111,45 @@ async function captureScreen() {
   };
 }
 
+const inputHelper = path.join(here, "input", "kiwi-input");
+
+function runInput(args: string[]) {
+  return new Promise<void>((resolve, reject) => {
+    execFile(inputHelper, args, (error) => (error ? reject(error) : resolve()));
+  });
+}
+
+function refusal(stop: Stop) {
+  if (!stop.allow) return "";
+  if (stop.kind === "type" && /discount/i.test(stop.label) && Number(stop.text) > 15) {
+    return "I won't type a discount over 15. Your manager, Alex Morgan, has to approve that.";
+  }
+  return "";
+}
+
+async function act(stop: Stop, screenX: number, screenY: number) {
+  if (stop.kind === "show" || !stop.allow) {
+    await new Promise((resolve) => setTimeout(resolve, stop.kind === "show" ? 1200 : 600));
+    return;
+  }
+  const blocked = refusal(stop);
+  if (blocked) {
+    send("answer", blocked);
+    return;
+  }
+  await new Promise((resolve) => setTimeout(resolve, 700));
+  try {
+    await runInput(["click", screenX.toFixed(0), screenY.toFixed(0)]);
+    if (stop.kind === "type" && stop.text) {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      await runInput(["type", stop.text]);
+    }
+  } catch (error) {
+    send("answer", `I couldn't press it: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  await new Promise((resolve) => setTimeout(resolve, 500));
+}
+
 async function answerQuestion(question: string) {
   const current = ++runId;
   transcript = "";
@@ -123,16 +163,19 @@ async function answerQuestion(question: string) {
     const asked = prior ? `Earlier:\n${prior}\n\n${question}` : question;
     const result = await ask({ question: asked, imagePngBase64: shot.base64, imageMime: "image/jpeg" });
     if (current !== runId) return;
-    const stop = result.stops[0];
-    if (!stop) throw new Error("Kiwi did not return a stop.");
-    const screenX = shot.display.bounds.x + (stop.x / shot.width) * shot.display.bounds.width;
-    const screenY = shot.display.bounds.y + (stop.y / shot.height) * shot.display.bounds.height;
+    if (result.stops.length === 0) throw new Error("Kiwi did not return a stop.");
     overlay.setBounds(shot.display.bounds);
     const placed = overlay.getBounds();
     overlay.showInactive();
-    point({ x: screenX - placed.x, y: screenY - placed.y, say: stop.say });
-    send("answer", stop.say);
-    history.push(`User: ${question}`, `Kiwi: ${stop.say}`);
+    for (const stop of result.stops) {
+      if (current !== runId) return;
+      const screenX = shot.display.bounds.x + (stop.x / shot.width) * shot.display.bounds.width;
+      const screenY = shot.display.bounds.y + (stop.y / shot.height) * shot.display.bounds.height;
+      point({ x: screenX - placed.x, y: screenY - placed.y, say: stop.say });
+      send("answer", stop.say);
+      await act(stop, screenX, screenY);
+    }
+    history.push(`User: ${question}`, `Kiwi: ${result.stops.map((stop) => stop.say).join(" ")}`);
   } catch (error) {
     if (current !== runId) return;
     send("answer", error instanceof Error ? error.message : String(error));

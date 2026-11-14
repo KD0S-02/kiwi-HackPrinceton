@@ -3,6 +3,7 @@
 # every rebuild changes the signature, and macOS then asks for permissions again.
 set -e
 cd "$(dirname "$0")/.."
+swiftc -O apps/desktop/input/kiwi-input.swift -o apps/desktop/input/kiwi-input
 rm -rf dist/Kiwi.app
 mkdir -p dist
 cp -R node_modules/electron/dist/Electron.app dist/Kiwi.app
