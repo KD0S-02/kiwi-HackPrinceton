@@ -6,9 +6,10 @@ import { app, BrowserWindow, desktopCapturer, globalShortcut, ipcMain, nativeIma
 import { uIOhook, UiohookKey } from "uiohook-napi";
 import { AssemblyAI, StreamingTranscriber } from "assemblyai";
 import { ask, primeCache, type Stop } from "../../scripts/ask.ts";
-import { askPage, pageIsOpen, pageUrl, startBridge } from "./bridge.ts";
+import { askPage, startBridge } from "./bridge.ts";
+import { ensureFieldnote } from "./fieldnote.ts";
 import { route } from "./router.ts";
-import { chromeTabs, focusChromeUrl, openChromeTab, prefetchChromeTabs } from "./chrome.ts";
+import { chromeTabs, openChromeTab, prefetchChromeTabs } from "./chrome.ts";
 import { requiredEnv } from "../../scripts/load-env.ts";
 import { lookupUser } from "../../scripts/lookup-user.ts";
 
@@ -97,40 +98,6 @@ async function warmCache() {
   }
 }
 
-async function captureScreen() {
-  const cursor = screen.getCursorScreenPoint();
-  const display = screen.getDisplayNearestPoint(cursor);
-  panel.hide();
-  overlay.hide();
-  await new Promise((resolve) => setTimeout(resolve, 180));
-  const sources = await desktopCapturer.getSources({
-    types: ["screen"],
-    thumbnailSize: { width: 1024, height: 640 },
-  });
-  const source = sources.find((item) => item.display_id === String(display.id)) ?? sources[0];
-  panel.showInactive();
-  if (!source || source.thumbnail.isEmpty()) {
-    throw new Error("Screen Recording is off for Electron. Turn it on in System Settings, then ask again.");
-  }
-  overlay.showInactive();
-  const image = source.thumbnail;
-  const size = image.getSize();
-  return {
-    base64: image.toJPEG(60).toString("base64"),
-    width: size.width,
-    height: size.height,
-    display,
-  };
-}
-
-const inputHelper = path.join(here, "input", "kiwi-input");
-
-function runInput(args: string[]) {
-  return new Promise<void>((resolve, reject) => {
-    execFile(inputHelper, args, (error) => (error ? reject(error) : resolve()));
-  });
-}
-
 function refusal(stop: Stop) {
   if (!stop.allow) return "";
   if (stop.kind === "click" && /confirm-delete/i.test(stop.target)) {
@@ -163,6 +130,8 @@ async function screenContext() {
     }));
     lines.push(`PAGE CONTROLS on Fieldnote ${page?.path} ${JSON.stringify(listed)}`);
     if (page?.facts?.length) lines.push(`PAGE TEXT ${JSON.stringify(page.facts)}`);
+  } else {
+    lines.push("FIELDNOTE IS NOT OPEN. kiwi opens it for you. start with a url: stop for the page that has what they want.");
   }
   return { text: lines.join("\n"), controls, tabs, facts: page?.ok ? page.facts ?? [] : [] };
 }
@@ -178,15 +147,24 @@ function overlayPoint(screenX: number, screenY: number) {
   return { x: screenX - placed.x, y: screenY - placed.y };
 }
 
-async function bringPageForward() {
-  const url = pageUrl();
-  if (!url) return false;
-  const result = await focusChromeUrl(new URL(url).host + new URL(url).pathname);
-  if (result === "moved") await wait(450);
-  return result !== "";
+// "Show me open cases" is not "show me my open cases". The model reads "me" as mine, so
+// an owner filter stays only when the question says whose records it wants.
+function onlyAskedOwner(question: string, target: string) {
+  if (!/^url:/i.test(target) || /\b(my|mine|i own|i'm on|sparsh)\b/i.test(question)) return target;
+  const [path, query = ""] = target.slice(4).trim().split("?");
+  const params = new URLSearchParams(query);
+  if (params.get("owner") === "mine") params.delete("owner");
+  if (params.get("ownerId") === "user") params.delete("ownerId");
+  const rest = params.toString();
+  return `url:${path}${rest ? `?${rest}` : ""}`;
 }
 
-async function playStop(stop: Stop, guess: { x: number; y: number } | undefined) {
+function urlOf(target: string) {
+  const path = target.replace(/^url:/i, "").trim();
+  return path.startsWith("/") ? path : `/${path}`;
+}
+
+async function playStop(stop: Stop) {
   const fly = (screenX: number, screenY: number, say = stop.say) => {
     point({ ...overlayPoint(screenX, screenY), say });
     send("answer", say);
@@ -195,14 +173,41 @@ async function playStop(stop: Stop, guess: { x: number; y: number } | undefined)
   const blocked = refusal(stop);
   const target = stop.target.trim();
 
-  if (/^url:/i.test(target)) {
-    if (!pageIsOpen()) {
-      send("answer", "Open Fieldnote in Chrome first, then ask me again.");
+  if (!target || target === "none") {
+    send("answer", stop.say);
+    return;
+  }
+
+  if (/^tab:/i.test(target)) {
+    send("answer", stop.say);
+    if (!doing || blocked) {
+      if (blocked) send("answer", blocked);
+      await wait(1200);
       return;
     }
-    await bringPageForward();
+    const opened = await openChromeTab(target).catch((error: Error) => {
+      send("answer", `Chrome would not switch tabs: ${error.message}. Allow Kiwi to control Google Chrome in Privacy & Security, Automation.`);
+      return "";
+    });
+    if (!opened && /fieldnote/i.test(target)) {
+      const problem = await ensureFieldnote("/", (text) => send("answer", text));
+      if (problem) send("answer", problem);
+    } else if (!opened) {
+      send("answer", `I could not find a tab called ${target.slice(4)}.`);
+    }
+    returnToCursor(600);
+    return;
+  }
+
+  const problem = await ensureFieldnote(/^url:/i.test(target) ? urlOf(target) : "/", (text) => send("answer", text));
+  if (problem) {
+    send("answer", problem);
+    return;
+  }
+
+  if (/^url:/i.test(target)) {
     send("answer", stop.say);
-    const opened = await askPage({ op: "navigate", url: target.slice(4).trim() }, 6500);
+    const opened = await askPage({ op: "navigate", url: urlOf(target) }, 6500);
     if (!opened?.ok) {
       send("answer", opened?.error ?? "Fieldnote did not open that page.");
       return;
@@ -215,50 +220,12 @@ async function playStop(stop: Stop, guess: { x: number; y: number } | undefined)
     return;
   }
 
-  if (/^tab:/i.test(target)) {
-    send("answer", stop.say);
-    if (!doing || blocked) {
-      if (blocked) send("answer", blocked);
-      if (guess) fly(guess.x, guess.y);
-      await wait(1200);
-      return;
-    }
-    const opened = await openChromeTab(target).catch((error: Error) => {
-      send("answer", `Chrome would not switch tabs: ${error.message}. Allow Kiwi to control Google Chrome in Privacy & Security, Automation.`);
-      return "";
-    });
-    if (!opened) send("answer", `I could not find a tab called ${target.slice(4)}.`);
-    returnToCursor(600);
+  const found = await askPage({ op: "locate", target }, 800);
+  if (!found?.ok || !found.rect) {
+    send("answer", `${stop.say} I couldn't find ${stop.label || target} on this page, though.`);
     return;
   }
-
-  if (target && pageIsOpen()) {
-    await bringPageForward();
-    const found = await askPage({ op: "locate", target }, 600);
-    if (found?.ok && found.rect) {
-      fly(found.rect.x, found.rect.y);
-      if (!doing) {
-        await wait(1200);
-        return;
-      }
-      if (blocked) {
-        send("answer", blocked);
-        return;
-      }
-      await wait(550);
-      const done = await askPage({ op: "act", target, kind: stop.kind, text: stop.text }, 800);
-      if (!done?.ok) send("answer", done?.error ?? "The page did not answer.");
-      returnToCursor(1100);
-      await wait(300);
-      return;
-    }
-  }
-
-  if (!guess) {
-    send("answer", `I could not find ${stop.label || target} on the page.`);
-    return;
-  }
-  fly(guess.x, guess.y);
+  fly(found.rect.x, found.rect.y);
   if (!doing) {
     await wait(1200);
     return;
@@ -267,18 +234,11 @@ async function playStop(stop: Stop, guess: { x: number; y: number } | undefined)
     send("answer", blocked);
     return;
   }
-  await wait(700);
-  try {
-    await runInput(["click", guess.x.toFixed(0), guess.y.toFixed(0)]);
-    if (stop.kind === "type" && stop.text) {
-      await wait(150);
-      await runInput(["type", stop.text]);
-    }
-  } catch (error) {
-    send("answer", `I couldn't press it: ${error instanceof Error ? error.message : String(error)}`);
-  }
+  await wait(550);
+  const done = await askPage({ op: "act", target, kind: stop.kind, text: stop.text }, 800);
+  if (!done?.ok) send("answer", done?.error ?? "The page did not answer.");
   returnToCursor(1100);
-  await wait(400);
+  await wait(300);
 }
 
 async function answerQuestion(question: string) {
@@ -293,35 +253,28 @@ async function answerQuestion(question: string) {
     if (current !== runId) return;
     const quick = route(question, context.controls, context.tabs, context.facts);
     if (quick) {
-      await playStop(quick, undefined);
+      await playStop(quick);
       history.push(`User: ${question}`, `Kiwi: ${quick.say}`);
       timing(question, "local", started);
       return;
     }
-    const usePage = context.controls.length > 0;
-    const shot = usePage ? undefined : await captureScreen();
-    if (current !== runId) return;
     const prior = history.slice(-4).join("\n");
     const asked = prior ? `Earlier:\n${prior}\n\n${question}` : question;
-    const result = await ask({
-      question: asked,
-      screenContext: context.text,
-      ...(shot ? { imagePngBase64: shot.base64, imageMime: "image/jpeg" as const } : {}),
-    });
+    const result = await ask({ question: asked, screenContext: context.text });
     if (current !== runId) return;
     if (result.stops.length === 0) throw new Error("Kiwi did not return a stop.");
     for (const stop of result.stops) {
       if (current !== runId) return;
-      const guess = shot
-        ? {
-            x: shot.display.bounds.x + (stop.x / shot.width) * shot.display.bounds.width,
-            y: shot.display.bounds.y + (stop.y / shot.height) * shot.display.bounds.height,
-          }
-        : undefined;
-      await playStop({ ...stop, target: stop.target ?? "" }, guess);
+      await playStop({ ...stop, target: onlyAskedOwner(question, stop.target ?? "") });
+    }
+    const last = result.stops.at(-1);
+    if (last && /^url:/i.test(last.target ?? "") && /\b(why|where|how|can'?t|cannot)\b/i.test(question) && current === runId) {
+      const landed = await screenContext();
+      const follow = route(question, landed.controls, landed.tabs, landed.facts);
+      if (follow) await playStop(follow);
     }
     history.push(`User: ${question}`, `Kiwi: ${result.stops.map((stop) => stop.say).join(" ")}`);
-    timing(question, shot ? "model+picture" : "model", started);
+    timing(question, "model", started);
   } catch (error) {
     if (current !== runId) return;
     send("answer", error instanceof Error ? error.message : String(error));

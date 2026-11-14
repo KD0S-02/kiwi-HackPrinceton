@@ -80,6 +80,28 @@ Every record type also has its own list page with a search box and a filter for 
 
 **Create, edit and delete work everywhere.** New account, opportunity, order, case and purchase order; Edit on every row and record page; Delete with a confirmation box; plus Clone, Change owner, Add product, Edit line, Log activity, Request approval, Save discount, Send Quote, Cycle count, Follow and CSV exports. They write to the JSON records through an allow-listed record API (`GET` pages, `POST`, `PATCH`, `DELETE`). Approvals and stock lines cannot be deleted. The discount can only change through its own route, and Send Quote checks both ownership and the 15 percent cap on the server.
 
+### Staying on Fieldnote
+
+**Scope.** Kiwi only answers questions about Fieldnote and Sparsh's job: accounts, buyers, deals, quotes, discounts, orders, cases, supply, the company and its rules. General questions, chat, coding, and anything about another app, document, PDF, email or website get one line back ("I only help with Fieldnote and your sales work.") and nothing moves. Work questions asked while you are somewhere else are still answered, from Fieldnote. Kiwi does not take screenshots, so it never sees the other document.
+
+**Getting to Fieldnote from anywhere.** Before Kiwi points at or opens anything, `apps/desktop/fieldnote.ts` puts a live, signed-in Fieldnote page in front:
+
+| You are | Kiwi |
+|---|---|
+| On another desktop | Activates the Chrome window holding Fieldnote, which switches desktops |
+| In Preview, a Google Doc, Finder or any other app | Brings Chrome forward on the Fieldnote tab |
+| On a PDF or another tab in Chrome | Switches to the Fieldnote tab |
+| In a second Chrome window | Raises the window that has Fieldnote |
+| With Chrome minimized | Restores the window |
+| With a stale tab Chrome put to sleep | Reloads it |
+| With no Fieldnote tab, or Chrome not running | Opens Chrome on the page the answer needs (for example `/pipeline`) |
+| Signed out | Signs in, then continues |
+| With the Fieldnote server down | Says so, with the command to start it |
+
+If a question needs a page you are not on ("why can't I send the Harbor Diner quote"), Kiwi opens that page first, then points at the answer on it. Owner filters are only kept when you say whose records you want, so "show me open cases" means everyone's.
+
+Tests: `npx tsx scripts/check-chrome.ts` runs the scenarios in the table against your real Chrome (quit Kiwi first). `npx tsx scripts/check-scope.ts` asks twelve in-scope and out-of-scope questions with a PDF and a Google Doc open.
+
 ### Kiwi and the CRM
 
 Kiwi gets a site map of every list, filter and allowed value (`scripts/site-map.ts`). "Show me open delivery-complaint cases" becomes one stop with target `url:/cases?status=open&kind=delivery+complaint`. Kiwi brings the Fieldnote tab forward, opens that URL in the page through the bridge (no reload), and points at the filter bar. On the current page it can also choose dropdown options and type in the search box. For create, edit and delete it opens the dialog and leaves the final click to you; it never presses the confirm button on Delete.
@@ -122,7 +144,7 @@ The script signs the app with a requirement that names only the bundle id (`com.
 
 ### macOS permissions (why Kiwi must be launched with `npm run kiwi`)
 
-Kiwi needs three permissions: **Accessibility** (global Control + Option), **Microphone**, and **Screen Recording**.
+Kiwi needs **Accessibility** (global Control + Option), **Microphone**, and **Automation** for Google Chrome (switching tabs and windows). It still asks for **Screen Recording**, but no longer uses it: Kiwi reads the Fieldnote page through the bridge, never your screen.
 
 macOS gives a process the permissions of the app that launched it. If Kiwi is started from a Cursor or Terminal window, the prompts name that app and Kiwi never appears in the list. `npm run kiwi` starts the bundle through macOS (`open -n`), so Kiwi is its own app and the prompts name **Kiwi**. After allowing Screen Recording, quit and reopen Kiwi once. If you re-sign the app, macOS may ask again. To start clean: `tccutil reset All com.fieldnote.kiwi`.
 
@@ -159,8 +181,8 @@ Kiwi keeps Clicky's interaction: hold Control + Option to talk, a buddy that fol
 ### Not done yet
 
 - **Voice and permissions are untested end to end.** The code exists, but nobody has yet held Control + Option on a real session and heard it answer back.
-- **Finding and pressing controls.** Fieldnote pages run a small bridge (`components/KiwiBridge.tsx`) that connects to Kiwi on `ws://127.0.0.1:4555`. Before each ask, Kiwi collects the page's visible controls (ids, labels, disabled state) and Chrome's tab titles, and the agent answers with a `target`, not just pixels. Kiwi then locates the real element, flies to its exact position, and clicks or types through the DOM. Chrome tabs are switched with AppleScript, which asks once for Automation permission. Screen pixels are only a fallback for things outside Fieldnote. `scripts/check-bridge.ts` and `scripts/check-targets.ts` test this.
-- **Clicking and typing are new and lightly tested.** Kiwi now presses and types through `apps/desktop/input/kiwi-input` (a small Swift helper that posts mouse and key events, using Kiwi's Accessibility permission). It only acts when you ask it to open, press or set something and the rule allows it. It refuses to type a discount over 15.
+- **Finding and pressing controls.** Fieldnote pages run a small bridge (`components/KiwiBridge.tsx`) that connects to Kiwi on `ws://127.0.0.1:4555`. Before each ask, Kiwi collects the page's visible controls (ids, labels, disabled state) and Chrome's tab titles, and the agent answers with a `target`, not just pixels. Kiwi then locates the real element, flies to its exact position, and clicks or types through the DOM. Chrome tabs are switched with AppleScript, which asks once for Automation permission. Kiwi no longer looks at screen pixels at all. `scripts/check-bridge.ts` and `scripts/check-targets.ts` test this.
+- **Clicking and typing go through the page, not the mouse.** Kiwi only acts when you ask it to open, press or set something and the rule allows it. It refuses to type a discount over 15 and never confirms a delete. (`apps/desktop/input/kiwi-input`, the old Swift mouse helper, is still built but unused.)
 - **No spoken replies.** Kiwi answers on screen only. There is no text to speech.
 - **No permission card.** Kiwi has no "OK to do this for you?" step before an action.
 - **Tours** return stops, but only the first stop is shown. There is no step-through.

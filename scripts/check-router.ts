@@ -11,6 +11,7 @@ const controls = [
   { id: "", label: "Products 3", kind: "a", disabled: false },
   { id: "send-quote", label: "Send Quote", kind: "button", disabled: true },
   { id: "discount", label: "Discount", kind: "input", disabled: false },
+  { id: "", label: "Cycle count", kind: "button", disabled: false },
 ];
 const tabs = [{ title: "crm template - Google Search" }, { title: "Fieldnote" }, { title: "GitHub" }];
 
@@ -25,6 +26,8 @@ for (const question of [
   "set the discount to 15",
   "send the quote",
   "what does Harbor Diner usually order?",
+  "where do I log a cycle count",
+  "how do I log a cycle count",
 ]) {
   const started = performance.now();
   const stop = route(question, controls, tabs, [{ id: "quote-message", text: "An account executive stops at 15 percent. Your manager, Alex Morgan, has to approve the rest." }]);

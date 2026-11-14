@@ -62,6 +62,12 @@ export function siteMap() {
     });
     lines.push(`${route} ${about}. q=<text>; ${params.join("; ")}`);
   }
+  lines.push(
+    "BUTTONS. /accounts: New account, Import, Export, Edit, Delete. /accounts/<account id>: Edit, Follow, Log activity, Add buyer, Delete.",
+    "/pipeline: New opportunity, Edit, Delete. /opportunities/<id>: discount field, Save discount, Send Quote (send-quote), Clone, Change owner, Add product, Edit line, Log activity, Request approval, Delete.",
+    "/orders: New order, New case, Export, Edit, Delete, case status. /supply: Cycle count, New purchase order, Export stock, Count on each stock row, Edit and Delete on purchase orders.",
+    "every other list: New, Export, Open, Edit, Delete. /company: Roster, Export roster. /profile: Log out.",
+  );
   lines.push("account ids are the restaurant name in kebab case, like harbor-diner. deal pages are /opportunities/opp-<account id>. account pages are /accounts/<account id>.");
   return lines.join("\n");
 }

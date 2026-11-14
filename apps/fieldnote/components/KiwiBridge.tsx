@@ -201,11 +201,14 @@ export function KiwiBridge() {
       socket.onerror = () => socket?.close();
     };
     connect();
+    // Chrome does not always fire visibilitychange when a window is restored from the Dock.
+    const heartbeat = setInterval(report, 1000);
     document.addEventListener("visibilitychange", report);
     window.addEventListener("focus", report);
     window.addEventListener("blur", report);
     return () => {
       stopped = true;
+      clearInterval(heartbeat);
       if (retry) clearTimeout(retry);
       socket?.close();
       document.removeEventListener("visibilitychange", report);

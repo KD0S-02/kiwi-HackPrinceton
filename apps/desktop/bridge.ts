@@ -44,7 +44,7 @@ export function startBridge(port = 4555) {
 
 function visiblePage() {
   const only = process.env.KIWI_BRIDGE_ONLY;
-  return [...pages].filter((page) => !only || page.agent.includes(only)).sort(
+  return [...pages].filter((page) => (only ? page.agent.includes(only) : !page.agent.includes("HeadlessChrome"))).sort(
     (a, b) => Number(b.visible) - Number(a.visible) || Number(b.focused) - Number(a.focused) || b.seen - a.seen,
   )[0];
 }
@@ -72,4 +72,23 @@ export function askPage(request: { op: "inventory" | "locate" | "act" | "navigat
     });
     page.socket.send(JSON.stringify({ id, ...request }));
   });
+}
+
+export async function waitForPage(timeoutMs: number, check: (path: string) => boolean = () => true) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const page = visiblePage();
+    if (page && check(page.path)) return true;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  return false;
+}
+
+export function pagePath() {
+  return visiblePage()?.path ?? "";
+}
+
+// True when the page Kiwi would talk to is the one showing in its browser window.
+export function pageInFront() {
+  return Boolean(visiblePage()?.visible);
 }

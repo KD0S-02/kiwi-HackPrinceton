@@ -18,8 +18,10 @@ function score(object: string[], label: string) {
   const labelWords = words(label);
   if (labelWords.length === 0) return 0;
   const hits = object.filter((word) => labelWords.some((labelWord) => labelWord === word || (word.length > 3 && labelWord.startsWith(word))));
-  if (hits.length < object.length) return 0;
-  return hits.length / labelWords.length;
+  if (hits.length === object.length) return hits.length / labelWords.length;
+  // "where do I log a cycle count" still means the Cycle count button.
+  if (hits.length >= 2 && hits.length === labelWords.length && hits.length / object.length >= 0.6) return 0.5;
+  return 0;
 }
 
 // Answers "where is X", "show me X" and "open X" without the model when X is plainly on the page.
@@ -39,7 +41,7 @@ export function route(
   if (all.some((word) => ["why", "discount", "approve", "approval", "set", "change", "type", "can", "cant", "should", "tour", "walk", "usually", "order", "orders", "stock"].includes(word))) {
     return undefined;
   }
-  const show = all.some((word) => ["where", "show", "find", "point", "whats", "see"].includes(word));
+  const show = all.some((word) => ["where", "show", "find", "point", "whats", "see", "how"].includes(word));
   const filtering = ["only", "with", "over", "under", "more", "less", "than", "which", "list", "filter", "filtered", "sort", "sorted", "by", "from",
     "closed", "paid", "delivered", "pending", "picking", "received", "low", "mine", "everyone", "proposal", "qualify", "commit",
     "new", "create", "add", "edit", "delete", "remove", "rename", "update", "cases", "invoices", "shipments", "products", "suppliers", "deals"];

@@ -118,7 +118,7 @@ try {
   failures += 1;
   console.log("failed", error instanceof Error ? error.message : error);
 } finally {
-  chrome.kill();
+  chrome.kill("SIGKILL");
   server.close();
   console.log(failures === 0 ? "all passed" : `${failures} failed`);
   process.exit(failures === 0 ? 0 : 1);

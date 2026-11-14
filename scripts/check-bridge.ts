@@ -56,7 +56,7 @@ try {
 } catch (error) {
   console.log("failed", error instanceof Error ? error.message : error);
 } finally {
-  chrome.kill();
+  chrome.kill("SIGKILL");
   server.close();
   process.exit(0);
 }

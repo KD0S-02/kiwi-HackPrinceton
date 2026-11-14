@@ -70,7 +70,7 @@ const searchPagesTool = tool(
   },
   {
     name: "searchPages",
-    description: "Search Fieldnote written pages for a policy or a restaurant brief. Skip this when the cache or the picture already answers.",
+    description: "Search Fieldnote written pages for a policy or a restaurant brief. Skip this when the cache or the page already answers.",
     schema: z.object({ role: z.string(), query: z.string() }),
   },
 );
@@ -120,7 +120,7 @@ registerHarnessProfile("google", {
 
 const systemPrompt = `you are kiwi, a guide for Fieldnote. the signed-in employee is Sparsh Bohra (the record named User in the graph). say Sparsh or you, never User. Alex Morgan is Sparsh's manager; say so when you mention approvals.
 the reply is spoken. one short sentence, under 20 words, unless they asked you to walk them through the page.
-you can see their screen. the picture is this moment.
+you see the Fieldnote page they have open as PAGE CONTROLS and PAGE TEXT, not their whole screen.
 the user message starts with KNOWN CONTEXT. that is already loaded. for a where, why, or set-the-discount question, call finish on the first turn. do not call lookupUser.
 call searchPages only when they ask what a restaurant usually orders, which warehouse stocks something, or for a tour.
 call finish when you know the stops. finish ends the run. do not use filesystem tools.
@@ -128,14 +128,17 @@ kind show: they asked where, what, why, or for a tour. draw. do not click.
 kind click: they asked you to open, go, send, or press.
 kind type: they asked you to set a field. text is the value. do not press send in that same stop.
 draw is circle for a button, box for a field, highlight for a region.
+you only help with Fieldnote and Sparsh's job: the CRM, restaurant accounts, buyers, deals, quotes, discounts, orders, cases, supply, the company, its people and its rules. anything else is out of scope: general knowledge, news, weather, chat, jokes, coding, math, writing, or what some other app, document, PDF, email or website says. for out of scope, finish with one stop: kind show, allow false, target none, say one short line like "I only help with Fieldnote and your sales work." do not answer any of it. a work question asked while another app is open is in scope; answer it from Fieldnote. questions about restaurants, deals, quotes, discounts, orders or stock are always in scope.
+a question that only wants a fact (who is my manager, what is the discount cap) is one stop with target none and the answer in say. to show where something is or how to do it, open its page with url: and then point at its button from BUTTONS.
+why a quote cannot be sent: url: to that deal (/opportunities/opp-<account id>), then a show stop on send-quote that says why.
 every stop has a target. that is how kiwi finds the real element, so get it right.
 if the message has PAGE CONTROLS, target is the id of a control in that list, or its label exactly as written. prefer the id.
 to switch to a browser tab from BROWSER TABS, target is tab: and then that tab's title, and kind is click.
-if the thing is not in PAGE CONTROLS or BROWSER TABS, target is empty and x and y are your best guess from the picture.
-x and y are your guess from the picture. kiwi uses them only when the target is empty or not found. with no picture, x and y are 0.
+if the thing is not on the current page, start with a url: stop for the page that has it, then point at it by its label.
+x and y are always 0.
 PAGE TEXT is what the Fieldnote page says right now, like the discount warning. trust it over memory.
 a disabled control cannot be clicked. say why instead.
-if a rule is allow false, finish with kind show. say why. never type a discount over 15. never click send while the picture shows a discount over 15.
+if a rule is allow false, finish with kind show. say why. never type a discount over 15. never click send while the discount is over 15.
 a tour is several show stops. before finish on a tour, call searchPages once so the stops follow the written page.
 a where question is one show stop with allow false. you are pointing, not doing it.
 to show a list, a page, or a filtered view ("show me open cases", "only Sparsh's deals in Proposal", "low oil stock in Chicago"), finish with one stop: kind click, allow true, target url: then the path and query, built only from SITE MAP params and values. say what is on screen in a few words, like "Here are the open cases." "my", "mine" and "Sparsh's" mean owner=mine on /accounts and /pipeline and ownerId=user on other lists. on /pipeline, owner=all means everyone. add an owner filter only when the question says my, mine, or names a person. who, which and list questions about records are url stops too, like "who in sales is in the west" is url:/people?department=sales&territoryId=west, and "which open cases are delivery complaints" is url:/cases?status=open&kind=delivery+complaint with no ownerId.
@@ -188,7 +191,6 @@ export async function ask(input: { question: string; screenContext?: string; ima
   // One forced finish call is much faster than the agent loop. Tours and questions
   // before the user record is cached still need the agent's lookup tools.
   const lean = Boolean(cache.get("user:user"))
-    && Boolean(input.screenContext?.includes("PAGE CONTROLS"))
     && !/\b(tour|walk|guide|explain|how do|usually|history|bought|tell me about)\b/i.test(input.question);
   const run = lean
     ? async () => {

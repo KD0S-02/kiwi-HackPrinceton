@@ -31,10 +31,12 @@ export async function focusChromeUrl(urlPart: string) {
   const script = `
     tell application "Google Chrome"
       set wanted to ${quoted(urlPart.toLowerCase())}
-      if frontmost then
-        ignoring case
-          if (URL of active tab of front window) contains wanted then return "front"
-        end ignoring
+      if frontmost and (count of windows) > 0 then
+        if not (minimized of front window) then
+          ignoring case
+            if (URL of active tab of front window) contains wanted then return "front"
+          end ignoring
+        end if
       end if
       repeat with chromeWindow in windows
         set tabIndex to 0
@@ -42,6 +44,7 @@ export async function focusChromeUrl(urlPart: string) {
           set tabIndex to tabIndex + 1
           ignoring case
             if (URL of chromeTab) contains wanted then
+              if minimized of chromeWindow then set minimized of chromeWindow to false
               set active tab index of chromeWindow to tabIndex
               set index of chromeWindow to 1
               activate
@@ -66,8 +69,10 @@ async function readChromeTabs() {
     const output = await osascript(
       `tell application "Google Chrome"
         set out to ""
-        repeat with chromeTab in tabs of front window
-          set out to out & (title of chromeTab) & tab & (URL of chromeTab) & linefeed
+        repeat with chromeWindow in windows
+          repeat with chromeTab in tabs of chromeWindow
+            set out to out & (title of chromeTab) & tab & (URL of chromeTab) & linefeed
+          end repeat
         end repeat
         return out
       end tell`,
@@ -98,6 +103,7 @@ export async function openChromeTab(name: string) {
           set tabUrl to URL of chromeTab
           ignoring case
             if tabTitle contains wanted or tabUrl contains wanted then
+              if minimized of chromeWindow then set minimized of chromeWindow to false
               set active tab index of chromeWindow to tabIndex
               set index of chromeWindow to 1
               activate
@@ -110,4 +116,58 @@ export async function openChromeTab(name: string) {
     end tell`;
   const found = await osascript(script, 2500);
   return found;
+}
+
+export async function chromeRunning() {
+  try {
+    return (await osascript('application "Google Chrome" is running', 600)) === "true";
+  } catch {
+    return false;
+  }
+}
+
+// Opens the URL in a new tab of the front Chrome window, starting Chrome if needed.
+export async function openChromeUrl(url: string) {
+  if (!(await chromeRunning())) {
+    await new Promise<void>((resolve, reject) => {
+      execFile("/usr/bin/open", ["-a", "Google Chrome", url], (error) => (error ? reject(error) : resolve()));
+    });
+    return;
+  }
+  await osascript(
+    `tell application "Google Chrome"
+      if (count of windows) = 0 then
+        make new window
+        set URL of active tab of front window to ${quoted(url)}
+      else
+        if minimized of front window then set minimized of front window to false
+        tell front window to make new tab with properties {URL:${quoted(url)}}
+      end if
+      activate
+    end tell`,
+    3000,
+  );
+}
+
+// Reloads the first tab whose URL contains this text. Chrome discards idle tabs, and a
+// discarded Fieldnote tab is listed but has no live page to talk to.
+export async function reloadChromeTab(urlPart: string) {
+  try {
+    return await osascript(
+      `tell application "Google Chrome"
+        repeat with chromeWindow in windows
+          repeat with chromeTab in tabs of chromeWindow
+            if (URL of chromeTab) contains ${quoted(urlPart)} then
+              tell chromeTab to reload
+              return "reloaded"
+            end if
+          end repeat
+        end repeat
+        return ""
+      end tell`,
+      2000,
+    );
+  } catch {
+    return "";
+  }
 }
