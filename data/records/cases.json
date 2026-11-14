@@ -1,0 +1,86 @@
+[
+  {
+    "id": "case-1",
+    "accountId": "harbor-diner",
+    "ownerId": "user",
+    "kind": "delivery complaint",
+    "status": "open"
+  },
+  {
+    "id": "case-2",
+    "accountId": "cedar-spoon",
+    "ownerId": "user",
+    "kind": "billing question",
+    "status": "open"
+  },
+  {
+    "id": "case-3",
+    "accountId": "lantern-noodle",
+    "ownerId": "user",
+    "kind": "missing item",
+    "status": "open"
+  },
+  {
+    "id": "case-4",
+    "accountId": "bright-pie",
+    "ownerId": "user",
+    "kind": "delivery complaint",
+    "status": "open"
+  },
+  {
+    "id": "case-5",
+    "accountId": "north-fork-grill",
+    "ownerId": "user",
+    "kind": "billing question",
+    "status": "closed"
+  },
+  {
+    "id": "case-6",
+    "accountId": "little-anchor",
+    "ownerId": "user",
+    "kind": "missing item",
+    "status": "closed"
+  },
+  {
+    "id": "case-7",
+    "accountId": "red-kettle",
+    "ownerId": "user",
+    "kind": "delivery complaint",
+    "status": "closed"
+  },
+  {
+    "id": "case-8",
+    "accountId": "maple-counter",
+    "ownerId": "user",
+    "kind": "billing question",
+    "status": "closed"
+  },
+  {
+    "id": "case-9",
+    "accountId": "goldfinch-cafe",
+    "ownerId": "ae-west",
+    "kind": "missing item",
+    "status": "closed"
+  },
+  {
+    "id": "case-10",
+    "accountId": "river-salt",
+    "ownerId": "ae-northeast-2",
+    "kind": "delivery complaint",
+    "status": "closed"
+  },
+  {
+    "id": "case-11",
+    "accountId": "olive-room",
+    "ownerId": "user",
+    "kind": "billing question",
+    "status": "closed"
+  },
+  {
+    "id": "case-12",
+    "accountId": "paper-lantern",
+    "ownerId": "ae-southeast",
+    "kind": "missing item",
+    "status": "closed"
+  }
+]

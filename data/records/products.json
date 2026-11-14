@@ -1,0 +1,362 @@
+[
+  {
+    "id": "napkins",
+    "name": "Napkins",
+    "sku": "FN-001",
+    "family": "paper",
+    "unit": "case",
+    "price": 4,
+    "supplierId": "northline-foods"
+  },
+  {
+    "id": "fryer-oil",
+    "name": "Fryer oil",
+    "sku": "FN-002",
+    "family": "oil",
+    "unit": "jug",
+    "price": 7.5,
+    "supplierId": "harbor-mills"
+  },
+  {
+    "id": "gloves",
+    "name": "Gloves",
+    "sku": "FN-003",
+    "family": "paper",
+    "unit": "box",
+    "price": 11,
+    "supplierId": "cedar-dairy-co"
+  },
+  {
+    "id": "butter",
+    "name": "Butter",
+    "sku": "FN-004",
+    "family": "dairy",
+    "unit": "case",
+    "price": 14.5,
+    "supplierId": "paperlane-supply"
+  },
+  {
+    "id": "cheddar",
+    "name": "Cheddar",
+    "sku": "FN-005",
+    "family": "dairy",
+    "unit": "wheel",
+    "price": 18,
+    "supplierId": "iron-pan-works"
+  },
+  {
+    "id": "cream",
+    "name": "Heavy cream",
+    "sku": "FN-006",
+    "family": "dairy",
+    "unit": "quart",
+    "price": 21.5,
+    "supplierId": "great-lakes-oil"
+  },
+  {
+    "id": "milk",
+    "name": "Whole milk",
+    "sku": "FN-007",
+    "family": "dairy",
+    "unit": "gallon",
+    "price": 25,
+    "supplierId": "metro-dry-goods"
+  },
+  {
+    "id": "yogurt",
+    "name": "Plain yogurt",
+    "sku": "FN-008",
+    "family": "dairy",
+    "unit": "tub",
+    "price": 28.5,
+    "supplierId": "atlas-smallwares"
+  },
+  {
+    "id": "rice",
+    "name": "Jasmine rice",
+    "sku": "FN-009",
+    "family": "dry goods",
+    "unit": "bag",
+    "price": 32,
+    "supplierId": "northline-foods"
+  },
+  {
+    "id": "flour",
+    "name": "All purpose flour",
+    "sku": "FN-010",
+    "family": "dry goods",
+    "unit": "bag",
+    "price": 4,
+    "supplierId": "harbor-mills"
+  },
+  {
+    "id": "sugar",
+    "name": "Granulated sugar",
+    "sku": "FN-011",
+    "family": "dry goods",
+    "unit": "bag",
+    "price": 7.5,
+    "supplierId": "cedar-dairy-co"
+  },
+  {
+    "id": "salt",
+    "name": "Kosher salt",
+    "sku": "FN-012",
+    "family": "dry goods",
+    "unit": "box",
+    "price": 11,
+    "supplierId": "paperlane-supply"
+  },
+  {
+    "id": "pasta",
+    "name": "Spaghetti",
+    "sku": "FN-013",
+    "family": "dry goods",
+    "unit": "case",
+    "price": 14.5,
+    "supplierId": "iron-pan-works"
+  },
+  {
+    "id": "beans",
+    "name": "Black beans",
+    "sku": "FN-014",
+    "family": "dry goods",
+    "unit": "case",
+    "price": 18,
+    "supplierId": "great-lakes-oil"
+  },
+  {
+    "id": "oats",
+    "name": "Rolled oats",
+    "sku": "FN-015",
+    "family": "dry goods",
+    "unit": "bag",
+    "price": 21.5,
+    "supplierId": "metro-dry-goods"
+  },
+  {
+    "id": "cans",
+    "name": "Crushed tomatoes",
+    "sku": "FN-016",
+    "family": "dry goods",
+    "unit": "case",
+    "price": 25,
+    "supplierId": "atlas-smallwares"
+  },
+  {
+    "id": "towels",
+    "name": "Kitchen towels",
+    "sku": "FN-017",
+    "family": "paper",
+    "unit": "case",
+    "price": 28.5,
+    "supplierId": "northline-foods"
+  },
+  {
+    "id": "foil",
+    "name": "Aluminum foil",
+    "sku": "FN-018",
+    "family": "paper",
+    "unit": "box",
+    "price": 32,
+    "supplierId": "harbor-mills"
+  },
+  {
+    "id": "wrap",
+    "name": "Plastic wrap",
+    "sku": "FN-019",
+    "family": "paper",
+    "unit": "box",
+    "price": 4,
+    "supplierId": "cedar-dairy-co"
+  },
+  {
+    "id": "containers",
+    "name": "Deli containers",
+    "sku": "FN-020",
+    "family": "paper",
+    "unit": "case",
+    "price": 7.5,
+    "supplierId": "paperlane-supply"
+  },
+  {
+    "id": "cups",
+    "name": "Paper cups",
+    "sku": "FN-021",
+    "family": "paper",
+    "unit": "case",
+    "price": 11,
+    "supplierId": "iron-pan-works"
+  },
+  {
+    "id": "lids",
+    "name": "Cup lids",
+    "sku": "FN-022",
+    "family": "paper",
+    "unit": "case",
+    "price": 14.5,
+    "supplierId": "great-lakes-oil"
+  },
+  {
+    "id": "straws",
+    "name": "Paper straws",
+    "sku": "FN-023",
+    "family": "paper",
+    "unit": "box",
+    "price": 18,
+    "supplierId": "metro-dry-goods"
+  },
+  {
+    "id": "bags",
+    "name": "Takeout bags",
+    "sku": "FN-024",
+    "family": "paper",
+    "unit": "bundle",
+    "price": 21.5,
+    "supplierId": "atlas-smallwares"
+  },
+  {
+    "id": "spatula",
+    "name": "Offset spatula",
+    "sku": "FN-025",
+    "family": "smallwares",
+    "unit": "each",
+    "price": 25,
+    "supplierId": "northline-foods"
+  },
+  {
+    "id": "tongs",
+    "name": "Locking tongs",
+    "sku": "FN-026",
+    "family": "smallwares",
+    "unit": "each",
+    "price": 28.5,
+    "supplierId": "harbor-mills"
+  },
+  {
+    "id": "ladle",
+    "name": "Stainless ladle",
+    "sku": "FN-027",
+    "family": "smallwares",
+    "unit": "each",
+    "price": 32,
+    "supplierId": "cedar-dairy-co"
+  },
+  {
+    "id": "sheet-pan",
+    "name": "Half sheet pan",
+    "sku": "FN-028",
+    "family": "smallwares",
+    "unit": "each",
+    "price": 4,
+    "supplierId": "paperlane-supply"
+  },
+  {
+    "id": "hotel-pan",
+    "name": "Hotel pan",
+    "sku": "FN-029",
+    "family": "smallwares",
+    "unit": "each",
+    "price": 7.5,
+    "supplierId": "iron-pan-works"
+  },
+  {
+    "id": "thermometer",
+    "name": "Probe thermometer",
+    "sku": "FN-030",
+    "family": "smallwares",
+    "unit": "each",
+    "price": 11,
+    "supplierId": "great-lakes-oil"
+  },
+  {
+    "id": "peeler",
+    "name": "Y peeler",
+    "sku": "FN-031",
+    "family": "smallwares",
+    "unit": "each",
+    "price": 14.5,
+    "supplierId": "metro-dry-goods"
+  },
+  {
+    "id": "knife",
+    "name": "Chef knife",
+    "sku": "FN-032",
+    "family": "smallwares",
+    "unit": "each",
+    "price": 18,
+    "supplierId": "atlas-smallwares"
+  },
+  {
+    "id": "canola",
+    "name": "Canola oil",
+    "sku": "FN-033",
+    "family": "oil",
+    "unit": "jug",
+    "price": 21.5,
+    "supplierId": "northline-foods"
+  },
+  {
+    "id": "olive-oil",
+    "name": "Olive oil",
+    "sku": "FN-034",
+    "family": "oil",
+    "unit": "bottle",
+    "price": 25,
+    "supplierId": "harbor-mills"
+  },
+  {
+    "id": "spray",
+    "name": "Pan spray",
+    "sku": "FN-035",
+    "family": "oil",
+    "unit": "can",
+    "price": 28.5,
+    "supplierId": "cedar-dairy-co"
+  },
+  {
+    "id": "vinegar",
+    "name": "White vinegar",
+    "sku": "FN-036",
+    "family": "dry goods",
+    "unit": "gallon",
+    "price": 32,
+    "supplierId": "paperlane-supply"
+  },
+  {
+    "id": "honey",
+    "name": "Wildflower honey",
+    "sku": "FN-037",
+    "family": "dry goods",
+    "unit": "jar",
+    "price": 4,
+    "supplierId": "iron-pan-works"
+  },
+  {
+    "id": "pepper",
+    "name": "Black pepper",
+    "sku": "FN-038",
+    "family": "dry goods",
+    "unit": "tin",
+    "price": 7.5,
+    "supplierId": "great-lakes-oil"
+  },
+  {
+    "id": "baking-soda",
+    "name": "Baking soda",
+    "sku": "FN-039",
+    "family": "dry goods",
+    "unit": "box",
+    "price": 11,
+    "supplierId": "metro-dry-goods"
+  },
+  {
+    "id": "filters",
+    "name": "Fryer filters",
+    "sku": "FN-040",
+    "family": "oil",
+    "unit": "pack",
+    "price": 14.5,
+    "supplierId": "atlas-smallwares"
+  }
+]

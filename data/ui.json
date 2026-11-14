@@ -1,0 +1,48 @@
+{
+  "modules": [
+    "Home",
+    "Accounts",
+    "Contacts",
+    "Opportunities",
+    "Quotes",
+    "Orders",
+    "Invoices",
+    "Products",
+    "Price Books",
+    "Inventory",
+    "Warehouses",
+    "Suppliers",
+    "Purchase Orders",
+    "Shipments",
+    "Cases",
+    "Approvals",
+    "People",
+    "Reports"
+  ],
+  "controls": [
+    {
+      "id": "send-quote",
+      "name": "Send Quote",
+      "module": "Opportunity",
+      "where": "header"
+    },
+    {
+      "id": "discount",
+      "name": "Discount",
+      "module": "Opportunity",
+      "where": "header"
+    },
+    {
+      "id": "amount",
+      "name": "Amount",
+      "module": "Opportunity",
+      "where": "header"
+    },
+    {
+      "id": "stage",
+      "name": "Stage",
+      "module": "Opportunity",
+      "where": "header"
+    }
+  ]
+}

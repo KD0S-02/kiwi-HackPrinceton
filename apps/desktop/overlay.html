@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    html, body { margin: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; }
+    #bird { position: absolute; width: 36px; height: 36px; margin-left: -18px; margin-top: -18px; display: none; filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
+    #bird.busy { animation: pulse .8s ease-in-out infinite; }
+    #ring { position: absolute; width: 54px; height: 54px; margin-left: -27px; margin-top: -27px; border: 3px solid #3b82f6; border-radius: 50%; box-shadow: 0 0 0 8px rgba(59, 130, 246, .25); display: none; }
+    #card { position: absolute; max-width: 280px; background: #111827; color: white; border-radius: 14px; padding: 10px 12px; font: 14px/1.4 Inter, "Segoe UI", sans-serif; display: none; box-shadow: 0 12px 30px rgba(0,0,0,.28); }
+    @keyframes pulse { 50% { transform: scale(1.08); } }
+  </style>
+</head>
+<body>
+  <img id="bird" src="kiwi.svg" alt="" />
+  <div id="ring"></div>
+  <div id="card"></div>
+  <script>
+    const birdElement = document.getElementById("bird");
+    const ring = document.getElementById("ring");
+    const card = document.getElementById("card");
+    let mode = "follow";
+    let bird = { x: -100, y: -100 };
+    let goal = { x: -100, y: -100 };
+    let fly = null;
+    let shown = false;
+
+    function place() {
+      birdElement.style.display = shown ? "block" : "none";
+      birdElement.style.left = `${bird.x}px`;
+      birdElement.style.top = `${bird.y}px`;
+      const pointing = mode === "hold";
+      ring.style.display = pointing ? "block" : "none";
+      ring.style.left = `${bird.x}px`;
+      ring.style.top = `${bird.y}px`;
+      if (pointing && card.dataset.say) {
+        card.style.display = "block";
+        card.style.left = `${Math.min(bird.x + 36, window.innerWidth - 300)}px`;
+        card.style.top = `${Math.max(12, bird.y - 24)}px`;
+      } else if (mode !== "hold") {
+        card.style.display = "none";
+      }
+    }
+
+    window.kiwi.on("cursor", (point) => {
+      if (mode !== "follow") return;
+      goal = { x: point.x + 22, y: point.y + 26 };
+      shown = true;
+    });
+
+    window.kiwi.on("point", (stop) => {
+      if (!stop) {
+        mode = "follow";
+        card.dataset.say = "";
+        card.style.display = "none";
+        ring.style.display = "none";
+        return;
+      }
+      fly = { from: { x: bird.x, y: bird.y }, to: { x: stop.x, y: stop.y }, start: performance.now() };
+      mode = "fly";
+      shown = true;
+      card.dataset.say = stop.say;
+      card.textContent = stop.say;
+    });
+
+    window.kiwi.on("follow", () => {
+      mode = "follow";
+      card.dataset.say = "";
+      card.style.display = "none";
+    });
+
+    window.kiwi.on("status", (payload) => {
+      birdElement.classList.toggle("busy", payload.busy);
+    });
+
+    function tick(now) {
+      if (mode === "fly" && fly) {
+        const t = Math.min(1, (now - fly.start) / 520);
+        const eased = t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
+        const bend = { x: (fly.from.x + fly.to.x) / 2, y: Math.min(fly.from.y, fly.to.y) - 90 };
+        const remaining = 1 - eased;
+        bird = {
+          x: remaining * remaining * fly.from.x + 2 * remaining * eased * bend.x + eased * eased * fly.to.x,
+          y: remaining * remaining * fly.from.y + 2 * remaining * eased * bend.y + eased * eased * fly.to.y,
+        };
+        if (t === 1) mode = "hold";
+      } else if (mode === "follow") {
+        bird = { x: bird.x + (goal.x - bird.x) * 0.28, y: bird.y + (goal.y - bird.y) * 0.28 };
+      }
+      place();
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+sku,name,family,unit,price,supplierId
+FN-001,Napkins,paper,case,4,northline-foods
+FN-002,Fryer oil,oil,jug,7.5,harbor-mills
+FN-003,Gloves,paper,box,11,cedar-dairy-co
+FN-004,Butter,dairy,case,14.5,paperlane-supply
+FN-005,Cheddar,dairy,wheel,18,iron-pan-works
+FN-006,Heavy cream,dairy,quart,21.5,great-lakes-oil
+FN-007,Whole milk,dairy,gallon,25,metro-dry-goods
+FN-008,Plain yogurt,dairy,tub,28.5,atlas-smallwares
+FN-009,Jasmine rice,dry goods,bag,32,northline-foods
+FN-010,All purpose flour,dry goods,bag,4,harbor-mills
+FN-011,Granulated sugar,dry goods,bag,7.5,cedar-dairy-co
+FN-012,Kosher salt,dry goods,box,11,paperlane-supply
+FN-013,Spaghetti,dry goods,case,14.5,iron-pan-works
+FN-014,Black beans,dry goods,case,18,great-lakes-oil
+FN-015,Rolled oats,dry goods,bag,21.5,metro-dry-goods
+FN-016,Crushed tomatoes,dry goods,case,25,atlas-smallwares
+FN-017,Kitchen towels,paper,case,28.5,northline-foods
+FN-018,Aluminum foil,paper,box,32,harbor-mills
+FN-019,Plastic wrap,paper,box,4,cedar-dairy-co
+FN-020,Deli containers,paper,case,7.5,paperlane-supply
+FN-021,Paper cups,paper,case,11,iron-pan-works
+FN-022,Cup lids,paper,case,14.5,great-lakes-oil
+FN-023,Paper straws,paper,box,18,metro-dry-goods
+FN-024,Takeout bags,paper,bundle,21.5,atlas-smallwares
+FN-025,Offset spatula,smallwares,each,25,northline-foods
+FN-026,Locking tongs,smallwares,each,28.5,harbor-mills
+FN-027,Stainless ladle,smallwares,each,32,cedar-dairy-co
+FN-028,Half sheet pan,smallwares,each,4,paperlane-supply
+FN-029,Hotel pan,smallwares,each,7.5,iron-pan-works
+FN-030,Probe thermometer,smallwares,each,11,great-lakes-oil
+FN-031,Y peeler,smallwares,each,14.5,metro-dry-goods
+FN-032,Chef knife,smallwares,each,18,atlas-smallwares
+FN-033,Canola oil,oil,jug,21.5,northline-foods
+FN-034,Olive oil,oil,bottle,25,harbor-mills
+FN-035,Pan spray,oil,can,28.5,cedar-dairy-co
+FN-036,White vinegar,dry goods,gallon,32,paperlane-supply
+FN-037,Wildflower honey,dry goods,jar,4,iron-pan-works
+FN-038,Black pepper,dry goods,tin,7.5,great-lakes-oil
+FN-039,Baking soda,dry goods,box,11,metro-dry-goods
+FN-040,Fryer filters,oil,pack,14.5,atlas-smallwares

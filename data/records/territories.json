@@ -1,0 +1,22 @@
+[
+  {
+    "id": "northeast",
+    "name": "Northeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "southeast",
+    "name": "Southeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "midwest",
+    "name": "Midwest",
+    "officeId": "chicago"
+  },
+  {
+    "id": "west",
+    "name": "West",
+    "officeId": "chicago"
+  }
+]

@@ -1,0 +1,152 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    html, body { margin: 0; background: transparent; color: white; font: 13px/1.4 Inter, "Segoe UI", sans-serif; }
+    .pill { margin: 10px; background: #111827; border-radius: 18px; padding: 12px 14px 10px; box-shadow: 0 16px 40px rgba(0,0,0,.28); }
+    .row { display: flex; align-items: center; gap: 8px; -webkit-app-region: drag; cursor: grab; }
+    .row:active { cursor: grabbing; }
+    .logo { width: 28px; height: 28px; }
+    strong { font-size: 14px; letter-spacing: -0.01em; }
+    .status { margin-left: auto; color: #9ca3af; font-size: 12px; }
+    .status.busy { color: #86efac; }
+    form { display: flex; gap: 8px; margin-top: 12px; -webkit-app-region: no-drag; }
+    input { flex: 1; min-width: 0; border: 0; border-radius: 10px; padding: 10px 12px; background: #1f2937; color: white; font: inherit; }
+    button { border: 0; border-radius: 10px; padding: 10px 12px; background: #1f6b32; color: white; font: inherit; cursor: pointer; -webkit-app-region: no-drag; }
+    button.talk { background: #1f2937; }
+    button.talk.live { background: #b42318; }
+    .hint, .partial, .answer { -webkit-app-region: no-drag; }
+    .hint { margin-top: 8px; color: #9ca3af; font-size: 12px; }
+    .partial { min-height: 0; margin-top: 6px; color: #d1d5db; }
+    .answer { margin-top: 4px; color: white; }
+    .spinner { width: 12px; height: 12px; border: 2px solid #374151; border-top-color: #86efac; border-radius: 50%; display: none; animation: spin .7s linear infinite; }
+    .spinner.on { display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="pill" id="pill">
+    <div class="row">
+      <img class="logo" src="kiwi.svg" alt="" />
+      <strong>Kiwi</strong>
+      <span class="spinner" id="spinner"></span>
+      <span class="status" id="status">Ready</span>
+    </div>
+    <form id="form">
+      <input id="question" placeholder="Where is Send Quote?" />
+      <button type="submit">Ask</button>
+      <button class="talk" id="talk" type="button">Talk</button>
+    </form>
+    <div class="hint">Hold Control + Option to talk. Drag this bar to move Kiwi.</div>
+    <div class="partial" id="partial"></div>
+    <div class="answer" id="answer"></div>
+  </div>
+  <script>
+    const status = document.getElementById("status");
+    const spinner = document.getElementById("spinner");
+    const partial = document.getElementById("partial");
+    const answer = document.getElementById("answer");
+    const talk = document.getElementById("talk");
+    let recording = false;
+    let audio = null;
+    let holdGeneration = 0;
+
+    function fit() {
+      const height = Math.ceil(document.getElementById("pill").getBoundingClientRect().height) + 20;
+      window.kiwi.fit(height);
+    }
+
+    function setBusy(busy, label) {
+      spinner.classList.toggle("on", busy);
+      status.textContent = label;
+      status.classList.toggle("busy", busy);
+    }
+
+    window.kiwi.on("status", (payload) => {
+      setBusy(payload.busy, payload.label);
+      if (!payload.busy) talk.classList.remove("live");
+      fit();
+    });
+    window.kiwi.on("partial", (text) => { partial.textContent = text; fit(); });
+    window.kiwi.on("answer", (text) => { answer.textContent = text; fit(); });
+    window.kiwi.on("listening", (on) => {
+      recording = on;
+      talk.classList.toggle("live", on);
+      talk.textContent = on ? "Stop" : "Talk";
+      if (on) answer.textContent = "";
+    });
+    window.kiwi.on("cancel", () => {
+      holdGeneration += 1;
+      window.kiwi.talkCancel();
+    });
+    window.kiwi.on("hold", async (down) => {
+      if (down) {
+        const generation = ++holdGeneration;
+        try {
+          await ensureMic();
+          if (generation !== holdGeneration) return;
+          await window.kiwi.talkStart();
+        } catch (error) {
+          answer.textContent = error instanceof Error ? error.message : String(error);
+          fit();
+        }
+        return;
+      }
+      holdGeneration += 1;
+      window.kiwi.talkStop();
+    });
+
+    document.getElementById("form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const question = document.getElementById("question").value.trim();
+      if (!question) return;
+      partial.textContent = question;
+      window.kiwi.ask(question);
+    });
+
+    async function ensureMic() {
+      if (audio) return audio;
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      const context = new AudioContext();
+      const source = context.createMediaStreamSource(stream);
+      const processor = context.createScriptProcessor(4096, 1, 1);
+      const mute = context.createGain();
+      mute.gain.value = 0;
+      processor.onaudioprocess = (event) => {
+        if (!recording) return;
+        const input = event.inputBuffer.getChannelData(0);
+        const ratio = context.sampleRate / 16000;
+        const length = Math.floor(input.length / ratio);
+        const pcm = new Int16Array(length);
+        for (let index = 0; index < length; index += 1) {
+          const sample = Math.max(-1, Math.min(1, input[Math.floor(index * ratio)]));
+          pcm[index] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+        }
+        window.kiwi.audio(new Uint8Array(pcm.buffer));
+      };
+      source.connect(processor);
+      processor.connect(mute);
+      mute.connect(context.destination);
+      audio = { context };
+      return audio;
+    }
+
+    talk.addEventListener("click", async () => {
+      if (recording) {
+        window.kiwi.talkStop();
+        return;
+      }
+      try {
+        await ensureMic();
+        await window.kiwi.talkStart();
+      } catch (error) {
+        answer.textContent = error instanceof Error ? error.message : String(error);
+        fit();
+      }
+    });
+
+    fit();
+  </script>
+</body>
+</html>

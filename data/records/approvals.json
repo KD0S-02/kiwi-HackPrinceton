@@ -1,0 +1,42 @@
+[
+  {
+    "id": "approval-1",
+    "opportunityId": "opp-cedar-spoon",
+    "requestedBy": "user",
+    "approverId": "alex-morgan",
+    "kind": "discount",
+    "status": "pending"
+  },
+  {
+    "id": "approval-2",
+    "opportunityId": "opp-lantern-noodle",
+    "requestedBy": "user",
+    "approverId": "alex-morgan",
+    "kind": "discount",
+    "status": "pending"
+  },
+  {
+    "id": "approval-3",
+    "opportunityId": "opp-bright-pie",
+    "requestedBy": "user",
+    "approverId": "alex-morgan",
+    "kind": "discount",
+    "status": "pending"
+  },
+  {
+    "id": "approval-4",
+    "opportunityId": "opp-north-fork-grill",
+    "requestedBy": "user",
+    "approverId": "alex-morgan",
+    "kind": "discount",
+    "status": "pending"
+  },
+  {
+    "id": "approval-5",
+    "opportunityId": "opp-little-anchor",
+    "requestedBy": "user",
+    "approverId": "alex-morgan",
+    "kind": "discount",
+    "status": "pending"
+  }
+]

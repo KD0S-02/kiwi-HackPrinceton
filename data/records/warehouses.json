@@ -1,0 +1,20 @@
+[
+  {
+    "id": "jersey-city-cold",
+    "name": "Jersey City cold",
+    "officeId": "jersey-city",
+    "kind": "cold"
+  },
+  {
+    "id": "chicago-dry",
+    "name": "Chicago dry",
+    "officeId": "chicago",
+    "kind": "dry"
+  },
+  {
+    "id": "newark-dry-goods",
+    "name": "Newark dry goods",
+    "officeId": "jersey-city",
+    "kind": "dry goods"
+  }
+]

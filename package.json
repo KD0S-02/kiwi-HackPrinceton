@@ -1,0 +1,33 @@
+{
+  "name": "kiwi",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check-env": "tsx scripts/check-env.ts",
+    "generate": "tsx scripts/generate-company.ts",
+    "check-seed": "tsx scripts/check-seed.ts",
+    "load-graph": "tsx scripts/load-graph.ts",
+    "embed-docs": "tsx scripts/embed-docs.ts",
+    "check-retrieval": "tsx scripts/check-retrieval.ts",
+    "lookup-user": "tsx scripts/lookup-user.ts",
+    "test-agent": "tsx scripts/test-agent.ts",
+    "desktop": "electron apps/desktop/start.mjs",
+    "kiwi": "open -n dist/Kiwi.app --args \"$PWD/apps/desktop/start.mjs\"",
+    "test": "tsx scripts/check-env.ts && tsx scripts/check-seed.ts && tsx scripts/check-retrieval.ts && tsx scripts/test-agent.ts"
+  },
+  "dependencies": {
+    "@langchain/core": "^1.1.0",
+    "@langchain/google-genai": "^2.0.0",
+    "assemblyai": "^4.43.0",
+    "deepagents": "^1.7.0",
+    "dotenv": "^16.6.1",
+    "electron": "^45.3.2",
+    "neo4j-driver": "^6.0.0",
+    "uiohook-napi": "^1.5.5",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  }
+}

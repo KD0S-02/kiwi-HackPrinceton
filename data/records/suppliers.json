@@ -1,0 +1,42 @@
+[
+  {
+    "id": "northline-foods",
+    "name": "Northline Foods",
+    "category": "dairy"
+  },
+  {
+    "id": "harbor-mills",
+    "name": "Harbor Mills",
+    "category": "dry goods"
+  },
+  {
+    "id": "cedar-dairy-co",
+    "name": "Cedar Dairy Co",
+    "category": "dairy"
+  },
+  {
+    "id": "paperlane-supply",
+    "name": "Paperlane Supply",
+    "category": "paper"
+  },
+  {
+    "id": "iron-pan-works",
+    "name": "Iron Pan Works",
+    "category": "smallwares"
+  },
+  {
+    "id": "great-lakes-oil",
+    "name": "Great Lakes Oil",
+    "category": "oil"
+  },
+  {
+    "id": "metro-dry-goods",
+    "name": "Metro Dry Goods",
+    "category": "dry goods"
+  },
+  {
+    "id": "atlas-smallwares",
+    "name": "Atlas Smallwares",
+    "category": "smallwares"
+  }
+]

@@ -1,0 +1,182 @@
+[
+  {
+    "id": "opp-harbor-diner",
+    "name": "Harbor Diner",
+    "accountId": "harbor-diner",
+    "ownerId": "user",
+    "stage": "Proposal",
+    "amount": 12400,
+    "discountPercent": 20
+  },
+  {
+    "id": "opp-cedar-spoon",
+    "name": "Cedar Spoon",
+    "accountId": "cedar-spoon",
+    "ownerId": "user",
+    "stage": "Proposal",
+    "amount": 937,
+    "discountPercent": 6
+  },
+  {
+    "id": "opp-lantern-noodle",
+    "name": "Lantern Noodle",
+    "accountId": "lantern-noodle",
+    "ownerId": "user",
+    "stage": "Commit",
+    "amount": 1074,
+    "discountPercent": 7
+  },
+  {
+    "id": "opp-bright-pie",
+    "name": "Bright Pie",
+    "accountId": "bright-pie",
+    "ownerId": "user",
+    "stage": "Qualify",
+    "amount": 1211,
+    "discountPercent": 8
+  },
+  {
+    "id": "opp-north-fork-grill",
+    "name": "North Fork Grill",
+    "accountId": "north-fork-grill",
+    "ownerId": "user",
+    "stage": "Proposal",
+    "amount": 1348,
+    "discountPercent": 9
+  },
+  {
+    "id": "opp-little-anchor",
+    "name": "Little Anchor",
+    "accountId": "little-anchor",
+    "ownerId": "user",
+    "stage": "Commit",
+    "amount": 1485,
+    "discountPercent": 10
+  },
+  {
+    "id": "opp-red-kettle",
+    "name": "Red Kettle",
+    "accountId": "red-kettle",
+    "ownerId": "user",
+    "stage": "Qualify",
+    "amount": 1622,
+    "discountPercent": 11
+  },
+  {
+    "id": "opp-maple-counter",
+    "name": "Maple Counter",
+    "accountId": "maple-counter",
+    "ownerId": "user",
+    "stage": "Proposal",
+    "amount": 1759,
+    "discountPercent": 12
+  },
+  {
+    "id": "opp-goldfinch-cafe",
+    "name": "Goldfinch Cafe",
+    "accountId": "goldfinch-cafe",
+    "ownerId": "ae-west",
+    "stage": "Commit",
+    "amount": 1896,
+    "discountPercent": 5
+  },
+  {
+    "id": "opp-river-salt",
+    "name": "River Salt",
+    "accountId": "river-salt",
+    "ownerId": "ae-northeast-2",
+    "stage": "Qualify",
+    "amount": 2033,
+    "discountPercent": 6
+  },
+  {
+    "id": "opp-olive-room",
+    "name": "Olive Room",
+    "accountId": "olive-room",
+    "ownerId": "user",
+    "stage": "Proposal",
+    "amount": 2170,
+    "discountPercent": 7
+  },
+  {
+    "id": "opp-paper-lantern",
+    "name": "Paper Lantern",
+    "accountId": "paper-lantern",
+    "ownerId": "ae-southeast",
+    "stage": "Commit",
+    "amount": 2307,
+    "discountPercent": 8
+  },
+  {
+    "id": "opp-sunday-roast",
+    "name": "Sunday Roast",
+    "accountId": "sunday-roast",
+    "ownerId": "ae-midwest",
+    "stage": "Qualify",
+    "amount": 2444,
+    "discountPercent": 9
+  },
+  {
+    "id": "opp-blue-plate-yard",
+    "name": "Blue Plate Yard",
+    "accountId": "blue-plate-yard",
+    "ownerId": "ae-west",
+    "stage": "Proposal",
+    "amount": 2581,
+    "discountPercent": 10
+  },
+  {
+    "id": "opp-kindling-pizza",
+    "name": "Kindling Pizza",
+    "accountId": "kindling-pizza",
+    "ownerId": "ae-northeast-2",
+    "stage": "Commit",
+    "amount": 2718,
+    "discountPercent": 11
+  },
+  {
+    "id": "opp-the-copper-pot",
+    "name": "The Copper Pot",
+    "accountId": "the-copper-pot",
+    "ownerId": "user",
+    "stage": "Qualify",
+    "amount": 2855,
+    "discountPercent": 12
+  },
+  {
+    "id": "opp-low-tide-tacos",
+    "name": "Low Tide Tacos",
+    "accountId": "low-tide-tacos",
+    "ownerId": "ae-southeast",
+    "stage": "Proposal",
+    "amount": 2992,
+    "discountPercent": 5
+  },
+  {
+    "id": "opp-orchard-table",
+    "name": "Orchard Table",
+    "accountId": "orchard-table",
+    "ownerId": "ae-midwest",
+    "stage": "Commit",
+    "amount": 3129,
+    "discountPercent": 6
+  },
+  {
+    "id": "opp-steam-house",
+    "name": "Steam House",
+    "accountId": "steam-house",
+    "ownerId": "ae-west",
+    "stage": "Qualify",
+    "amount": 3266,
+    "discountPercent": 7
+  },
+  {
+    "id": "opp-fennel-rye",
+    "name": "Fennel & Rye",
+    "accountId": "fennel-rye",
+    "ownerId": "ae-northeast-2",
+    "stage": "Proposal",
+    "amount": 3403,
+    "discountPercent": 8
+  }
+]

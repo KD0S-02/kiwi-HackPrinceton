@@ -1,0 +1,20 @@
+[
+  {
+    "id": "li-harbor-1",
+    "opportunityId": "opp-harbor-diner",
+    "productId": "napkins",
+    "quantity": 12
+  },
+  {
+    "id": "li-harbor-2",
+    "opportunityId": "opp-harbor-diner",
+    "productId": "fryer-oil",
+    "quantity": 8
+  },
+  {
+    "id": "li-harbor-3",
+    "opportunityId": "opp-harbor-diner",
+    "productId": "gloves",
+    "quantity": 6
+  }
+]

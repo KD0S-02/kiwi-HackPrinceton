@@ -1,0 +1,272 @@
+[
+  {
+    "id": "sam-ortiz",
+    "name": "Sam Ortiz",
+    "role": "VP of Sales",
+    "department": "sales",
+    "reportsTo": null,
+    "territoryId": null,
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "alex-morgan",
+    "name": "Alex Morgan",
+    "role": "manager",
+    "department": "sales",
+    "reportsTo": "sam-ortiz",
+    "territoryId": "northeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "user",
+    "name": "Sparsh Bohra",
+    "role": "account executive",
+    "department": "sales",
+    "reportsTo": "alex-morgan",
+    "territoryId": "northeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "ae-southeast",
+    "name": "Priya Shah",
+    "role": "account executive",
+    "department": "sales",
+    "reportsTo": "alex-morgan",
+    "territoryId": "southeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "ae-midwest",
+    "name": "Chris Alvarez",
+    "role": "account executive",
+    "department": "sales",
+    "reportsTo": "alex-morgan",
+    "territoryId": "midwest",
+    "officeId": "chicago"
+  },
+  {
+    "id": "ae-west",
+    "name": "Morgan Blake",
+    "role": "account executive",
+    "department": "sales",
+    "reportsTo": "alex-morgan",
+    "territoryId": "west",
+    "officeId": "chicago"
+  },
+  {
+    "id": "ae-northeast-2",
+    "name": "Elena Vasquez",
+    "role": "account executive",
+    "department": "sales",
+    "reportsTo": "alex-morgan",
+    "territoryId": "northeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "sales-1",
+    "name": "Noah Patel",
+    "role": "business development",
+    "department": "sales",
+    "reportsTo": "alex-morgan",
+    "territoryId": "northeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "sales-2",
+    "name": "Grace Kim",
+    "role": "business development",
+    "department": "sales",
+    "reportsTo": "alex-morgan",
+    "territoryId": "southeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "sales-3",
+    "name": "Owen Brooks",
+    "role": "business development",
+    "department": "sales",
+    "reportsTo": "alex-morgan",
+    "territoryId": "midwest",
+    "officeId": "chicago"
+  },
+  {
+    "id": "sales-4",
+    "name": "Hannah Diaz",
+    "role": "business development",
+    "department": "sales",
+    "reportsTo": "alex-morgan",
+    "territoryId": "west",
+    "officeId": "chicago"
+  },
+  {
+    "id": "sales-5",
+    "name": "Leo Nguyen",
+    "role": "business development",
+    "department": "sales",
+    "reportsTo": "alex-morgan",
+    "territoryId": "northeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "sales-6",
+    "name": "Jack Romero",
+    "role": "business development",
+    "department": "sales",
+    "reportsTo": "alex-morgan",
+    "territoryId": "southeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "ops-1",
+    "name": "Sofia Berg",
+    "role": "ops",
+    "department": "ops",
+    "reportsTo": "sam-ortiz",
+    "territoryId": "northeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "ops-2",
+    "name": "Ethan Cole",
+    "role": "ops",
+    "department": "ops",
+    "reportsTo": "sam-ortiz",
+    "territoryId": "southeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "ops-3",
+    "name": "Ava Rahman",
+    "role": "ops",
+    "department": "ops",
+    "reportsTo": "sam-ortiz",
+    "territoryId": "midwest",
+    "officeId": "chicago"
+  },
+  {
+    "id": "ops-4",
+    "name": "Liam Ortiz",
+    "role": "ops",
+    "department": "ops",
+    "reportsTo": "sam-ortiz",
+    "territoryId": "west",
+    "officeId": "chicago"
+  },
+  {
+    "id": "ops-5",
+    "name": "Nora Kapoor",
+    "role": "ops",
+    "department": "ops",
+    "reportsTo": "sam-ortiz",
+    "territoryId": "northeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "ops-6",
+    "name": "Ben Cho",
+    "role": "ops",
+    "department": "ops",
+    "reportsTo": "sam-ortiz",
+    "territoryId": "southeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "ops-7",
+    "name": "Iris Feldman",
+    "role": "ops",
+    "department": "ops",
+    "reportsTo": "sam-ortiz",
+    "territoryId": "midwest",
+    "officeId": "chicago"
+  },
+  {
+    "id": "ops-8",
+    "name": "Theo March",
+    "role": "ops",
+    "department": "ops",
+    "reportsTo": "sam-ortiz",
+    "territoryId": "west",
+    "officeId": "chicago"
+  },
+  {
+    "id": "warehouse-1",
+    "name": "Camille Brooks",
+    "role": "warehouse",
+    "department": "warehouse",
+    "reportsTo": "sam-ortiz",
+    "territoryId": "northeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "warehouse-2",
+    "name": "Derek Huang",
+    "role": "warehouse",
+    "department": "warehouse",
+    "reportsTo": "sam-ortiz",
+    "territoryId": "southeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "warehouse-3",
+    "name": "Paige Lerner",
+    "role": "warehouse",
+    "department": "warehouse",
+    "reportsTo": "sam-ortiz",
+    "territoryId": "midwest",
+    "officeId": "chicago"
+  },
+  {
+    "id": "warehouse-4",
+    "name": "Omar Farouk",
+    "role": "warehouse",
+    "department": "warehouse",
+    "reportsTo": "sam-ortiz",
+    "territoryId": "west",
+    "officeId": "chicago"
+  },
+  {
+    "id": "warehouse-5",
+    "name": "Nina Solis",
+    "role": "warehouse",
+    "department": "warehouse",
+    "reportsTo": "sam-ortiz",
+    "territoryId": "northeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "warehouse-6",
+    "name": "Victor Adeyemi",
+    "role": "warehouse",
+    "department": "warehouse",
+    "reportsTo": "sam-ortiz",
+    "territoryId": "southeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "finance-1",
+    "name": "Holly Grant",
+    "role": "finance",
+    "department": "finance",
+    "reportsTo": "sam-ortiz",
+    "territoryId": "northeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "finance-2",
+    "name": "Quinn Parker",
+    "role": "finance",
+    "department": "finance",
+    "reportsTo": "sam-ortiz",
+    "territoryId": "southeast",
+    "officeId": "jersey-city"
+  },
+  {
+    "id": "finance-3",
+    "name": "Felix Rahman",
+    "role": "finance",
+    "department": "finance",
+    "reportsTo": "sam-ortiz",
+    "territoryId": "midwest",
+    "officeId": "chicago"
+  }
+]

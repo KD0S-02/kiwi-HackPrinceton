@@ -1,0 +1,50 @@
+[
+  {
+    "id": "po-1",
+    "supplierId": "northline-foods",
+    "warehouseId": "jersey-city-cold",
+    "status": "open"
+  },
+  {
+    "id": "po-2",
+    "supplierId": "harbor-mills",
+    "warehouseId": "chicago-dry",
+    "status": "received"
+  },
+  {
+    "id": "po-3",
+    "supplierId": "cedar-dairy-co",
+    "warehouseId": "newark-dry-goods",
+    "status": "received"
+  },
+  {
+    "id": "po-4",
+    "supplierId": "paperlane-supply",
+    "warehouseId": "jersey-city-cold",
+    "status": "received"
+  },
+  {
+    "id": "po-5",
+    "supplierId": "iron-pan-works",
+    "warehouseId": "chicago-dry",
+    "status": "received"
+  },
+  {
+    "id": "po-6",
+    "supplierId": "great-lakes-oil",
+    "warehouseId": "newark-dry-goods",
+    "status": "received"
+  },
+  {
+    "id": "po-7",
+    "supplierId": "metro-dry-goods",
+    "warehouseId": "jersey-city-cold",
+    "status": "received"
+  },
+  {
+    "id": "po-8",
+    "supplierId": "atlas-smallwares",
+    "warehouseId": "chicago-dry",
+    "status": "received"
+  }
+]

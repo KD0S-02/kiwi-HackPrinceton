@@ -1,0 +1,72 @@
+[
+  {
+    "id": "shipment-1",
+    "orderId": "order-1",
+    "accountId": "goldfinch-cafe",
+    "warehouseId": "jersey-city-cold",
+    "status": "picking"
+  },
+  {
+    "id": "shipment-2",
+    "orderId": "order-2",
+    "accountId": "river-salt",
+    "warehouseId": "newark-dry-goods",
+    "status": "delivered"
+  },
+  {
+    "id": "shipment-3",
+    "orderId": "order-3",
+    "accountId": "olive-room",
+    "warehouseId": "chicago-dry",
+    "status": "delivered"
+  },
+  {
+    "id": "shipment-4",
+    "orderId": "order-4",
+    "accountId": "paper-lantern",
+    "warehouseId": "chicago-dry",
+    "status": "delivered"
+  },
+  {
+    "id": "shipment-5",
+    "orderId": "order-5",
+    "accountId": "sunday-roast",
+    "warehouseId": "jersey-city-cold",
+    "status": "delivered"
+  },
+  {
+    "id": "shipment-6",
+    "orderId": "order-6",
+    "accountId": "blue-plate-yard",
+    "warehouseId": "newark-dry-goods",
+    "status": "delivered"
+  },
+  {
+    "id": "shipment-7",
+    "orderId": "order-7",
+    "accountId": "kindling-pizza",
+    "warehouseId": "chicago-dry",
+    "status": "delivered"
+  },
+  {
+    "id": "shipment-8",
+    "orderId": "order-8",
+    "accountId": "the-copper-pot",
+    "warehouseId": "chicago-dry",
+    "status": "delivered"
+  },
+  {
+    "id": "shipment-9",
+    "orderId": "order-9",
+    "accountId": "low-tide-tacos",
+    "warehouseId": "jersey-city-cold",
+    "status": "delivered"
+  },
+  {
+    "id": "shipment-10",
+    "orderId": "order-10",
+    "accountId": "orchard-table",
+    "warehouseId": "newark-dry-goods",
+    "status": "delivered"
+  }
+]

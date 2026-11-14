@@ -1,0 +1,98 @@
+[
+  {
+    "id": "quote-1",
+    "opportunityId": "opp-cedar-spoon",
+    "accountId": "cedar-spoon",
+    "ownerId": "user",
+    "status": "sent",
+    "amount": 937
+  },
+  {
+    "id": "quote-2",
+    "opportunityId": "opp-lantern-noodle",
+    "accountId": "lantern-noodle",
+    "ownerId": "user",
+    "status": "sent",
+    "amount": 1074
+  },
+  {
+    "id": "quote-3",
+    "opportunityId": "opp-bright-pie",
+    "accountId": "bright-pie",
+    "ownerId": "user",
+    "status": "sent",
+    "amount": 1211
+  },
+  {
+    "id": "quote-4",
+    "opportunityId": "opp-north-fork-grill",
+    "accountId": "north-fork-grill",
+    "ownerId": "user",
+    "status": "sent",
+    "amount": 1348
+  },
+  {
+    "id": "quote-5",
+    "opportunityId": "opp-little-anchor",
+    "accountId": "little-anchor",
+    "ownerId": "user",
+    "status": "sent",
+    "amount": 1485
+  },
+  {
+    "id": "quote-6",
+    "opportunityId": "opp-red-kettle",
+    "accountId": "red-kettle",
+    "ownerId": "user",
+    "status": "sent",
+    "amount": 1622
+  },
+  {
+    "id": "quote-7",
+    "opportunityId": "opp-maple-counter",
+    "accountId": "maple-counter",
+    "ownerId": "user",
+    "status": "sent",
+    "amount": 1759
+  },
+  {
+    "id": "quote-8",
+    "opportunityId": "opp-goldfinch-cafe",
+    "accountId": "goldfinch-cafe",
+    "ownerId": "ae-west",
+    "status": "sent",
+    "amount": 1896
+  },
+  {
+    "id": "quote-9",
+    "opportunityId": "opp-river-salt",
+    "accountId": "river-salt",
+    "ownerId": "ae-northeast-2",
+    "status": "sent",
+    "amount": 2033
+  },
+  {
+    "id": "quote-10",
+    "opportunityId": "opp-olive-room",
+    "accountId": "olive-room",
+    "ownerId": "user",
+    "status": "sent",
+    "amount": 2170
+  },
+  {
+    "id": "quote-11",
+    "opportunityId": "opp-paper-lantern",
+    "accountId": "paper-lantern",
+    "ownerId": "ae-southeast",
+    "status": "sent",
+    "amount": 2307
+  },
+  {
+    "id": "quote-12",
+    "opportunityId": "opp-sunday-roast",
+    "accountId": "sunday-roast",
+    "ownerId": "ae-midwest",
+    "status": "sent",
+    "amount": 2444
+  }
+]
