@@ -7,11 +7,11 @@ import { uIOhook, UiohookKey } from "uiohook-napi";
 import { AssemblyAI, StreamingTranscriber } from "assemblyai";
 import { ask, clearSignedIn, primeCache, type Stop } from "../../scripts/ask.ts";
 import { askPage, pageInFront, pagePath, startBridge } from "./bridge.ts";
-import { ensureFieldnote, fieldnoteUrl } from "./fieldnote.ts";
+import { ensureFieldnote } from "./fieldnote.ts";
 import { route } from "./router.ts";
 import { prepareStops, stillToDo } from "./steps.ts";
 import { adjustOwner, personByEmail, personById, type Person } from "../fieldnote/lib/people.ts";
-import { activateApp, chromeTabs, frontWindow, openChromeTab, openChromeUrl, prefetchChromeTabs } from "./chrome.ts";
+import { activateApp, chromeTabs, frontWindow, openChromeTab, prefetchChromeTabs } from "./chrome.ts";
 import { requiredEnv } from "../../scripts/load-env.ts";
 import { lookupUser } from "../../scripts/lookup-user.ts";
 import { dataDirectory } from "../../scripts/paths.ts";
@@ -123,7 +123,6 @@ async function signIn(email: string) {
   const already = sessionPerson?.id === found.person.id;
   runId += 1;
   await activatePerson(found.person);
-  void openChromeUrl(`${fieldnoteUrl}/api/login?email=${encodeURIComponent(found.person.email)}`).catch(() => undefined);
   return { ok: true as const, already, ...sessionPayload(found.person)! };
 }
 
@@ -137,7 +136,6 @@ async function signOut() {
   recorder.stop();
   send("session", null);
   send("answer", "");
-  void openChromeUrl(`${fieldnoteUrl}/api/logout`).catch(() => undefined);
   return { ok: true as const };
 }
 
@@ -742,6 +740,7 @@ app.whenReady().then(async () => {
     webPreferences: { preload: path.join(here, "preload.cjs"), contextIsolation: true, nodeIntegration: false, backgroundThrottling: false },
   });
   overlay.setIgnoreMouseEvents(true);
+  ipcMain.handle("session", () => sessionPayload(sessionPerson));
   await panel.loadFile(path.join(here, "panel.html"));
   await overlay.loadFile(path.join(here, "overlay.html"));
   for (const window of [panel, overlay]) {
@@ -766,7 +765,6 @@ app.whenReady().then(async () => {
     point(null);
     void cancelTalking();
   });
-  ipcMain.handle("session", () => sessionPayload(sessionPerson));
   ipcMain.handle("sign-in", (_event, email: string) => signIn(String(email ?? "")));
   ipcMain.handle("sign-out", () => signOut());
   ipcMain.handle("record-start", () => {
