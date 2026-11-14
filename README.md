@@ -13,15 +13,15 @@ Built for HackPrinceton.
 
 ## The demo in one paragraph
 
-Sparsh Bohra is an account executive at Fieldnote. His manager and approver is Shail Shah. The rule: an account executive may send a quote on their own opportunities and may not discount past 15 percent. Anything over the cap needs Shail's approval. The demo record is **Harbor Diner**, discounted 20 percent, so **Send Quote** is switched off. Sparsh holds Control + Option and asks "where is Send Quote?". Kiwi flies a small kiwi slice to the button, draws a ring around it, and explains that the discount is over the cap and Shail has to approve it.
+Sparsh Bohra is an account executive at Fieldnote. His manager is Shail Shah. The rule: an account executive may send a quote on their own opportunities and may not discount past 15 percent. Anything over the cap needs Shail. The demo record is **Harbor Diner**, discounted 20 percent, so **Send Quote** is switched off. Sparsh holds Control + Option and asks "where is Send Quote?". Kiwi flies a small kiwi slice to the button, draws a ring around it, and explains that the discount is over the cap and Shail has to sign off.
 
-Sign in with a work email. Three accounts are preloaded. Shail Shah reviews the team book and sends anything over the cap to Krishna Das. Krishna Das owns Fieldnote, has no manager and no approver, and sees the whole company.
+Sign in with a work email. Three accounts are preloaded. Shail Shah reviews the team book and sends anything over the cap to Krishna Das. Krishna Das owns Fieldnote, has no manager, and sees the whole company.
 
 ## Who is who
 
 - **Sparsh Bohra** (`sparsh.bohra@fieldnote.com`) is an account executive. In the data he is the record `user`. He owns his own restaurants. Kiwi calls him Sparsh or "you".
-- **Shail Shah** (`shail.shah@fieldnote.com`) is a senior account executive. He is Sparsh's manager and approver. He does not carry a personal book. His manager and approver is Krishna Das.
-- **Krishna Das** (`krishna.das@fieldnote.com`) owns Fieldnote. He has no manager and no approver. He sees every deal, and a discount over the cap stops with him.
+- **Shail Shah** (`shail.shah@fieldnote.com`) is a senior account executive. He is Sparsh's manager. He does not carry a personal book. His manager is Krishna Das.
+- **Krishna Das** (`krishna.das@fieldnote.com`) owns Fieldnote. He has no manager. He sees every deal, and a discount over the cap stops with him.
 - **Alex Morgan** is still in the directory. Other account executives report to him. He is not Sparsh's manager.
 - **Fieldnote** is the fictional restaurant-supply company: 40 restaurants, 32 employees, 2 offices (Jersey City and Chicago), 3 warehouses, 40 products.
 

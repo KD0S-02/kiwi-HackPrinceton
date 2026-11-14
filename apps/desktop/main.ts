@@ -39,6 +39,9 @@ let transcriberOpen = false;
 let pendingAudio: Buffer[] = [];
 let listenTimer: NodeJS.Timeout | undefined;
 let listening = false;
+let activePress = 0;
+let stoppedPress = 0;
+let talkGeneration = 0;
 let transcript = "";
 let runId = 0;
 let followCursor = true;
@@ -469,14 +472,36 @@ function timing(question: string, path: string, started: number) {
   writeFileSync("/tmp/kiwi-timing.log", `${new Date().toISOString()} ${Date.now() - started}ms ${path} ${question}\n`, { flag: "a" });
 }
 
-async function startTalking() {
+async function finishUtterance(generation: number) {
+  if (listenTimer) clearTimeout(listenTimer);
+  if (!listening) return;
+  listening = false;
+  send("listening", false);
+  const current = transcriber;
+  transcriber = undefined;
+  transcriberOpen = false;
+  await closeTranscriber(current);
+  if (talkGeneration !== generation) return;
+  const question = transcript.trim();
+  if (!question) {
+    send("status", { busy: false, label: "Ready" });
+    send("partial", "No words came through.");
+    return;
+  }
+  await answerQuestion(question);
+}
+
+async function startTalking(press: number) {
   if (listening) return;
+  const generation = ++talkGeneration;
+  activePress = press;
+  const stopAlready = stoppedPress === press;
   transcript = "";
   listening = true;
   send("listening", true);
   send("status", { busy: true, label: "Listening" });
   if (listenTimer) clearTimeout(listenTimer);
-  listenTimer = setTimeout(() => void stopTalking(), 30_000);
+  listenTimer = setTimeout(() => void stopTalking(press), 30_000);
   const client = new AssemblyAI({ apiKey: requiredEnv("ASSEMBLYAI_API_KEY") });
   const next = client.streaming.transcriber({
     sampleRate: 16_000,
@@ -495,26 +520,30 @@ async function startTalking() {
   next.on("close", () => {
     if (transcriber === next) transcriberOpen = false;
   });
+  const early = pendingAudio;
+  pendingAudio = [];
   transcriber = next;
   transcriberOpen = false;
-  pendingAudio = [];
   try {
     await next.connect();
   } catch (error) {
-    listening = false;
-    transcriber = undefined;
-    pendingAudio = [];
-    send("listening", false);
-    send("status", { busy: false, label: "Ready" });
+    if (talkGeneration === generation) {
+      listening = false;
+      transcriber = undefined;
+      pendingAudio = [];
+      send("listening", false);
+      send("status", { busy: false, label: "Ready" });
+    }
     throw error;
   }
-  if (transcriber !== next) {
-    await next.close();
+  if (talkGeneration !== generation || transcriber !== next) {
+    await next.close().catch(() => undefined);
     return;
   }
   transcriberOpen = true;
-  for (const chunk of pendingAudio) sendAudioSafely(next, chunk);
+  for (const chunk of [...early, ...pendingAudio]) sendAudioSafely(next, chunk);
   pendingAudio = [];
+  if (stopAlready || stoppedPress === press) await finishUtterance(generation);
 }
 
 function sendAudioSafely(target: StreamingTranscriber, chunk: Buffer) {
@@ -536,25 +565,17 @@ async function closeTranscriber(current: StreamingTranscriber | undefined) {
   }
 }
 
-async function stopTalking() {
+async function stopTalking(press: number) {
   if (listenTimer) clearTimeout(listenTimer);
-  if (!listening) return;
-  listening = false;
-  send("listening", false);
-  const current = transcriber;
-  transcriber = undefined;
-  await closeTranscriber(current);
-  const question = transcript.trim();
-  if (!question) {
-    send("status", { busy: false, label: "Ready" });
-    send("partial", "No words came through.");
-    return;
-  }
-  await answerQuestion(question);
+  stoppedPress = press;
+  if (!listening || activePress !== press || !transcriberOpen) return;
+  await finishUtterance(talkGeneration);
 }
 
 async function cancelTalking() {
   if (listenTimer) clearTimeout(listenTimer);
+  talkGeneration += 1;
+  stoppedPress = activePress;
   listening = false;
   transcript = "";
   send("listening", false);
@@ -772,20 +793,20 @@ app.whenReady().then(async () => {
     return { ok: true as const };
   });
   ipcMain.handle("ask", (_event, question: string) => answerQuestion(question));
-  ipcMain.handle("talk-start", () => {
+  ipcMain.handle("talk-start", (_event, press: number) => {
     if (!sessionPerson) {
       send("answer", "Sign in with your work email first.");
       return;
     }
-    return startTalking();
+    return startTalking(Number(press) || 0);
   });
-  ipcMain.handle("talk-stop", () => stopTalking());
+  ipcMain.handle("talk-stop", (_event, press: number) => stopTalking(Number(press) || activePress));
   ipcMain.handle("talk-cancel", () => cancelTalking());
   ipcMain.on("audio", (_event, bytes: ArrayBuffer) => {
-    if (!listening || !transcriber) return;
+    if (!listening) return;
     const chunk = Buffer.from(bytes);
-    if (!transcriberOpen) {
-      if (pendingAudio.length < 100) pendingAudio.push(chunk);
+    if (!transcriber || !transcriberOpen) {
+      if (pendingAudio.length < 200) pendingAudio.push(chunk);
       return;
     }
     sendAudioSafely(transcriber, chunk);

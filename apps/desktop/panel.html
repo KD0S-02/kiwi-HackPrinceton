@@ -142,7 +142,7 @@
     let micOn = false;
     let recordMode = "idle";
     let audio = null;
-    let holdGeneration = 0;
+    let pressId = 0;
 
     function fit() {
       const height = Math.ceil(document.getElementById("pill").getBoundingClientRect().height);
@@ -186,30 +186,26 @@
       if (on) answer.textContent = "";
     });
     window.kiwi.on("cancel", () => {
-      holdGeneration += 1;
       window.kiwi.talkCancel();
     });
     window.kiwi.on("hold", async (down) => {
       if (down) {
+        const id = ++pressId;
         await sessionReady;
         if (!signedIn) {
           document.getElementById("session-error").textContent = "Sign in with your work email first.";
           fit();
           return;
         }
-        const generation = ++holdGeneration;
         try {
-          await ensureMic();
-          if (generation !== holdGeneration) return;
-          await window.kiwi.talkStart();
+          await beginTalk(id);
         } catch (error) {
           answer.textContent = error instanceof Error ? error.message : String(error);
           fit();
         }
         return;
       }
-      holdGeneration += 1;
-      window.kiwi.talkStop();
+      window.kiwi.talkStop(pressId);
     });
 
     let signedIn = null;
@@ -223,7 +219,10 @@
       document.getElementById("sign-out").classList.toggle("on", Boolean(person));
       document.getElementById("brand-title").textContent = person ? "Kiwi · Fieldnote" : "Kiwi";
       document.getElementById("brand-role").textContent = person ? `${person.name} (${person.role})` : "";
-      if (person) document.getElementById("session-error").textContent = "";
+      if (person) {
+        document.getElementById("session-error").textContent = "";
+        void ensureMic().catch(() => {});
+      }
       else {
         answer.textContent = "";
         partial.textContent = "";
@@ -265,12 +264,31 @@
       window.kiwi.ask(question);
     });
 
+    async function beginTalk(id) {
+      micOn = true;
+      talk.classList.add("live");
+      const started = window.kiwi.talkStart(id);
+      try {
+        await ensureMic();
+        await started;
+      } catch (error) {
+        micOn = false;
+        talk.classList.remove("live");
+        void window.kiwi.talkCancel();
+        throw error;
+      }
+    }
+
     async function ensureMic() {
-      if (audio) return audio;
+      if (audio) {
+        if (audio.context.state === "suspended") await audio.context.resume();
+        return audio;
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       const context = new AudioContext();
+      if (context.state === "suspended") await context.resume();
       const source = context.createMediaStreamSource(stream);
-      const processor = context.createScriptProcessor(4096, 1, 1);
+      const processor = context.createScriptProcessor(1024, 1, 1);
       const mute = context.createGain();
       mute.gain.value = 0;
       processor.onaudioprocess = (event) => {
@@ -349,13 +367,20 @@
 
     talk.addEventListener("click", async () => {
       if (micOn) {
-        window.kiwi.talkStop();
+        window.kiwi.talkStop(pressId);
+        return;
+      }
+      await sessionReady;
+      if (!signedIn) {
+        document.getElementById("session-error").textContent = "Sign in with your work email first.";
+        fit();
         return;
       }
       try {
-        await ensureMic();
-        await window.kiwi.talkStart();
+        await beginTalk(++pressId);
       } catch (error) {
+        micOn = false;
+        talk.classList.remove("live");
         answer.textContent = error instanceof Error ? error.message : String(error);
         fit();
       }
