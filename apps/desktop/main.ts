@@ -70,11 +70,20 @@ function point(payload: { x: number; y: number; say: string } | null) {
   followCursor = payload === null;
   showOnOverlay("point", payload);
   if (payload) {
-    followTimer = setTimeout(() => {
-      followCursor = true;
-      showOnOverlay("follow", true);
-    }, 7000);
+    returnToCursor(4500);
   }
+}
+
+function returnToCursor(delayMs: number) {
+  if (followTimer) clearTimeout(followTimer);
+  followTimer = setTimeout(() => {
+    followCursor = true;
+    if (!overlay.isDestroyed()) {
+      overlay.showInactive();
+      overlay.moveTop();
+    }
+    showOnOverlay("follow", true);
+  }, delayMs);
 }
 
 async function warmCache() {
@@ -201,6 +210,7 @@ async function playStop(stop: Stop, guess: { x: number; y: number } | undefined)
     let spot = await askPage({ op: "locate", target: "filters" }, 600);
     if (!spot?.ok) spot = await askPage({ op: "locate", target: "results" }, 600);
     if (spot?.ok && spot.rect) fly(spot.rect.x, spot.rect.y);
+    returnToCursor(2200);
     await wait(1200);
     return;
   }
@@ -218,6 +228,7 @@ async function playStop(stop: Stop, guess: { x: number; y: number } | undefined)
       return "";
     });
     if (!opened) send("answer", `I could not find a tab called ${target.slice(4)}.`);
+    returnToCursor(600);
     return;
   }
 
@@ -237,6 +248,7 @@ async function playStop(stop: Stop, guess: { x: number; y: number } | undefined)
       await wait(550);
       const done = await askPage({ op: "act", target, kind: stop.kind, text: stop.text }, 800);
       if (!done?.ok) send("answer", done?.error ?? "The page did not answer.");
+      returnToCursor(1100);
       await wait(300);
       return;
     }
@@ -265,6 +277,7 @@ async function playStop(stop: Stop, guess: { x: number; y: number } | undefined)
   } catch (error) {
     send("answer", `I couldn't press it: ${error instanceof Error ? error.message : String(error)}`);
   }
+  returnToCursor(1100);
   await wait(400);
 }
 
@@ -568,7 +581,7 @@ app.whenReady().then(async () => {
     skipTaskbar: true,
     hasShadow: false,
     show: false,
-    webPreferences: { preload: path.join(here, "preload.cjs"), contextIsolation: true, nodeIntegration: false },
+    webPreferences: { preload: path.join(here, "preload.cjs"), contextIsolation: true, nodeIntegration: false, backgroundThrottling: false },
   });
   overlay.setIgnoreMouseEvents(true);
   await panel.loadFile(path.join(here, "panel.html"));
