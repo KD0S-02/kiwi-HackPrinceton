@@ -12,7 +12,7 @@
     "lookup-user": "tsx scripts/lookup-user.ts",
     "test-agent": "tsx scripts/test-agent.ts",
     "desktop": "electron apps/desktop/start.mjs",
-    "kiwi": "open -n dist/Kiwi.app --args \"$PWD/apps/desktop/start.mjs\"",
+    "kiwi": "open -n dist/Kiwi.app",
     "test": "tsx scripts/check-env.ts && tsx scripts/check-seed.ts && tsx scripts/check-retrieval.ts && tsx scripts/test-agent.ts"
   },
   "dependencies": {

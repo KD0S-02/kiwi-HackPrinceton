@@ -101,16 +101,13 @@ cd ../.. && npm run kiwi              # launches dist/Kiwi.app
 
 ### Rebuilding `dist/Kiwi.app`
 
-`dist/` is not committed. To rebuild it:
+`dist/` is not committed. Build it once with:
 
 ```bash
-cp -R node_modules/electron/dist/Electron.app dist/Kiwi.app
-plutil -replace CFBundleName -string Kiwi dist/Kiwi.app/Contents/Info.plist
-plutil -replace CFBundleDisplayName -string Kiwi dist/Kiwi.app/Contents/Info.plist
-plutil -replace CFBundleIdentifier -string com.fieldnote.kiwi dist/Kiwi.app/Contents/Info.plist
-# put an .icns made from apps/desktop/kiwi-icon.svg at dist/Kiwi.app/Contents/Resources/electron.icns
-codesign --force --deep --sign - dist/Kiwi.app
+./scripts/build-kiwi-app.sh
 ```
+
+The script signs the app with a requirement that names only the bundle id (`com.fieldnote.kiwi`). A plain ad-hoc signature is tied to the exact file contents, so every rebuild looks like a new app to macOS and it asks for Accessibility, Microphone and Screen Recording again. Rebuild only when you must. Editing the code under `apps/desktop` does not need a rebuild.
 
 ### macOS permissions (why Kiwi must be launched with `npm run kiwi`)
 
