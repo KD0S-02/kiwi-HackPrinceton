@@ -188,13 +188,34 @@ function waitFor(check: () => boolean, timeoutMs: number) {
   });
 }
 
+function samePlace(wanted: string) {
+  const now = location.pathname + location.search;
+  if (now === wanted) return true;
+  try {
+    const a = new URL(wanted, location.origin);
+    const b = new URL(now, location.origin);
+    if (a.pathname !== b.pathname) return false;
+    const left = [...a.searchParams.entries()].sort().join("\0");
+    const right = [...b.searchParams.entries()].sort().join("\0");
+    return left === right;
+  } catch {
+    return false;
+  }
+}
+
 async function navigate(url: string, push: (href: string) => void) {
   const target = new URL(url, location.href);
   if (target.origin !== location.origin) return { ok: false, error: "Kiwi only opens Fieldnote pages." };
   const wanted = target.pathname + target.search;
-  if (location.pathname + location.search !== wanted) {
+  if (!samePlace(wanted)) {
     push(wanted);
-    const arrived = await waitFor(() => location.pathname + location.search === wanted, 6000);
+    // Soft nav can stall on a cold Next compile. Fall back to a hard load quickly
+    // so the bridge still answers before Electron's navigate timeout.
+    let arrived = await waitFor(() => samePlace(wanted), 2500);
+    if (!arrived) {
+      location.assign(wanted);
+      arrived = await waitFor(() => samePlace(wanted), 12000);
+    }
     if (!arrived) return { ok: false, error: "That page took too long to open." };
   }
   await new Promise((resolve) => setTimeout(resolve, 120));

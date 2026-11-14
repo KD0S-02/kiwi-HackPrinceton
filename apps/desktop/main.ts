@@ -359,7 +359,7 @@ async function playStop(stop: Stop) {
 
   if (/^url:/i.test(target)) {
     send("answer", stop.say);
-    const opened = await askPage({ op: "navigate", url: urlOf(target) }, 6500);
+    const opened = await askPage({ op: "navigate", url: urlOf(target) }, 22000);
     if (!opened?.ok) {
       send("answer", opened?.error ?? "Fieldnote did not open that page.");
       return;
@@ -503,7 +503,7 @@ async function playSkill(skill: Skill, current: number) {
         send("answer", problem);
         return;
       }
-      const opened = await askPage({ op: "navigate", url: step.path }, 6500);
+      const opened = await askPage({ op: "navigate", url: step.path }, 22000);
       if (!opened?.ok) {
         send("answer", `I could not open ${step.path}.`);
         return;
@@ -513,7 +513,7 @@ async function playSkill(skill: Skill, current: number) {
       continue;
     }
     if (step.path && pagePath() !== step.path && knownPath(step.path)) {
-      await askPage({ op: "navigate", url: step.path }, 6500);
+      await askPage({ op: "navigate", url: step.path }, 22000);
       await wait(500);
     }
     const say = `${describeStep(step, index === 0, nav)}.`;
@@ -524,7 +524,7 @@ async function playSkill(skill: Skill, current: number) {
     await wait(2200);
   }
   if (current === runId && skill.end && pagePath() !== skill.end && knownPath(skill.end)) {
-    await askPage({ op: "navigate", url: skill.end }, 6500);
+    await askPage({ op: "navigate", url: skill.end }, 22000);
   }
   if (current === runId) {
     returnToCursor(400);
