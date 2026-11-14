@@ -5,20 +5,26 @@ import { fileURLToPath } from "node:url";
 import { app, BrowserWindow, clipboard, desktopCapturer, globalShortcut, ipcMain, nativeImage, screen, session, shell, systemPreferences } from "electron";
 import { uIOhook, UiohookKey } from "uiohook-napi";
 import { AssemblyAI, StreamingTranscriber } from "assemblyai";
-import { ask, primeCache, type Stop } from "../../scripts/ask.ts";
-import { askPage, pageInFront, startBridge } from "./bridge.ts";
-import { ensureFieldnote } from "./fieldnote.ts";
+import { ask, clearSignedIn, primeCache, type Stop } from "../../scripts/ask.ts";
+import { askPage, pageInFront, pagePath, startBridge } from "./bridge.ts";
+import { ensureFieldnote, fieldnoteUrl } from "./fieldnote.ts";
 import { route } from "./router.ts";
-import { activateApp, chromeTabs, frontWindow, openChromeTab, prefetchChromeTabs } from "./chrome.ts";
+import { prepareStops, stillToDo } from "./steps.ts";
+import { adjustOwner, personByEmail, personById, type Person } from "../fieldnote/lib/people.ts";
+import { activateApp, chromeTabs, frontWindow, openChromeTab, openChromeUrl, prefetchChromeTabs } from "./chrome.ts";
 import { requiredEnv } from "../../scripts/load-env.ts";
 import { lookupUser } from "../../scripts/lookup-user.ts";
+import { dataDirectory } from "../../scripts/paths.ts";
+import { createRecorder } from "./record.ts";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const keyterms = [
   "Fieldnote",
   "Harbor Diner",
   "Send Quote",
-  "Alex Morgan",
+  "Krishna Das",
+  "Shail Shah",
+  "Sparsh Bohra",
   "Priya Shah",
   "Discount",
   "fryer oil",
@@ -87,14 +93,59 @@ function returnToCursor(delayMs: number) {
   }, delayMs);
 }
 
+const knownPages = [
+  { source: "discount-policy.md", text: "An account executive may discount up to 15 percent and may send a quote on their own opportunities." },
+  { source: "sending-a-quote.md", text: "Send Quote is on the Opportunity header next to the discount field." },
+];
+let sessionPerson: Person | null = null;
+
+function sessionFile() {
+  return path.join(app.getPath("userData"), "session.json");
+}
+
+function sessionPayload(person: Person | null) {
+  return person ? { name: person.name, role: person.role, email: person.email } : null;
+}
+
+async function activatePerson(person: Person) {
+  sessionPerson = person;
+  writeFileSync(sessionFile(), JSON.stringify({ id: person.id }));
+  primeCache(await lookupUser(person.id), knownPages);
+  send("session", sessionPayload(person));
+}
+
+async function signIn(email: string) {
+  const found = personByEmail(email);
+  if ("error" in found) return { ok: false as const, error: found.error };
+  const already = sessionPerson?.id === found.person.id;
+  runId += 1;
+  await activatePerson(found.person);
+  void openChromeUrl(`${fieldnoteUrl}/api/login?email=${encodeURIComponent(found.person.email)}`).catch(() => undefined);
+  return { ok: true as const, already, ...sessionPayload(found.person)! };
+}
+
+async function signOut() {
+  if (!sessionPerson) return { ok: true as const };
+  sessionPerson = null;
+  writeFileSync(sessionFile(), "{}");
+  clearSignedIn();
+  runId += 1;
+  void cancelTalking();
+  recorder.stop();
+  send("session", null);
+  send("answer", "");
+  void openChromeUrl(`${fieldnoteUrl}/api/logout`).catch(() => undefined);
+  return { ok: true as const };
+}
+
 async function warmCache() {
   try {
-    primeCache(await lookupUser("user"), [
-      { source: "discount-policy.md", text: "An account executive may discount up to 15 percent and may send a quote on their own opportunities." },
-      { source: "sending-a-quote.md", text: "Send Quote is on the Opportunity header next to the discount field." },
-    ]);
-  } catch (error) {
-    send("answer", error instanceof Error ? error.message : String(error));
+    const saved = JSON.parse(readFileSync(sessionFile(), "utf8")) as { id?: string };
+    const person = saved.id ? personById(saved.id) : undefined;
+    if (!person) return;
+    await activatePerson(person);
+  } catch {
+    // No one is signed in yet.
   }
 }
 
@@ -138,6 +189,13 @@ async function captureScreen() {
   }
 }
 
+const recorder = createRecorder({
+  directory: path.join(dataDirectory, "runs"),
+  look: () => ({ where: pagePath() || lastFront.title, app: lastFront.app, title: lastFront.title }),
+  shoot: () => captureScreen(),
+  onState: (state) => send("record", state),
+});
+
 const inputHelper = path.join(here, "input", "kiwi-input");
 
 function runInput(args: string[]) {
@@ -173,7 +231,8 @@ function refusal(stop: Stop) {
     return "I opened it, but deleting is your call. Press Delete if you're sure.";
   }
   if (stop.kind === "type" && /discount/i.test(`${stop.label} ${stop.target}`) && Number(stop.text) > 15) {
-    return "I won't type a discount over 15. Your manager, Alex Morgan, has to approve that.";
+    const approver = sessionPerson?.approverName || "You";
+    return `I won't type a discount over 15. ${approver} has to approve that.`;
   }
   return "";
 }
@@ -218,14 +277,8 @@ function overlayPoint(screenX: number, screenY: number) {
 
 // "Show me open cases" is not "show me my open cases". The model reads "me" as mine, so
 // an owner filter stays only when the question says whose records it wants.
-function onlyAskedOwner(question: string, target: string) {
-  if (!/^url:/i.test(target) || /\b(my|mine|i own|i'm on|sparsh)\b/i.test(question)) return target;
-  const [path, query = ""] = target.slice(4).trim().split("?");
-  const params = new URLSearchParams(query);
-  if (params.get("owner") === "mine") params.delete("owner");
-  if (params.get("ownerId") === "user") params.delete("ownerId");
-  const rest = params.toString();
-  return `url:${path}${rest ? `?${rest}` : ""}`;
+function ownerTarget(question: string, target: string) {
+  return sessionPerson ? adjustOwner(question, target, sessionPerson) : target;
 }
 
 // A written answer stays in Kiwi's window. It pastes only when asked, and it leaves the
@@ -332,6 +385,10 @@ async function playStop(stop: Stop) {
 }
 
 async function answerQuestion(question: string) {
+  if (!sessionPerson) {
+    send("answer", "Sign in with your work email first.");
+    return;
+  }
   const current = ++runId;
   const started = Date.now();
   transcript = "";
@@ -363,18 +420,42 @@ async function answerQuestion(question: string) {
     });
     if (current !== runId) return;
     if (result.stops.length === 0) throw new Error("Kiwi did not return a stop.");
-    for (const stop of result.stops) {
+    let planned = prepareStops(question, result.stops, context.controls);
+    for (const stop of planned) {
       if (current !== runId) return;
-      await playStop(keepWritingHere(question, { ...stop, target: onlyAskedOwner(question, stop.target ?? "") }));
+      await playStop(keepWritingHere(question, { ...stop, target: ownerTarget(question, stop.target ?? "") }));
     }
-    const last = result.stops.at(-1);
+    // The first reply often only opens the page, because the field is not on it yet.
+    // Read the page it landed on and finish the change. Do not wait for "continue".
+    for (let round = 0; round < 2 && stillToDo(question, planned) && current === runId; round += 1) {
+      const landed = await screenContext();
+      const next = await ask({
+        question: `${question}\nThe deal is open. Type the discount and click save-discount now. Do not navigate. Do not ask to continue.`,
+        screenContext: landed.text,
+        mode: "act",
+      });
+      const more = prepareStops(question, next.stops, landed.controls).filter((stop) => !/^url:/i.test(stop.target));
+      if (more.length === 0) break;
+      for (const stop of more) {
+        if (current !== runId) return;
+        await playStop(keepWritingHere(question, { ...stop, target: ownerTarget(question, stop.target ?? "") }));
+      }
+      planned = [...planned, ...more];
+    }
+    if (planned.some((stop) => /save-discount/.test(stop.target)) && current === runId) {
+      await wait(700);
+      const landed = await screenContext();
+      const status = (landed.facts ?? []).filter((fact) => fact.id === "quote-message" || fact.id === "readiness").map((fact) => fact.text);
+      if (status.length > 0) send("answer", status.join(" "));
+    }
+    const last = planned.at(-1);
     if (last && /^url:/i.test(last.target ?? "") && /\b(why|where|how|can'?t|cannot)\b/i.test(question) && current === runId) {
       const landed = await screenContext();
       const follow = route(question, landed.controls, landed.tabs, landed.facts);
       if (follow) await playStop(follow);
     }
-    const notes = result.stops.map((stop) => stop.note).filter(Boolean).join("\n").slice(0, 1500);
-    history.push(`User: ${question}`, `Kiwi: ${result.stops.map((stop) => stop.say).join(" ")}${notes ? `\nKiwi wrote: ${notes}` : ""}`);
+    const notes = planned.map((stop) => stop.note).filter(Boolean).join("\n").slice(0, 1500);
+    history.push(`User: ${question}`, `Kiwi: ${planned.map((stop) => stop.say).join(" ")}${notes ? `\nKiwi wrote: ${notes}` : ""}`);
     timing(question, shot ? "model+screen" : "model", started);
   } catch (error) {
     if (current !== runId) return;
@@ -532,7 +613,6 @@ function watchKeys() {
     uIOhook.on("keyup", (event) => trackShortcut(event.keycode, false));
     uIOhook.start();
     keysWatching = true;
-    send("answer", "Control + Option is on.");
   };
   if (!systemPreferences.isTrustedAccessibilityClient(true)) {
     send("answer", "A macOS prompt should be asking for Kiwi. In Accessibility, turn on Kiwi. Not Cursor.");
@@ -614,7 +694,7 @@ app.whenReady().then(async () => {
   const panelPosition = savedPanelPosition(panelWidth, 168);
   panel = new BrowserWindow({
     width: panelWidth,
-    height: 168,
+    height: 280,
     x: panelPosition.x,
     y: panelPosition.y,
     type: "panel",
@@ -665,8 +745,29 @@ app.whenReady().then(async () => {
     point(null);
     void cancelTalking();
   });
+  ipcMain.handle("session", () => sessionPayload(sessionPerson));
+  ipcMain.handle("sign-in", (_event, email: string) => signIn(String(email ?? "")));
+  ipcMain.handle("sign-out", () => signOut());
+  ipcMain.handle("record-start", () => {
+    if (!sessionPerson) return { ok: false as const };
+    recorder.start({ id: sessionPerson.id, name: sessionPerson.name });
+    return { ok: true as const };
+  });
+  ipcMain.handle("record-pause", () => recorder.pause());
+  ipcMain.handle("record-resume", () => recorder.resume());
+  ipcMain.handle("record-stop", () => {
+    const saved = recorder.stop();
+    if (saved) send("answer", saved.beats.length ? `Saved ${saved.beats.length} moments.` : "Saved. Nothing on screen changed.");
+    return { ok: true as const, beats: saved?.beats.length ?? 0 };
+  });
   ipcMain.handle("ask", (_event, question: string) => answerQuestion(question));
-  ipcMain.handle("talk-start", () => startTalking());
+  ipcMain.handle("talk-start", () => {
+    if (!sessionPerson) {
+      send("answer", "Sign in with your work email first.");
+      return;
+    }
+    return startTalking();
+  });
   ipcMain.handle("talk-stop", () => stopTalking());
   ipcMain.handle("talk-cancel", () => cancelTalking());
   ipcMain.on("audio", (_event, bytes: ArrayBuffer) => {

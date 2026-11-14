@@ -1,0 +1,47 @@
+[
+  {
+    "id": "user",
+    "email": "sparsh.bohra@fieldnote.com",
+    "name": "Sparsh Bohra",
+    "initials": "SB",
+    "role": "account executive",
+    "managerName": "Shail Shah",
+    "approverName": "Shail Shah",
+    "approverId": "shail-shah",
+    "territory": "Northeast",
+    "office": "Jersey City",
+    "book": "own",
+    "greeting": "Your manager, Shail Shah, reviews anything over the cap. You send quotes on your own book.",
+    "workflow": "Sparsh Bohra is an account executive. He owns his restaurants and sends quotes on that book. He stops at the discount cap. Shail Shah is his manager and the person who approves anything over the cap. Harbor Diner is the deal on his book that is over the cap. Before a quote goes out he still has to notice an open complaint on that restaurant."
+  },
+  {
+    "id": "shail-shah",
+    "email": "shail.shah@fieldnote.com",
+    "name": "Shail Shah",
+    "initials": "SS",
+    "role": "senior account executive",
+    "managerName": "Krishna Das",
+    "approverName": "Krishna Das",
+    "approverId": "krishna-das",
+    "territory": "Northeast",
+    "office": "Jersey City",
+    "book": "team",
+    "greeting": "You review the team's book. Krishna Das is your manager and approves anything over the cap.",
+    "workflow": "Shail Shah is a senior account executive. He does not carry a personal book. He reviews the team's deals before they go out: the discount against the cap, open complaints on that restaurant, then the filtered list he would export. He leaves a page and comes back before he exports. Krishna Das is his manager and the person who approves anything over the cap. Shail does not approve that exception himself. He does not send a quote while a delivery complaint is open."
+  },
+  {
+    "id": "krishna-das",
+    "email": "krishna.das@fieldnote.com",
+    "name": "Krishna Das",
+    "initials": "KD",
+    "role": "owner",
+    "managerName": "",
+    "approverName": "",
+    "approverId": "",
+    "territory": "Northeast",
+    "office": "Jersey City",
+    "book": "company",
+    "greeting": "You own Fieldnote. You see the whole company. Nothing over the cap goes above you.",
+    "workflow": "Krishna Das owns Fieldnote. He has no manager and no approver. He does not carry a personal book of restaurants. He sees every deal: the discount against the cap, an open complaint on that restaurant, and which account executive owns it. A discount over the cap stops with him. He does not send a quote on someone else's restaurant."
+  }
+]

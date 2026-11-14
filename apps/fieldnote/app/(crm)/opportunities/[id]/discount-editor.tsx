@@ -9,21 +9,26 @@ export function DiscountEditor({
   sendAllowed,
   ownerOk,
   cap,
+  approverName,
 }: {
   opportunityId: string;
   discountPercent: number;
   sendAllowed: boolean;
   ownerOk: boolean;
   cap: number;
+  approverName: string;
 }) {
   const router = useRouter();
   const [discountField, setDiscountField] = useState(String(discountPercent));
+  const [savedPercent, setSavedPercent] = useState(discountPercent);
   const [message, setMessage] = useState(
     !ownerOk
       ? "You can send a quote on your own opportunities."
       : sendAllowed
         ? "Ready to send."
-        : `An account executive stops at ${cap} percent. Your manager, Alex Morgan, has to approve the rest.`,
+        : approverName
+          ? `An account executive stops at ${cap} percent. ${approverName} has to approve the rest.`
+          : `An account executive stops at ${cap} percent. You approve the rest.`,
   );
 
   async function saveDiscount() {
@@ -32,7 +37,17 @@ export function DiscountEditor({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ discountPercent: Number(discountField) }),
     });
-    setMessage(await response.text());
+    const next = Number(discountField);
+    setSavedPercent(next);
+    setMessage(
+      !response.ok
+        ? await response.text()
+        : next > cap
+          ? `Saved ${next}. Still over the ${cap}% cap. ${approverName ? `${approverName} has to approve it.` : "You approve it."}`
+          : ownerOk
+            ? `Saved ${next}. Ready to send.`
+            : `Saved ${next}. Only the owner can send this quote.`,
+    );
     router.refresh();
   }
 
@@ -50,9 +65,9 @@ export function DiscountEditor({
           <input id="discount" value={discountField} onChange={(event) => setDiscountField(event.target.value)} inputMode="decimal" />
         </div>
         <button type="button" className="btn ghost" id="save-discount" onClick={saveDiscount}>Save</button>
-        <button type="button" className="btn primary" id="send-quote" disabled={!sendAllowed || !ownerOk} onClick={sendQuote}>Send Quote</button>
+        <button type="button" className="btn primary" id="send-quote" disabled={savedPercent > cap || !ownerOk} onClick={sendQuote}>Send Quote</button>
       </div>
-      {message ? <p className={`warning${message === "Ready to send." || message === "Quote sent." ? " ok" : ""}`} id="quote-message">{message}</p> : null}
+      {message ? <p className={`warning${/ready to send|quote sent/i.test(message) ? " ok" : ""}`} id="quote-message">{message}</p> : null}
     </div>
   );
 }

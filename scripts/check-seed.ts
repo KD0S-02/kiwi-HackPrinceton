@@ -34,16 +34,25 @@ const employees = await readJson(path.join(recordsDirectory, "employees.json"));
 const accounts = await readJson(path.join(recordsDirectory, "accounts.json"));
 const products = await readJson(path.join(recordsDirectory, "products.json"));
 const contacts = await readJson(path.join(recordsDirectory, "contacts.json"));
-if (employees.length !== 30) fail(`employees ${employees.length}`);
+if (employees.length !== 32) fail(`employees ${employees.length}`);
 if (accounts.length !== 40) fail(`accounts ${accounts.length}`);
 if (products.length !== 40) fail(`products ${products.length}`);
 if (contacts.length !== 40) fail(`contacts ${contacts.length}`);
 
 const user = employees.find((row: { id: string }) => row.id === "user");
 const alex = employees.find((row: { id: string }) => row.id === "alex-morgan");
-if (user?.reportsTo !== "alex-morgan") fail("User does not report to Alex");
+if (user?.reportsTo !== "shail-shah") fail("User does not report to Shail");
 if (user?.role !== "account executive") fail("User role");
 if (alex?.name !== "Alex Morgan") fail("Alex missing");
+const shail = employees.find((row: { id: string }) => row.id === "shail-shah");
+const krishna = employees.find((row: { id: string }) => row.id === "krishna-das");
+if (shail?.name !== "Shail Shah") fail("Shail missing");
+if (shail?.role !== "senior account executive") fail("Shail role");
+if (shail?.reportsTo !== "krishna-das") fail("Shail does not report to Krishna");
+if (krishna?.name !== "Krishna Das") fail("Krishna missing");
+if (krishna?.role !== "owner") fail("Krishna role");
+if (krishna?.reportsTo) fail("Krishna should have no manager");
+if (accounts.some((row: { ownerId: string }) => row.ownerId === "shail-shah" || row.ownerId === "krishna-das")) fail("Shail and Krishna should not own a restaurant");
 
 const userAccounts = accounts.filter((row: { ownerId: string }) => row.ownerId === "user");
 if (userAccounts.length < 8) fail("User should own about 8 accounts");

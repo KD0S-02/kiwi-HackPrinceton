@@ -6,6 +6,7 @@ import { requiredEnv } from "./load-env.ts";
 import { lookupUser } from "./lookup-user.ts";
 import { searchPages } from "./search-pages.ts";
 import { siteMap } from "./site-map.ts";
+import { authorityLine, firstName, mineLine, personById, type Person } from "../apps/fieldnote/lib/people.ts";
 
 export type Stop = {
   screen: number;
@@ -23,15 +24,29 @@ export type Stop = {
 
 const cache = new Map<string, unknown>();
 export const toolLog: { name: string; cached: boolean }[] = [];
+let signedInId = "";
+let sharedAgent: ReturnType<typeof createDeepAgent> | undefined;
 
-export function primeCache(userLookup: unknown, pages: { source: string; text: string }[]) {
-  cache.set("user:user", userLookup);
+export function primeCache(userLookup: { id?: string }, pages: { source: string; text: string }[]) {
+  const id = userLookup.id || "user";
+  if (id !== signedInId) sharedAgent = undefined;
+  signedInId = id;
+  for (const key of [...cache.keys()]) {
+    if (key.startsWith("user:") && key !== `user:${id}`) cache.delete(key);
+  }
+  cache.set(`user:${id}`, userLookup);
   for (const page of pages) cache.set(`page:${page.source}`, page);
+}
+
+export function clearSignedIn() {
+  signedInId = "";
+  sharedAgent = undefined;
 }
 
 const lookupUserTool = tool(
   async ({ userId }) => {
-    const normalizedUserId = userId.trim().toLowerCase() === "user" ? "user" : userId.trim();
+    const asked = userId.trim().toLowerCase() === "user" ? "user" : userId.trim();
+    const normalizedUserId = signedInId || asked;
     const cacheKey = `user:${normalizedUserId}`;
     const cached = cache.get(cacheKey);
     toolLog.push({ name: "lookupUser", cached: cached !== undefined });
@@ -120,7 +135,15 @@ registerHarnessProfile("google", {
   ],
 });
 
-const systemPrompt = `you are kiwi, a guide for Fieldnote. the signed-in employee is Sparsh Bohra (the record named User in the graph). say Sparsh or you, never User. Alex Morgan is Sparsh's manager; say so when you mention approvals.
+function signedInPerson(): Person {
+  return personById(signedInId) ?? personById("user")!;
+}
+
+export function systemPromptFor(person: Person) {
+  const name = firstName(person);
+  return `you are kiwi, a guide for Fieldnote. the signed-in employee is ${person.name}, a ${person.role}. say ${name} or you.
+${authorityLine(person)}
+how ${name} works: ${person.workflow}
 the reply is spoken. one short sentence, under 20 words, unless they asked you to walk them through the page.
 you see the Fieldnote page they have open as PAGE CONTROLS and PAGE TEXT. you see the rest of the screen only when a SCREEN picture is attached.
 the user message starts with KNOWN CONTEXT. that is already loaded. for a where, why, or set-the-discount question, call finish on the first turn. do not call lookupUser.
@@ -130,7 +153,7 @@ kind show: they asked where, what, why, or for a tour. draw. do not click.
 kind click: they asked you to open, go, send, or press.
 kind type: they asked you to set a field. text is the value. do not press send in that same stop.
 draw is circle for a button, box for a field, highlight for a region.
-you help Sparsh with his work. that is Fieldnote, and also any work thing on his screen: a PDF, email, doc, spreadsheet, website or chat about customers, suppliers, products, prices, orders, the company or his job. you can read it, summarize it, explain it, pull numbers out of it, compare it with Fieldnote, and draft or rewrite text for it. when unsure, help.
+you help ${name} with his work. that is Fieldnote, and also any work thing on his screen: a PDF, email, doc, spreadsheet, website or chat about customers, suppliers, products, prices, orders, the company or his job. you can read it, summarize it, explain it, pull numbers out of it, compare it with Fieldnote, and draft or rewrite text for it. when unsure, help.
 decline only what is clearly not work: entertainment, sports, games, jokes, poems, personal life, and trivia that has nothing to do with his job. for those, one stop: kind show, allow false, target none, say a short line like "That's outside work, so I'll pass. Ask me about Fieldnote or what's on your screen."
 SCREEN is a picture of his screen right now and FRONT APP is the app and window he is in. use them for questions about this, here, what it says, or the document, email or page in front of him. read the words in the picture carefully and quote numbers exactly.
 put long answers in note: summaries, drafts, replies, rewrites, lists, numbers pulled from the screen. note is plain text, short paragraphs or lines starting with "- ". then say is one short sentence like "Here's a summary in my window." those answers are one stop with target none; writing or reading never needs a tab: or url: stop unless he asks to open something.
@@ -150,11 +173,21 @@ a disabled control cannot be clicked. say why instead.
 if a rule is allow false, finish with kind show. say why. never type a discount over 15. never click send while the discount is over 15.
 a tour is several show stops. before finish on a tour, call searchPages once so the stops follow the written page.
 a where question is one show stop with allow false. you are pointing, not doing it.
-to show a list, a page, or a filtered view ("show me open cases", "only Sparsh's deals in Proposal", "low oil stock in Chicago"), finish with one stop: kind click, allow true, target url: then the path and query, built only from SITE MAP params and values. say what is on screen in a few words, like "Here are the open cases." "my", "mine" and "Sparsh's" mean owner=mine on /accounts and /pipeline and ownerId=user on other lists. on /pipeline, owner=all means everyone. add an owner filter only when the question says my, mine, or names a person. who, which and list questions about records are url stops too, like "who in sales is in the west" is url:/people?department=sales&territoryId=west, and "which open cases are delivery complaints" is url:/cases?status=open&kind=delivery+complaint with no ownerId.
-to create, edit, or delete a record, use two stops: a click stop with url: for the right list, then a click stop on its button (New account, New opportunity, New order, New case, New purchase order, Edit, Delete). Sparsh fills in and confirms the dialog. never click confirm-delete.
+to show a list, a page, or a filtered view ("show me open cases", "only ${name}'s deals in Proposal", "low oil stock in Chicago"), finish with one stop: kind click, allow true, target url: then the path and query, built only from SITE MAP params and values. say what is on screen in a few words, like "Here are the open cases." ${mineLine(person)} who, which and list questions about records are url stops too, like "who in sales is in the west" is url:/people?department=sales&territoryId=west, and "which open cases are delivery complaints" is url:/cases?status=open&kind=delivery+complaint with no ownerId.
+to create, edit, or delete a record, use two stops: a click stop with url: for the right list, then a click stop on its button (New account, New opportunity, New order, New case, New purchase order, Edit, Delete). ${name} fills in and confirms the dialog. never click confirm-delete.
+to set a discount, even from another page, one finish with three stops and no pause: click url:/opportunities/opp-<account id>, type target discount with text the number only (15, not 15%), click target save-discount. do not ask him to continue. never type a discount over 15.
 ${siteMap()}`;
+}
 
-let sharedAgent: ReturnType<typeof createDeepAgent> | undefined;
+export function actPromptFor(person: Person) {
+  const name = firstName(person);
+  return `you finish with stops for one Fieldnote change. the signed-in employee is ${person.name}, a ${person.role}. ${authorityLine(person)}
+how ${name} works: ${person.workflow}
+${mineLine(person)}
+to set a discount, three stops in this order: click url:/opportunities/opp-<account id>, type target discount text the number only, click target save-discount allow true.
+account ids are kebab case, so Harbor Diner is opp-harbor-diner. say one short sentence on the last stop. never type a discount over 15. if he did not ask to change anything, one show stop, target none, and answer in say. decline poems, jokes, and sports with "That's outside work, so I'll pass."`;
+}
+
 let sharedModel: ChatGoogleGenerativeAI | undefined;
 
 function getModel() {
@@ -173,14 +206,14 @@ function getAgent() {
   sharedAgent = createDeepAgent({
     model: getModel(),
     tools: [lookupUserTool, searchPagesTool, finishTool],
-    systemPrompt,
+    systemPrompt: systemPromptFor(signedInPerson()),
     permissions: [{ operations: ["read", "write"], paths: ["/**"], mode: "deny" }],
   });
   return sharedAgent;
 }
 
 function knownContext(): string {
-  const userRecord = cache.get("user:user");
+  const userRecord = cache.get(`user:${signedInId}`);
   const pages = [...cache.entries()]
     .filter(([key]) => key.startsWith("page:"))
     .map(([, page]) => page);
@@ -188,7 +221,7 @@ function knownContext(): string {
   return `KNOWN CONTEXT ${JSON.stringify({ user: userRecord, pages })}\n`;
 }
 
-export async function ask(input: { question: string; screenContext?: string; imagePngBase64?: string; imageMime?: "image/png" | "image/jpeg" }) {
+export async function ask(input: { question: string; screenContext?: string; imagePngBase64?: string; imageMime?: "image/png" | "image/jpeg"; mode?: "lean" | "deep" | "act" }) {
   const question = `${knownContext()}${input.screenContext ? `${input.screenContext}\n` : ""}${input.question}`;
   const mime = input.imageMime ?? "image/png";
   const content = input.imagePngBase64
@@ -199,16 +232,18 @@ export async function ask(input: { question: string; screenContext?: string; ima
     : question;
   // One forced finish call is much faster than the agent loop. Tours and questions
   // before the user record is cached still need the agent's lookup tools.
-  const lean = Boolean(cache.get("user:user"))
+  const lean = input.mode !== "deep" && Boolean(cache.get(`user:${signedInId}`))
     && !/\b(tour|walk|guide|explain|how do|usually|history|bought|tell me about)\b/i.test(input.question);
-  const run = lean
-    ? async () => {
+  const person = signedInPerson();
+  const prompt = input.mode === "act" ? actPromptFor(person) : systemPromptFor(person);
+  const run = input.mode === "deep" || !lean
+    ? () => getAgent().invoke({ messages: [{ role: "user", content }] })
+    : async () => {
         const reply = await getModel()
           .bindTools([finishTool], { tool_choice: "finish" })
-          .invoke([{ role: "system", content: systemPrompt }, { role: "user", content }]);
+          .invoke([{ role: "system", content: prompt }, { role: "user", content }]);
         return { messages: [reply] as unknown[] };
-      }
-    : () => getAgent().invoke({ messages: [{ role: "user", content }] });
+      };
   let result: { messages: unknown[] } | undefined;
   let lastError: unknown;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
@@ -231,7 +266,7 @@ export async function ask(input: { question: string; screenContext?: string; ima
       ? `${content}\n${nudge}`
       : [{ type: "text", text: `${question}\n${nudge}` }, ...content.slice(1)];
     const reply = await getModel().bindTools([finishTool], { tool_choice: "finish" }).invoke([
-      { role: "system", content: systemPrompt },
+      { role: "system", content: prompt },
       { role: "user", content: nudged },
     ]);
     stops = tidyStops(stopsFromMessages([reply] as { tool_calls?: { name: string; args: { stops?: Stop[] } }[] }[]));

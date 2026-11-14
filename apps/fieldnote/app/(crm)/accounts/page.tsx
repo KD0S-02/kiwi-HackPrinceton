@@ -5,6 +5,8 @@ import { FilterBar } from "../../../components/FilterBar";
 import { loadNames, readRecords } from "../../../lib/data";
 import { ownerMatches, textMatches } from "../../../lib/filters";
 import { loadFilters } from "../../../lib/page-filters";
+import { seesAll } from "../../../lib/people";
+import { signedInUser } from "../../../lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -12,19 +14,25 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
   const params = await searchParams;
   if (params.scope && !params.owner) params.owner = params.scope;
   const { filters, values } = await loadFilters("/accounts", params);
-  const [accounts, contacts, territories, warehouses, nameOf] = await Promise.all([
+  const [accounts, contacts, territories, warehouses, employees, nameOf] = await Promise.all([
     readRecords("accounts.json"),
     readRecords("contacts.json"),
     readRecords("territories.json"),
     readRecords("warehouses.json"),
+    readRecords("employees.json"),
     loadNames(),
   ]);
-  const mine = accounts.filter((row) => row.ownerId === "user");
+  const person = await signedInUser();
+  const wide = seesAll(person);
+  const mine = wide ? accounts : accounts.filter((row) => row.ownerId === person.id);
   const filtered = accounts.filter((row) =>
-    ownerMatches(row.ownerId, values.owner)
+    ownerMatches(row.ownerId, values.owner, person)
     && (!values.territory || row.territoryId === values.territory)
     && (!values.warehouse || row.warehouseId === values.warehouse)
     && textMatches(values.q, [row.name, row.buyerName, row.usualOrder, nameOf(row.territoryId), nameOf(row.warehouseId)]));
+  const ownerOptions = employees
+    .filter((row) => row.role === "account executive")
+    .map((row) => ({ value: String(row.id), label: String(row.name) }));
   const territoryOptions = territories.map((row) => ({ value: String(row.id), label: String(row.name) }));
   const warehouseOptions = warehouses.map((row) => ({ value: String(row.id), label: String(row.name) }));
   const myContacts = contacts.filter((contact) => mine.some((account) => account.id === contact.accountId));
@@ -34,7 +42,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
       <div className="page-head">
         <div>
           <h1>Accounts</h1>
-          <p>{mine.length} restaurants are yours. {accounts.length} are in the company.</p>
+          <p>{person.book === "company" ? `${accounts.length} restaurants in the company.` : wide ? `${mine.length} restaurants on the team book. ${accounts.length} are in the company.` : `${mine.length} restaurants are yours. ${accounts.length} are in the company.`}</p>
         </div>
         <div className="actions">
           <ActionButton
@@ -53,7 +61,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
             icon="plus"
             label="New account"
             title="New account"
-            description="Add a restaurant to your book."
+            description={wide ? "Add a restaurant and name the account executive who owns it." : "Add a restaurant to your book."}
             endpoint="/api/records/accounts"
             submit="Create account"
             fields={[
@@ -62,6 +70,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
               { name: "usualOrder", label: "Usual order", placeholder: "napkins, fryer oil, and gloves" },
               { name: "territoryId", label: "Territory", type: "select", options: territoryOptions },
               { name: "warehouseId", label: "Warehouse", type: "select", options: warehouseOptions },
+              ...(wide ? [{ name: "ownerId", label: "Owner", type: "select" as const, required: true, options: ownerOptions }] : []),
             ]}
           />
         </div>
@@ -69,7 +78,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
 
       <div className="book-layout">
         <section>
-          <div className="panel-head"><h2>Your book</h2><span>{mine.length} restaurants</span></div>
+          <div className="panel-head"><h2>{person.book === "company" ? "The company" : wide ? "Team book" : "Your book"}</h2><span>{mine.length} restaurants</span></div>
           <div className="book">
             {mine.map((account) => (
               <a className="restaurant" key={String(account.id)} href={`/accounts/${account.id}`}>

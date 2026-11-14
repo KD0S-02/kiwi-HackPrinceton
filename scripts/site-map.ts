@@ -70,5 +70,6 @@ export function siteMap() {
   );
   lines.push("account ids are the restaurant name in kebab case, like harbor-diner. deal pages are /opportunities/opp-<account id>. account pages are /accounts/<account id>.");
   lines.push("home is /. the sidebar Fieldnote logo is the control id brand. click brand to go home.");
+  lines.push("setting a discount is three stops in one finish: url:/opportunities/opp-<account id>, type target discount text <number>, click target save-discount.");
   return lines.join("\n");
 }

@@ -4,6 +4,8 @@ import { FilterBar } from "../../../components/FilterBar";
 import { loadNames, money, readRecords, readRules } from "../../../lib/data";
 import { ownerMatches, textMatches } from "../../../lib/filters";
 import { loadFilters } from "../../../lib/page-filters";
+import { seesAll } from "../../../lib/people";
+import { signedInUser } from "../../../lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -21,21 +23,23 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
     readRules(),
     loadNames(),
   ]);
+  const person = await signedInUser();
   const cap = rules.discountCapPercent;
   const min = Number(values.min || 0);
   const visible = opportunities.filter((row) =>
-    ownerMatches(row.ownerId, values.owner)
+    ownerMatches(row.ownerId, values.owner, person)
     && (!values.stage || row.stage === values.stage)
     && (values.discount !== "over" || Number(row.discountPercent) > cap)
     && (values.discount !== "within" || Number(row.discountPercent) <= cap)
     && Number(row.amount) >= min
     && textMatches(values.q, [row.name, nameOf(row.accountId), nameOf(row.ownerId)]));
   const owners = filters.find((filter) => filter.name === "owner")?.choices.filter((option) => option.value !== "mine") ?? [];
-  const myAccounts = accounts.filter((row) => row.ownerId === "user");
+  const wide = seesAll(person);
+  const myAccounts = wide ? accounts : accounts.filter((row) => row.ownerId === person.id);
   const total = visible.reduce((sum, row) => sum + Number(row.amount), 0);
   const average = visible.length ? visible.reduce((sum, row) => sum + Number(row.discountPercent), 0) / visible.length : 0;
   const over = visible.filter((row) => Number(row.discountPercent) > rules.discountCapPercent);
-  const myQuotes = quotes.filter((row) => row.ownerId === "user");
+  const myQuotes = wide ? quotes : quotes.filter((row) => row.ownerId === person.id);
   const pending = approvals.filter((row) => row.status === "pending");
   const shown = columns.filter((column) => !values.stage || values.stage === column);
 
@@ -44,7 +48,7 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
       <div className="page-head">
         <div>
           <h1>Pipeline</h1>
-          <p>Deals over {rules.discountCapPercent} percent stay with your manager, Alex Morgan, until he approves them.</p>
+          <p>{person.approverName ? `Deals over ${rules.discountCapPercent} percent stay with ${person.approverName} until approved.` : `Deals over ${rules.discountCapPercent} percent stop with you.`}</p>
         </div>
         <div className="actions">
           <ActionButton
@@ -65,7 +69,7 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
       </div>
 
       <div className="stats">
-        <article className="card stat"><span>Deals in view</span><strong>{visible.length}</strong><em>{values.owner === "mine" ? "your book" : values.owner === "all" ? "whole company" : nameOf(values.owner)}</em></article>
+        <article className="card stat"><span>Deals in view</span><strong>{visible.length}</strong><em>{values.owner === "mine" ? (person.book === "company" ? "the whole company" : wide ? "the team's book" : "your book") : values.owner === "all" ? "whole company" : nameOf(values.owner)}</em></article>
         <article className="card stat tone-indigo"><span>Pipeline value</span><strong>{money(total)}</strong><em>open amount</em></article>
         <article className="card stat tone-green"><span>Average discount</span><strong>{average.toFixed(1)}%</strong><em>cap is {rules.discountCapPercent}%</em></article>
         <article className="card stat tone-amber"><span>Over the cap</span><strong>{over.length}</strong><em>{pending.length} approvals waiting</em></article>
@@ -158,7 +162,7 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
           </div>
         </section>
         <section className="panel">
-          <div className="panel-head"><h2>Waiting on your manager</h2><a href="/approvals">All approvals →</a></div>
+          <div className="panel-head"><h2>{person.approverName ? `Waiting on ${person.approverName}` : "Over the cap"}</h2><a href="/approvals">All approvals →</a></div>
           <div className="scroll short">
             <table>
               <thead><tr><th>Deal</th><th>Kind</th><th>Status</th></tr></thead>

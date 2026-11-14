@@ -124,7 +124,7 @@ function inventory() {
     .slice(0, 70)
     .map(describe)
     .filter((control) => control.id || control.label);
-  const facts = [...document.querySelectorAll("h1, #stage, #amount, #quote-message, #filter-count, .warning, .pill")]
+  const facts = [...document.querySelectorAll("h1, #stage, #amount, #quote-message, #readiness, #filter-count, .warning, .pill")]
     .filter(isShown)
     .slice(0, 12)
     .map((element) => ({ id: element.id || "", text: labelOf(element) }))
