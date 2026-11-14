@@ -104,5 +104,6 @@ export function siteMap() {
   lines.push("account ids are the restaurant name in kebab case, like harbor-diner. deal pages are /opportunities/opp-<account id>. account pages are /accounts/<account id>.");
   lines.push("home is /. the sidebar Fieldnote logo is the control id brand. click brand to go home.");
   lines.push("setting a discount is three stops in one finish: url:/opportunities/opp-<account id>, type target discount text <number>, click target save-discount.");
+  lines.push("adding a restaurant he named does not stop when New account opens. the open dialog fields are new-account-name, new-account-buyerName, new-account-zip, and new-account-usualOrder. Create account is new-account-submit. type the name, type the ZIP when he gave one, then click new-account-submit. without a ZIP, type the name and ask for it.");
   return lines.join("\n");
 }

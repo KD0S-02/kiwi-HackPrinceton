@@ -165,14 +165,16 @@ export function ActionButton(props: Props) {
                 <label className="field" key={field.name}>
                   <span>{field.label}{field.required ? " *" : ""}</span>
                   {field.type === "select" ? (
-                    <select name={field.name} value={values[field.name]} onChange={(event) => setValues({ ...values, [field.name]: event.target.value })}>
+                    <select name={field.name} aria-label={field.label} data-kiwi={props.kiwi ? `${props.kiwi}-${field.name}` : undefined} value={values[field.name]} onChange={(event) => setValues({ ...values, [field.name]: event.target.value })}>
                       {field.options?.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                     </select>
                   ) : field.type === "textarea" ? (
-                    <textarea name={field.name} rows={props.csv ? 7 : 4} placeholder={field.placeholder} required={field.required} value={values[field.name]} onChange={(event) => setValues({ ...values, [field.name]: event.target.value })} autoFocus={index === 0} />
+                    <textarea name={field.name} aria-label={field.label} data-kiwi={props.kiwi ? `${props.kiwi}-${field.name}` : undefined} rows={props.csv ? 7 : 4} placeholder={field.placeholder} required={field.required} value={values[field.name]} onChange={(event) => setValues({ ...values, [field.name]: event.target.value })} autoFocus={index === 0} />
                   ) : (
                     <input
                       name={field.name}
+                      aria-label={field.label}
+                      data-kiwi={props.kiwi ? `${props.kiwi}-${field.name}` : undefined}
                       type={field.type === "number" ? "number" : field.type === "date" ? "date" : field.type === "email" ? "email" : "text"}
                       step={field.type === "number" ? "any" : undefined}
                       min={field.min}
