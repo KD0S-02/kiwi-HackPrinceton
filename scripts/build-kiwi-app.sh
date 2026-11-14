@@ -16,7 +16,10 @@ cp apps/desktop/kiwi.icns dist/Kiwi.app/Contents/Resources/electron.icns
 mkdir -p dist/Kiwi.app/Contents/Resources/app
 echo '{ "name": "kiwi", "productName": "Kiwi", "version": "0.1.0", "main": "main.mjs", "type": "module" }' > dist/Kiwi.app/Contents/Resources/app/package.json
 echo "import \"$PWD/apps/desktop/start.mjs\";" > dist/Kiwi.app/Contents/Resources/app/main.mjs
-# The requirement names only the bundle id, so the signature identity stays the same on rebuilds
-# and macOS keeps the permissions you already gave.
-codesign --force --deep --sign - -r='designated => identifier "com.fieldnote.kiwi"' dist/Kiwi.app
+# Helpers keep their own identities. Only the outer app gets a requirement that names the bundle id,
+# so its identity stays the same on rebuilds and macOS keeps the permissions you already gave.
+# Passing -r together with --deep would stamp that requirement on every helper and break them.
+codesign --force --deep --sign - dist/Kiwi.app
+codesign --force --sign - -r='designated => identifier "com.fieldnote.kiwi"' dist/Kiwi.app
+codesign --verify --deep --strict dist/Kiwi.app
 echo "Built dist/Kiwi.app"

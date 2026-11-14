@@ -270,14 +270,30 @@ function watchKeys() {
 }
 
 async function askPermissions() {
+  const report = (extra: Record<string, unknown> = {}) => {
+    const status = {
+      screen: systemPreferences.getMediaAccessStatus("screen"),
+      microphone: systemPreferences.getMediaAccessStatus("microphone"),
+      accessibility: systemPreferences.isTrustedAccessibilityClient(false),
+      exec: process.execPath,
+      ...extra,
+    };
+    writeFileSync("/tmp/kiwi-status.json", JSON.stringify(status, null, 2));
+    return status;
+  };
   try {
-    const microphone = await systemPreferences.askForMediaAccess("microphone");
-    if (!microphone) send("answer", "Turn on Kiwi under Privacy & Security, Microphone.");
+    await systemPreferences.askForMediaAccess("microphone");
     if (systemPreferences.getMediaAccessStatus("screen") !== "granted") {
       await desktopCapturer.getSources({ types: ["screen"], thumbnailSize: { width: 1, height: 1 } });
     }
-  } catch {
-    send("answer", "Turn on Kiwi under Privacy & Security, Screen Recording, then open Kiwi again.");
+    report();
+  } catch (error) {
+    const status = report({ error: error instanceof Error ? error.message : String(error) });
+    if (status.screen !== "granted") {
+      send("answer", "Screen Recording is off for Kiwi. Turn it on in Privacy & Security, then quit and reopen Kiwi.");
+    } else if (status.microphone !== "granted") {
+      send("answer", "Microphone is off for Kiwi. Turn it on in Privacy & Security.");
+    }
   }
 }
 
