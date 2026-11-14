@@ -149,6 +149,35 @@ export async function openChromeUrl(url: string) {
   );
 }
 
+// Points the first tab whose URL contains this text at the URL and brings it forward.
+// Returns "" when no tab matches.
+export async function navigateChromeTab(urlPart: string, url: string) {
+  try {
+    return await osascript(
+      `tell application "Google Chrome"
+        repeat with chromeWindow in windows
+          set tabIndex to 0
+          repeat with chromeTab in tabs of chromeWindow
+            set tabIndex to tabIndex + 1
+            if (URL of chromeTab) contains ${quoted(urlPart)} then
+              set URL of chromeTab to ${quoted(url)}
+              if minimized of chromeWindow then set minimized of chromeWindow to false
+              set active tab index of chromeWindow to tabIndex
+              set index of chromeWindow to 1
+              activate
+              return "navigated"
+            end if
+          end repeat
+        end repeat
+        return ""
+      end tell`,
+      2500,
+    );
+  } catch {
+    return "";
+  }
+}
+
 // Reloads the first tab whose URL contains this text. Chrome discards idle tabs, and a
 // discarded Fieldnote tab is listed but has no live page to talk to.
 export async function reloadChromeTab(urlPart: string) {

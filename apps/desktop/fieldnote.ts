@@ -1,5 +1,5 @@
 import { askPage, pageInFront, pageIsOpen, pagePath, pageUrl, waitForPage } from "./bridge.ts";
-import { focusChromeUrl, openChromeUrl, reloadChromeTab } from "./chrome.ts";
+import { focusChromeUrl, navigateChromeTab, openChromeUrl, reloadChromeTab } from "./chrome.ts";
 
 export const fieldnoteUrl = (process.env.FIELDNOTE_URL ?? "http://localhost:3000").replace(/\/$/, "");
 
@@ -34,7 +34,7 @@ export async function ensureFieldnote(path = "/", say: (text: string) => void = 
     if (!(await fieldnoteServerUp(base))) return `Fieldnote isn't running at ${base}. Start it with npm run dev, then ask again.`;
     say("Opening Fieldnote…");
     try {
-      await openChromeUrl(`${base}${path}`);
+      if (!(await navigateChromeTab(host, `${base}${path}`))) await openChromeUrl(`${base}${path}`);
     } catch (error) {
       return `I couldn't open Chrome: ${error instanceof Error ? error.message : String(error)}`;
     }
