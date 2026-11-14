@@ -973,9 +973,8 @@ app.whenReady().then(async () => {
     try {
       const run = nameRun(path.join(dataDirectory, "runs"), cleanId, cleanTitle, String(note ?? "").trim());
       const skill = compileSkill(run);
-      const acted = skill.steps.some((step) => step.kind !== "page");
-      if (acted) saveSkill(skillsDirectory, skill);
-      return { ok: true as const, steps: acted ? skill.steps.length : 0 };
+      if (skill.steps.length > 0) saveSkill(skillsDirectory, skill);
+      return { ok: true as const, steps: skill.steps.length };
     } catch {
       return { ok: false as const };
     }

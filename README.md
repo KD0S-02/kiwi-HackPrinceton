@@ -58,7 +58,7 @@ screen capture (JPEG)  ----------------------------------+
 ### Desktop app (`apps/desktop`)
 
 - **Panel**: a small always-on-top window. Signed out, it asks for a work email and an SSO login, and it does not mention Fieldnote. Signed in, the header is Kiwi · Fieldnote with the person's name and role. Press Enter to ask. The mic sits to the right of the bar, and Record sits to the right of the mic. Log out is an icon on the top right. The kiwi matches the record button and spins while an answer is loading. Drag the top bar to move it. Its position is remembered. It shows on every desktop (Space), including over full-screen apps.
-- **Record**: while Record is on, Kiwi keeps a still each time the screen changes (`data/runs/<id>/`). Pause holds the trail. Stop asks for a title and a note and saves the run as a draft. It does not turn that trail into a skill yet. Asking a question does not wait on the recording.
+- **Record**: while Record is on, Kiwi keeps a still each time the screen changes (`data/runs/<id>/`). Pause holds the trail. Stop asks for a title and a note. Any signed-in person can record, and a trail through Fieldnote is saved as a skill anyone can ask Kiwi to walk through, including a walk that only opens pages. A trail that never touched Fieldnote stays a draft. Asking a question does not wait on the recording.
 - **Overlay**: a transparent, click-through, full-screen window. The kiwi slice trails your mouse. When an answer arrives it flies along an arc to the target, draws a ring, shows the sentence, and goes back to following the mouse after about seven seconds.
 - **Push-to-talk**: hold Control + Option (a global key hook via `uiohook-napi`), release to ask. The mic is captured in the panel, down-sampled to 16 kHz PCM16, and streamed to AssemblyAI's `universal-3-6-pro` streaming model with key terms such as Fieldnote, Harbor Diner, Send Quote, Sparsh Bohra, Shail Shah and Krishna Das. Escape cancels.
 - **Screen capture**: Electron `desktopCapturer`, JPEG, with Kiwi's own windows hidden for the shot. Stop coordinates are scaled from the shot back to the display, including multi-display offsets.
@@ -206,7 +206,6 @@ Kiwi keeps Clicky's interaction: hold Control + Option to talk, a buddy that fol
 - A menu-bar icon (Clicky is menu-bar only) instead of a floating panel, plus a setting for the hotkey.
 - Multi-monitor stops: the agent only sees the display under the cursor today.
 - Detect UI elements with accessibility trees or DOM hints for more precise coordinates than a vision guess.
-- A skill compiled from a recording, so a later question can use the idea even when the workflow is only close. Today a recording is a named draft trail and nothing more.
 - Per-role rules for the rest of the directory (ops, business development), not only the three sign-in accounts.
 - Real auth in Fieldnote and a real database in place of JSON files.
 - Fix the 1 high severity `npm audit` finding, add CI, and add a Playwright suite for Fieldnote.

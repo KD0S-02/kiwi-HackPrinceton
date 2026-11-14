@@ -26,7 +26,7 @@ export function compileSkill(run: Run): Skill {
   let here = "";
   let end = "";
   let afterAction = false;
-  const beats = run.beats.filter((beat) => beat.action || (beat.app === "Google Chrome" && beat.where && knownPath(beat.where)));
+  const beats = run.beats.filter((beat) => beat.action || (beat.where && knownPath(beat.where)));
   beats.forEach((beat, index) => {
     const next = beats[index + 1];
     if (!beat.action) {
