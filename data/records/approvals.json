@@ -5,7 +5,16 @@
     "requestedBy": "user",
     "approverId": "shail-shah",
     "kind": "discount",
-    "status": "pending"
+    "status": "pending",
+    "subjectType": "opportunity",
+    "subjectId": "opp-cedar-spoon",
+    "accountId": "cedar-spoon",
+    "amount": 6,
+    "note": "",
+    "requestedAt": "2026-11-09T14:00:00.000Z",
+    "decidedBy": "",
+    "decidedAt": "",
+    "decisionNote": ""
   },
   {
     "id": "approval-2",
@@ -13,7 +22,16 @@
     "requestedBy": "user",
     "approverId": "shail-shah",
     "kind": "discount",
-    "status": "pending"
+    "status": "pending",
+    "subjectType": "opportunity",
+    "subjectId": "opp-lantern-noodle",
+    "accountId": "lantern-noodle",
+    "amount": 7,
+    "note": "",
+    "requestedAt": "2026-11-09T14:00:00.000Z",
+    "decidedBy": "",
+    "decidedAt": "",
+    "decisionNote": ""
   },
   {
     "id": "approval-3",
@@ -21,7 +39,16 @@
     "requestedBy": "user",
     "approverId": "shail-shah",
     "kind": "discount",
-    "status": "pending"
+    "status": "pending",
+    "subjectType": "opportunity",
+    "subjectId": "opp-bright-pie",
+    "accountId": "bright-pie",
+    "amount": 8,
+    "note": "",
+    "requestedAt": "2026-11-09T14:00:00.000Z",
+    "decidedBy": "",
+    "decidedAt": "",
+    "decisionNote": ""
   },
   {
     "id": "approval-4",
@@ -29,7 +56,16 @@
     "requestedBy": "user",
     "approverId": "shail-shah",
     "kind": "discount",
-    "status": "pending"
+    "status": "pending",
+    "subjectType": "opportunity",
+    "subjectId": "opp-north-fork-grill",
+    "accountId": "north-fork-grill",
+    "amount": 9,
+    "note": "",
+    "requestedAt": "2026-11-09T14:00:00.000Z",
+    "decidedBy": "",
+    "decidedAt": "",
+    "decisionNote": ""
   },
   {
     "id": "approval-5",
@@ -37,6 +73,15 @@
     "requestedBy": "user",
     "approverId": "shail-shah",
     "kind": "discount",
-    "status": "pending"
+    "status": "pending",
+    "subjectType": "opportunity",
+    "subjectId": "opp-little-anchor",
+    "accountId": "little-anchor",
+    "amount": 10,
+    "note": "",
+    "requestedAt": "2026-11-09T14:00:00.000Z",
+    "decidedBy": "",
+    "decidedAt": "",
+    "decisionNote": ""
   }
 ]

@@ -1,0 +1,119 @@
+[
+  {
+    "id": "sl-legacy-shipment-1-cans",
+    "shipmentId": "shipment-1",
+    "productId": "cans",
+    "quantity": 48,
+    "short": 0,
+    "redelivered": 0,
+    "credited": 0
+  },
+  {
+    "id": "sl-legacy-shipment-2-vinegar",
+    "shipmentId": "shipment-2",
+    "productId": "vinegar",
+    "quantity": 42,
+    "short": 0,
+    "redelivered": 0,
+    "credited": 0
+  },
+  {
+    "id": "sl-legacy-shipment-3-yogurt",
+    "shipmentId": "shipment-3",
+    "productId": "yogurt",
+    "quantity": 52,
+    "short": 0,
+    "redelivered": 0,
+    "credited": 0
+  },
+  {
+    "id": "sl-legacy-shipment-4-towels",
+    "shipmentId": "shipment-4",
+    "productId": "towels",
+    "quantity": 57,
+    "short": 0,
+    "redelivered": 0,
+    "credited": 0
+  },
+  {
+    "id": "sl-legacy-shipment-5-spatula",
+    "shipmentId": "shipment-5",
+    "productId": "spatula",
+    "quantity": 70,
+    "short": 0,
+    "redelivered": 0,
+    "credited": 0
+  },
+  {
+    "id": "sl-legacy-shipment-6-foil",
+    "shipmentId": "shipment-6",
+    "productId": "foil",
+    "quantity": 59,
+    "short": 0,
+    "redelivered": 0,
+    "credited": 0
+  },
+  {
+    "id": "sl-legacy-shipment-7-towels",
+    "shipmentId": "shipment-7",
+    "productId": "towels",
+    "quantity": 71,
+    "short": 0,
+    "redelivered": 0,
+    "credited": 0
+  },
+  {
+    "id": "sl-legacy-shipment-8-tongs",
+    "shipmentId": "shipment-8",
+    "productId": "tongs",
+    "quantity": 76,
+    "short": 0,
+    "redelivered": 0,
+    "credited": 0
+  },
+  {
+    "id": "sl-legacy-shipment-9-milk",
+    "shipmentId": "shipment-9",
+    "productId": "milk",
+    "quantity": 92,
+    "short": 0,
+    "redelivered": 0,
+    "credited": 0
+  },
+  {
+    "id": "sl-legacy-shipment-10-ladle",
+    "shipmentId": "shipment-10",
+    "productId": "ladle",
+    "quantity": 76,
+    "short": 0,
+    "redelivered": 0,
+    "credited": 0
+  },
+  {
+    "id": "sl-shipment-11-gloves",
+    "shipmentId": "shipment-11",
+    "productId": "gloves",
+    "quantity": 10,
+    "short": 0,
+    "redelivered": 0,
+    "credited": 0
+  },
+  {
+    "id": "sl-shipment-11-fryer-oil",
+    "shipmentId": "shipment-11",
+    "productId": "fryer-oil",
+    "quantity": 30,
+    "short": 0,
+    "redelivered": 0,
+    "credited": 0
+  },
+  {
+    "id": "sl-shipment-11-napkins",
+    "shipmentId": "shipment-11",
+    "productId": "napkins",
+    "quantity": 20,
+    "short": 0,
+    "redelivered": 0,
+    "credited": 0
+  }
+]

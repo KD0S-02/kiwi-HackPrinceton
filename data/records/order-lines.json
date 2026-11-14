@@ -1,0 +1,232 @@
+[
+  {
+    "id": "ol-legacy-order-1",
+    "orderId": "order-1",
+    "productId": "cans",
+    "quantity": 48,
+    "unitPrice": 25.23,
+    "allocated": 20,
+    "backordered": 0,
+    "warehouseId": "jersey-city-cold"
+  },
+  {
+    "id": "ol-legacy-order-2",
+    "orderId": "order-2",
+    "productId": "vinegar",
+    "quantity": 42,
+    "unitPrice": 32.1,
+    "allocated": 42,
+    "backordered": 0,
+    "warehouseId": "newark-dry-goods"
+  },
+  {
+    "id": "ol-legacy-order-3",
+    "orderId": "order-3",
+    "productId": "yogurt",
+    "quantity": 52,
+    "unitPrice": 28.56,
+    "allocated": 52,
+    "backordered": 0,
+    "warehouseId": "chicago-dry"
+  },
+  {
+    "id": "ol-legacy-order-4",
+    "orderId": "order-4",
+    "productId": "towels",
+    "quantity": 57,
+    "unitPrice": 28.46,
+    "allocated": 57,
+    "backordered": 0,
+    "warehouseId": "chicago-dry"
+  },
+  {
+    "id": "ol-legacy-order-5",
+    "orderId": "order-5",
+    "productId": "spatula",
+    "quantity": 70,
+    "unitPrice": 25.13,
+    "allocated": 70,
+    "backordered": 0,
+    "warehouseId": "jersey-city-cold"
+  },
+  {
+    "id": "ol-legacy-order-6",
+    "orderId": "order-6",
+    "productId": "foil",
+    "quantity": 59,
+    "unitPrice": 32.14,
+    "allocated": 59,
+    "backordered": 0,
+    "warehouseId": "newark-dry-goods"
+  },
+  {
+    "id": "ol-legacy-order-7",
+    "orderId": "order-7",
+    "productId": "towels",
+    "quantity": 71,
+    "unitPrice": 28.63,
+    "allocated": 71,
+    "backordered": 0,
+    "warehouseId": "chicago-dry"
+  },
+  {
+    "id": "ol-legacy-order-8",
+    "orderId": "order-8",
+    "productId": "tongs",
+    "quantity": 76,
+    "unitPrice": 28.55,
+    "allocated": 76,
+    "backordered": 0,
+    "warehouseId": "chicago-dry"
+  },
+  {
+    "id": "ol-legacy-order-9",
+    "orderId": "order-9",
+    "productId": "milk",
+    "quantity": 92,
+    "unitPrice": 25.08,
+    "allocated": 92,
+    "backordered": 0,
+    "warehouseId": "jersey-city-cold"
+  },
+  {
+    "id": "ol-legacy-order-10",
+    "orderId": "order-10",
+    "productId": "ladle",
+    "quantity": 76,
+    "unitPrice": 32.16,
+    "allocated": 76,
+    "backordered": 0,
+    "warehouseId": "newark-dry-goods"
+  },
+  {
+    "id": "ol-legacy-order-11",
+    "orderId": "order-11",
+    "productId": "tongs",
+    "quantity": 91,
+    "unitPrice": 28.36,
+    "allocated": 91,
+    "backordered": 0,
+    "warehouseId": "chicago-dry"
+  },
+  {
+    "id": "ol-legacy-order-12",
+    "orderId": "order-12",
+    "productId": "yogurt",
+    "quantity": 95,
+    "unitPrice": 28.61,
+    "allocated": 95,
+    "backordered": 0,
+    "warehouseId": "chicago-dry"
+  },
+  {
+    "id": "ol-legacy-order-13",
+    "orderId": "order-13",
+    "productId": "cans",
+    "quantity": 114,
+    "unitPrice": 25.04,
+    "allocated": 114,
+    "backordered": 0,
+    "warehouseId": "jersey-city-cold"
+  },
+  {
+    "id": "ol-legacy-order-14",
+    "orderId": "order-14",
+    "productId": "vinegar",
+    "quantity": 94,
+    "unitPrice": 31.83,
+    "allocated": 94,
+    "backordered": 0,
+    "warehouseId": "newark-dry-goods"
+  },
+  {
+    "id": "ol-legacy-order-15",
+    "orderId": "order-15",
+    "productId": "yogurt",
+    "quantity": 110,
+    "unitPrice": 28.45,
+    "allocated": 110,
+    "backordered": 0,
+    "warehouseId": "chicago-dry"
+  },
+  {
+    "id": "ol-order-16-1",
+    "orderId": "order-16",
+    "productId": "gloves",
+    "quantity": 10,
+    "unitPrice": 11.55,
+    "allocated": 10,
+    "backordered": 0,
+    "warehouseId": "newark-dry-goods"
+  },
+  {
+    "id": "ol-order-16-2",
+    "orderId": "order-16",
+    "productId": "fryer-oil",
+    "quantity": 30,
+    "unitPrice": 7.88,
+    "allocated": 30,
+    "backordered": 0,
+    "warehouseId": "newark-dry-goods"
+  },
+  {
+    "id": "ol-order-16-3",
+    "orderId": "order-16",
+    "productId": "napkins",
+    "quantity": 20,
+    "unitPrice": 4.2,
+    "allocated": 20,
+    "backordered": 0,
+    "warehouseId": "newark-dry-goods"
+  },
+  {
+    "id": "ol-order-19-1",
+    "orderId": "order-19",
+    "productId": "fryer-oil",
+    "quantity": 18,
+    "unitPrice": 7.5,
+    "allocated": 18,
+    "backordered": 0,
+    "warehouseId": "newark-dry-goods"
+  },
+  {
+    "id": "ol-order-20-1",
+    "orderId": "order-20",
+    "productId": "fryer-oil",
+    "quantity": 12,
+    "unitPrice": 7.5,
+    "allocated": 0,
+    "backordered": 12,
+    "warehouseId": "newark-dry-goods"
+  },
+  {
+    "id": "ol-order-17-1",
+    "orderId": "order-17",
+    "productId": "rice",
+    "quantity": 50,
+    "unitPrice": 32,
+    "allocated": 50,
+    "backordered": 0,
+    "warehouseId": "newark-dry-goods"
+  },
+  {
+    "id": "ol-order-17-2",
+    "orderId": "order-17",
+    "productId": "sugar",
+    "quantity": 32,
+    "unitPrice": 7.5,
+    "allocated": 32,
+    "backordered": 0,
+    "warehouseId": "newark-dry-goods"
+  },
+  {
+    "id": "ol-order-18-1",
+    "orderId": "order-18",
+    "productId": "rice",
+    "quantity": 20,
+    "unitPrice": 32,
+    "allocated": 0,
+    "backordered": 0,
+    "warehouseId": "newark-dry-goods"
+  }
+]

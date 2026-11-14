@@ -2,21 +2,25 @@
   {
     "id": "northeast",
     "name": "Northeast",
-    "officeId": "jersey-city"
+    "officeId": "jersey-city",
+    "zipPrefixes": "07|08|10|11|12"
   },
   {
     "id": "southeast",
     "name": "Southeast",
-    "officeId": "jersey-city"
+    "officeId": "jersey-city",
+    "zipPrefixes": "27|28|29|30|31|32|33"
   },
   {
     "id": "midwest",
     "name": "Midwest",
-    "officeId": "chicago"
+    "officeId": "chicago",
+    "zipPrefixes": "46|53|60|61"
   },
   {
     "id": "west",
     "name": "West",
-    "officeId": "chicago"
+    "officeId": "chicago",
+    "zipPrefixes": "90|91|94|98"
   }
 ]

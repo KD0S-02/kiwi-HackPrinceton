@@ -49,11 +49,11 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
             icon="upload"
             label="Import"
             title="Import accounts"
-            description="Paste CSV. The first row is the header: name, buyerName, usualOrder."
+            description="Paste CSV. The first row is the header: name, buyerName, usualOrder, zip. Imported accounts start in onboarding."
             endpoint="/api/records/accounts"
             csv
             submit="Import"
-            fields={[{ name: "csv", label: "CSV rows", type: "textarea", required: true, placeholder: "name,buyerName,usualOrder\nTaylor Bistro,Sam Lee,napkins and gloves" }]}
+            fields={[{ name: "csv", label: "CSV rows", type: "textarea", required: true, placeholder: "name,buyerName,usualOrder,zip\nTaylor Bistro,Sam Lee,napkins and gloves,07302" }]}
           />
           <ExportLink name="accounts" />
           <ActionButton
@@ -61,15 +61,16 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
             icon="plus"
             label="New account"
             title="New account"
-            description={wide ? "Add a restaurant and name the account executive who owns it." : "Add a restaurant to your book."}
+            kiwi="new-account"
+            description="The account starts in onboarding. Its territory and warehouse come from the ZIP."
+            redirect="/accounts/{id}"
             endpoint="/api/records/accounts"
             submit="Create account"
             fields={[
               { name: "name", label: "Restaurant name", required: true, placeholder: "Taylor Bistro" },
               { name: "buyerName", label: "Buyer", placeholder: "Sam Lee" },
+              { name: "zip", label: "ZIP code", required: true, placeholder: "07302", hint: "Northeast 07, 08, 10–12 · Southeast 27–33 · Midwest 46, 53, 60, 61 · West 90, 91, 94, 98" },
               { name: "usualOrder", label: "Usual order", placeholder: "napkins, fryer oil, and gloves" },
-              { name: "territoryId", label: "Territory", type: "select", options: territoryOptions },
-              { name: "warehouseId", label: "Warehouse", type: "select", options: warehouseOptions },
               ...(wide ? [{ name: "ownerId", label: "Owner", type: "select" as const, required: true, options: ownerOptions }] : []),
             ]}
           />
@@ -85,6 +86,8 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
                 <header>
                   <span className="avatar">{String(account.name).slice(0, 1)}</span>
                   <strong>{account.name}</strong>
+                  {account.status === "onboarding" ? <span className="pill warn">onboarding</span> : null}
+                  {account.creditHold === "yes" ? <span className="pill bad">credit hold</span> : null}
                 </header>
                 <span>{account.buyerName}</span>
                 <em>{account.usualOrder}</em>
@@ -116,11 +119,12 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
         <FilterBar path="/accounts" filters={filters} values={values} shown={filtered.length} total={accounts.length} noun="restaurants" />
         <div className="scroll tall">
           <table>
-            <thead><tr><th>Restaurant</th><th>Buyer</th><th>Territory</th><th>Owner</th><th>Warehouse</th><th>Usual order</th><th></th></tr></thead>
+            <thead><tr><th>Restaurant</th><th>Status</th><th>Buyer</th><th>Territory</th><th>Owner</th><th>Warehouse</th><th>Usual order</th><th></th></tr></thead>
             <tbody>
-              {filtered.length === 0 ? <tr><td colSpan={7} className="empty">Nothing matches those filters.</td></tr> : filtered.map((row) => (
+              {filtered.length === 0 ? <tr><td colSpan={8} className="empty">Nothing matches those filters.</td></tr> : filtered.map((row) => (
                 <tr key={String(row.id)}>
                   <td><a href={`/accounts/${row.id}`}>{row.name}</a></td>
+                  <td>{row.creditHold === "yes" ? <span className="pill bad">credit hold</span> : <span className={`pill ${row.status === "onboarding" ? "warn" : "good"}`}>{String(row.status ?? "active")}</span>}</td>
                   <td>{row.buyerName}</td>
                   <td>{nameOf(row.territoryId)}</td>
                   <td>{nameOf(row.ownerId)}</td>

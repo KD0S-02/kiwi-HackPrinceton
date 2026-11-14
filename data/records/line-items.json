@@ -3,18 +3,24 @@
     "id": "li-harbor-1",
     "opportunityId": "opp-harbor-diner",
     "productId": "napkins",
-    "quantity": 12
+    "quantity": 12,
+    "unitPrice": 4.2,
+    "substituteFor": ""
   },
   {
     "id": "li-harbor-2",
     "opportunityId": "opp-harbor-diner",
     "productId": "fryer-oil",
-    "quantity": 8
+    "quantity": 8,
+    "unitPrice": 7.88,
+    "substituteFor": ""
   },
   {
     "id": "li-harbor-3",
     "opportunityId": "opp-harbor-diner",
     "productId": "gloves",
-    "quantity": 6
+    "quantity": 6,
+    "unitPrice": 11.55,
+    "substituteFor": ""
   }
 ]

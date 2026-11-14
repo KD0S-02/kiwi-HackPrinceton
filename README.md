@@ -85,6 +85,24 @@ Every record type also has its own list page with a search box and a filter for 
 
 **Create, edit and delete work everywhere.** New account, opportunity, order, case and purchase order; Edit on every row and record page; Delete with a confirmation box; plus Clone, Change owner, Add product, Edit line, Log activity, Request approval, Save discount, Send Quote, Cycle count, Follow and CSV exports. They write to the JSON records through an allow-listed record API (`GET` pages, `POST`, `PATCH`, `DELETE`). Approvals and stock lines cannot be deleted. The discount can only change through its own route, and Send Quote checks both ownership and the 15 percent cap on the server.
 
+### Workflows
+
+Fieldnote runs five distributor workflows, each across several pages, with rules checked on the server and handoffs between the three sign-ins:
+
+| Workflow | Starts at | Who |
+|---|---|---|
+| Short delivery → redelivery and credit | `/cases/case-13` (Dockside Bowls) | Sparsh, then Shail approves the credit |
+| Quote to order | `/opportunities/opp-north-fork-grill?tab=products` | Sparsh |
+| Overdue invoice → credit hold → release | `/accounts/juniper-deli` | Sparsh, then Krishna as finance |
+| Low stock → purchase order → receiving → backorders | `/supply?low=reorder` (fryer oil) | Krishna |
+| New restaurant onboarding | Accounts → New account with a ZIP | Sparsh, Krishna for limits over $2,500 |
+
+Every step is a `POST /api/actions/<name>` (`apps/fieldnote/lib/workflow/actions`). A refusal is HTTP 400 with one sentence, and the page shows the same sentence under the disabled button (`data-kiwi="<id>-why"`). Status, money and stock never change through the generic record edit. Harbor Diner is untouched.
+
+- `npm run reset-data` puts the records back to the committed rows plus the workflow seed (`scripts/seed-workflows.ts`). Run it before a demo.
+- `npx tsx scripts/check-seed.ts` also checks the workflow fixtures.
+- `npm run check-workflows` drives all five workflows through the API as each person (Fieldnote must be running). It restores the data afterwards.
+
 ### Staying on Fieldnote
 
 **Scope.** Kiwi helps with Fieldnote and with any work thing on your screen: a PDF, an email, a doc, a spreadsheet or a website about customers, suppliers, products, prices or orders. Ask "summarize this pdf", "what's the new fryer oil price here", "what does this email want from me" or "draft a reply saying yes". When the question is about what's in front of you and Fieldnote isn't the front window, Kiwi takes one screenshot (with its own windows hidden) and reads it. It declines only what is clearly not work, like sports, jokes, poems or what to watch tonight ("That's outside work, so I'll pass.").

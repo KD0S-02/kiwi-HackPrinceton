@@ -13,7 +13,7 @@ const pickLists: Record<string, string> = {
 };
 
 const fixedChoices: Record<string, string[]> = {
-  stage: ["Qualify", "Proposal", "Commit"],
+  stage: ["Qualify", "Proposal", "Commit", "Closed Won"],
   kind: ["delivery complaint", "missing item", "billing question"],
 };
 
@@ -40,7 +40,7 @@ export function formFields(columns: string[], choices: Choices, rows: Row[], row
     const value = row ? String(row[column] ?? "") : undefined;
     const label = columnLabel(column);
     if (column === "text") return { name: column, label, type: "textarea", value };
-    if (["amount", "quantity", "onHand", "price"].includes(column)) return { name: column, label, type: "number", value };
+    if (["amount", "quantity", "onHand", "price", "reorderPoint", "reorderQty"].includes(column)) return { name: column, label, type: "number", value };
     if (pickLists[column] || fixedChoices[column] || ["status", "role", "category", "family", "department"].includes(column)) {
       const options = choices(column, rows);
       if (options.length > 0) return { name: column, label, type: "select", value, options };

@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { ActionButton } from "../../../../components/ActionButton";
 import { DeleteButton } from "../../../../components/DeleteButton";
 import { FollowButton } from "../../../../components/FollowButton";
-import { columnLabel, modules, readRecords, recordTypes } from "../../../../lib/data";
+import { columnLabel, modules, money, prettyDate, readRecords, recordTypes, tone } from "../../../../lib/data";
+import { hrefFor, idLabel } from "../../../../lib/links";
 import { choiceLists, formFields } from "../../../../lib/record-fields";
 
 export const dynamic = "force-dynamic";
@@ -31,8 +32,8 @@ export default async function ModuleDetailPage({ params }: { params: Promise<{ m
     <section>
       <div className="record-head">
         <div>
-          <div className="crumb">{moduleConfig.title} / {String(row.name ?? row.id)}</div>
-          <h1>{String(row.name ?? row.id)}</h1>
+          <div className="crumb"><a href={`/${moduleKey}`}>{moduleConfig.title}</a> / {idLabel(row.name ?? row.id)}</div>
+          <h1>{idLabel(row.name ?? row.id)}</h1>
         </div>
         <div className="actions">
           <FollowButton id={`${moduleKey}-${id}`} />
@@ -69,7 +70,7 @@ export default async function ModuleDetailPage({ params }: { params: Promise<{ m
           <h2>Details</h2>
           <table>
             <tbody>
-              {Object.entries(row).map(([key, value]) => (
+              {Object.entries(row).filter(([key]) => key !== "id").map(([key, value]) => (
                 <tr key={key}><th>{columnLabel(key)}</th><td>{displayValue(key, value, names)}</td></tr>
               ))}
             </tbody>
@@ -85,7 +86,7 @@ export default async function ModuleDetailPage({ params }: { params: Promise<{ m
               ))}
               <h3>Orders</h3>
               {orders.length === 0 ? <p className="empty">No orders.</p> : orders.map((order) => (
-                <p key={String(order.id)}>{order.id} · {order.status}</p>
+                <p key={String(order.id)}><a href={`/orders/${order.id}`}>{order.id}</a> · {order.status}</p>
               ))}
             </>
           ) : <p className="empty">No related lists on this record.</p>}
@@ -95,10 +96,17 @@ export default async function ModuleDetailPage({ params }: { params: Promise<{ m
   );
 }
 
+const moneyKeys = ["amount", "price", "total", "minOrderDollars", "requestedLimit", "approvedLimit", "creditLimit", "cost", "unitPrice", "paid", "credited"];
+
 function displayValue(key: string, value: string | number | null, names: Map<string, string>) {
   if (value == null || value === "") return "—";
-  if (key.endsWith("Id") || key === "reportsTo" || key === "requestedBy") {
-    return names.get(String(value)) ?? String(value);
+  if (key === "status") return <span className={`pill ${tone(value) || "gray"}`}>{String(value)}</span>;
+  if (moneyKeys.includes(key)) return money(value);
+  if (/(At|Date|Expires|Since|Until)$/.test(key)) return prettyDate(value);
+  if (key.endsWith("Id") || key === "reportsTo" || key === "requestedBy" || key === "by" || key === "decidedBy") {
+    const label = names.get(String(value)) ?? idLabel(value);
+    const href = key === "accountId" ? `/accounts/${value}` : hrefFor(value);
+    return href ? <a href={href}>{label}</a> : label;
   }
   return String(value);
 }

@@ -9,7 +9,8 @@ import { signedInUser } from "../../../lib/session";
 
 export const dynamic = "force-dynamic";
 
-const columns = ["Qualify", "Proposal", "Commit"];
+const columns = ["Qualify", "Proposal", "Commit", "Closed Won"];
+const openStages = ["Qualify", "Proposal", "Commit"];
 
 export default async function PipelinePage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const params = await searchParams;
@@ -62,7 +63,7 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
             fields={[
               { name: "accountId", label: "Restaurant", type: "select", required: true, options: myAccounts.map((row) => ({ value: String(row.id), label: String(row.name) })) },
               { name: "amount", label: "Amount", type: "number", placeholder: "5000" },
-              { name: "stage", label: "Stage", type: "select", options: columns.map((value) => ({ value, label: value })) },
+              { name: "stage", label: "Stage", type: "select", options: openStages.map((value) => ({ value, label: value })) },
             ]}
           />
         </div>

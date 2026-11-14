@@ -2,11 +2,21 @@
   {
     "id": "act-harbor-1",
     "opportunityId": "opp-harbor-diner",
-    "text": "Buyer asked for a quote on the standing napkin and oil order."
+    "text": "Buyer asked for a quote on the standing napkin and oil order.",
+    "subjectType": "opportunity",
+    "subjectId": "opp-harbor-diner",
+    "by": "",
+    "kind": "note",
+    "outcome": ""
   },
   {
     "id": "act-harbor-2",
     "opportunityId": "opp-harbor-diner",
-    "text": "Discount was left at 20 percent from the first draft. Shail Shah has not approved it."
+    "text": "Discount was left at 20 percent from the first draft. Shail Shah has not approved it.",
+    "subjectType": "opportunity",
+    "subjectId": "opp-harbor-diner",
+    "by": "",
+    "kind": "note",
+    "outcome": ""
   }
 ]

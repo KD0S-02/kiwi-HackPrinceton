@@ -3,7 +3,8 @@ import { ActionButton } from "../../../components/ActionButton";
 import { DeleteButton } from "../../../components/DeleteButton";
 import { ExportLink } from "../../../components/ExportLink";
 import { FilterBar } from "../../../components/FilterBar";
-import { columnLabel, loadNames, modules, readRecords, recordTypes, type Row } from "../../../lib/data";
+import { columnLabel, loadNames, modules, money, readRecords, recordTypes, tone, type Row } from "../../../lib/data";
+import { hrefFor, idLabel } from "../../../lib/links";
 import { listFilterColumns, textMatches } from "../../../lib/filters";
 import { choiceLists, formFields } from "../../../lib/record-fields";
 
@@ -70,14 +71,14 @@ export default async function ModuleListPage({
             <table>
               <thead>
                 <tr>
-                  {moduleConfig.columns.map((column) => <th key={column}>{columnLabel(column)}</th>)}
+                  {moduleConfig.columns.map((column) => <th key={column} className={moneyColumns.includes(column) ? "num" : undefined}>{columnLabel(column)}</th>)}
                   <th></th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((row) => (
                   <tr key={String(row.id)}>
-                    {moduleConfig.columns.map((column) => <td key={column}>{cell(moduleKey, column, row, nameOf)}</td>)}
+                    {moduleConfig.columns.map((column, index) => <td key={column} className={moneyColumns.includes(column) ? "num" : undefined}>{index === 0 && column !== "name" ? <><a className="row-id" href={detailHref(moduleKey, row)}>{idLabel(row.id)}</a>{" "}</> : null}{cell(moduleKey, column, row, nameOf)}</td>)}
                     <td>
                       <div className="row-actions">
                         <a className="btn ghost small" href={detailHref(moduleKey, row)}>Open</a>
@@ -119,17 +120,27 @@ function detailHref(moduleKey: string, row: Row) {
   return `/${moduleKey}/${row.id}`;
 }
 
+const moneyColumns = ["amount", "price", "total", "minOrderDollars", "requestedLimit", "approvedLimit", "creditLimit", "cost", "unitPrice"];
+
 function cell(moduleKey: string, column: string, row: Row, nameOf: (id: Row[string]) => string) {
   const value = row[column];
-  if (column.endsWith("Id") || column === "reportsTo" || column === "requestedBy") return nameOf(value);
+  if (column === "subjectId") {
+    const href = hrefFor(value, String(row.subjectType ?? (row.opportunityId ? "opportunity" : "")));
+    return href ? <a href={href}>{row.subjectType === "opportunity" || row.subjectType === "account" ? nameOf(value) : idLabel(value)}</a> : String(value ?? "—");
+  }
+  if (column.endsWith("Id") || column === "reportsTo" || column === "requestedBy") {
+    const href = column === "accountId" ? `/accounts/${value}` : hrefFor(value);
+    const label = nameOf(value);
+    return href && value ? <a href={href}>{label === String(value) ? idLabel(value) : label}</a> : label;
+  }
   if (column === "name") return <a href={detailHref(moduleKey, row)}>{value}</a>;
   if (column === "status" || column === "stage") {
-    const tone = value === "open" || value === "pending" ? "warn" : value === "delivered" || value === "paid" || value === "sent" || value === "closed" ? "good" : "";
-    return <span className={`pill ${tone}`}>{value}</span>;
+    const shown = moduleKey === "purchase-orders" && value === "open" ? "sent" : value;
+    return <span className={`pill ${tone(shown) || "gray"}`}>{shown}</span>;
   }
   if (column === "discountPercent") {
     return <span className={Number(value) > 15 ? "pill bad" : "pill good"}>{value}%</span>;
   }
-  if (column === "amount" || column === "price") return `$${Number(value).toLocaleString()}`;
+  if (moneyColumns.includes(column)) return value == null || value === "" ? "—" : money(value);
   return String(value ?? "");
 }

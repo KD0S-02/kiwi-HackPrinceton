@@ -5,7 +5,14 @@
     "accountId": "cedar-spoon",
     "ownerId": "user",
     "status": "sent",
-    "amount": 937
+    "amount": 937,
+    "version": 1,
+    "sentTo": "contact-cedar-spoon",
+    "sentAt": "2026-11-02T15:00:00.000Z",
+    "validUntil": "2026-11-16",
+    "acceptedBy": "",
+    "buyerPo": "",
+    "orderId": ""
   },
   {
     "id": "quote-2",
@@ -13,7 +20,14 @@
     "accountId": "lantern-noodle",
     "ownerId": "user",
     "status": "sent",
-    "amount": 1074
+    "amount": 1074,
+    "version": 1,
+    "sentTo": "contact-lantern-noodle",
+    "sentAt": "2026-11-02T15:00:00.000Z",
+    "validUntil": "2026-11-16",
+    "acceptedBy": "",
+    "buyerPo": "",
+    "orderId": ""
   },
   {
     "id": "quote-3",
@@ -21,7 +35,14 @@
     "accountId": "bright-pie",
     "ownerId": "user",
     "status": "sent",
-    "amount": 1211
+    "amount": 1211,
+    "version": 1,
+    "sentTo": "contact-bright-pie",
+    "sentAt": "2026-11-02T15:00:00.000Z",
+    "validUntil": "2026-11-16",
+    "acceptedBy": "",
+    "buyerPo": "",
+    "orderId": ""
   },
   {
     "id": "quote-4",
@@ -29,7 +50,14 @@
     "accountId": "north-fork-grill",
     "ownerId": "user",
     "status": "sent",
-    "amount": 1348
+    "amount": 1348,
+    "version": 1,
+    "sentTo": "contact-north-fork-grill",
+    "sentAt": "2026-11-02T15:00:00.000Z",
+    "validUntil": "2026-11-16",
+    "acceptedBy": "",
+    "buyerPo": "",
+    "orderId": ""
   },
   {
     "id": "quote-5",
@@ -37,7 +65,14 @@
     "accountId": "little-anchor",
     "ownerId": "user",
     "status": "sent",
-    "amount": 1485
+    "amount": 1485,
+    "version": 1,
+    "sentTo": "contact-little-anchor",
+    "sentAt": "2026-11-02T15:00:00.000Z",
+    "validUntil": "2026-11-16",
+    "acceptedBy": "",
+    "buyerPo": "",
+    "orderId": ""
   },
   {
     "id": "quote-6",
@@ -45,7 +80,14 @@
     "accountId": "red-kettle",
     "ownerId": "user",
     "status": "sent",
-    "amount": 1622
+    "amount": 1622,
+    "version": 1,
+    "sentTo": "contact-red-kettle",
+    "sentAt": "2026-11-02T15:00:00.000Z",
+    "validUntil": "2026-11-16",
+    "acceptedBy": "",
+    "buyerPo": "",
+    "orderId": ""
   },
   {
     "id": "quote-7",
@@ -53,7 +95,14 @@
     "accountId": "maple-counter",
     "ownerId": "user",
     "status": "sent",
-    "amount": 1759
+    "amount": 1759,
+    "version": 1,
+    "sentTo": "contact-maple-counter",
+    "sentAt": "2026-11-02T15:00:00.000Z",
+    "validUntil": "2026-11-16",
+    "acceptedBy": "",
+    "buyerPo": "",
+    "orderId": ""
   },
   {
     "id": "quote-8",
@@ -61,7 +110,14 @@
     "accountId": "goldfinch-cafe",
     "ownerId": "ae-west",
     "status": "sent",
-    "amount": 1896
+    "amount": 1896,
+    "version": 1,
+    "sentTo": "contact-goldfinch-cafe",
+    "sentAt": "2026-11-02T15:00:00.000Z",
+    "validUntil": "2026-11-16",
+    "acceptedBy": "",
+    "buyerPo": "",
+    "orderId": ""
   },
   {
     "id": "quote-9",
@@ -69,7 +125,14 @@
     "accountId": "river-salt",
     "ownerId": "ae-northeast-2",
     "status": "sent",
-    "amount": 2033
+    "amount": 2033,
+    "version": 1,
+    "sentTo": "contact-river-salt",
+    "sentAt": "2026-11-02T15:00:00.000Z",
+    "validUntil": "2026-11-16",
+    "acceptedBy": "",
+    "buyerPo": "",
+    "orderId": ""
   },
   {
     "id": "quote-10",
@@ -77,7 +140,14 @@
     "accountId": "olive-room",
     "ownerId": "user",
     "status": "sent",
-    "amount": 2170
+    "amount": 2170,
+    "version": 1,
+    "sentTo": "contact-olive-room",
+    "sentAt": "2026-11-02T15:00:00.000Z",
+    "validUntil": "2026-11-16",
+    "acceptedBy": "",
+    "buyerPo": "",
+    "orderId": ""
   },
   {
     "id": "quote-11",
@@ -85,7 +155,14 @@
     "accountId": "paper-lantern",
     "ownerId": "ae-southeast",
     "status": "sent",
-    "amount": 2307
+    "amount": 2307,
+    "version": 1,
+    "sentTo": "contact-paper-lantern",
+    "sentAt": "2026-11-02T15:00:00.000Z",
+    "validUntil": "2026-11-16",
+    "acceptedBy": "",
+    "buyerPo": "",
+    "orderId": ""
   },
   {
     "id": "quote-12",
@@ -93,6 +170,13 @@
     "accountId": "sunday-roast",
     "ownerId": "ae-midwest",
     "status": "sent",
-    "amount": 2444
+    "amount": 2444,
+    "version": 1,
+    "sentTo": "contact-sunday-roast",
+    "sentAt": "2026-11-02T15:00:00.000Z",
+    "validUntil": "2026-11-16",
+    "acceptedBy": "",
+    "buyerPo": "",
+    "orderId": ""
   }
 ]
