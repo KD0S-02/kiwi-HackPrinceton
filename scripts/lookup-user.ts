@@ -20,6 +20,12 @@ function localPerson(userId: string): UserLookup | undefined {
     rules: [
       { tool: "fieldnote", action: "discount", scope: "15 percent", allow: false },
       { tool: "fieldnote", action: "send quote", scope: "own opportunities", allow: true },
+      { tool: "fieldnote", action: "issue credit", scope: "over 100 dollars needs the approver", allow: false },
+      { tool: "fieldnote", action: "payment plan", scope: "over 1000 dollars or more than 3 installments needs finance", allow: false },
+      { tool: "fieldnote", action: "purchase order", scope: "over 5000 dollars needs finance", allow: false },
+      { tool: "fieldnote", action: "credit limit", scope: "over 2500 dollars needs finance", allow: false },
+      { tool: "fieldnote", action: "credit hold", scope: "an invoice still open 30 days after its due date", allow: false },
+      { tool: "fieldnote", action: "receive", scope: "account executives do not receive", allow: false },
     ],
     screens: [],
     org: { manager: person.managerName || null, territory: person.territory, office: person.office },

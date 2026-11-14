@@ -16,33 +16,36 @@
     "Shipments",
     "Cases",
     "Approvals",
+    "Credit Memos",
+    "Payments",
+    "Payment Plans",
     "People",
     "Reports"
   ],
   "controls": [
-    {
-      "id": "send-quote",
-      "name": "Send Quote",
-      "module": "Opportunity",
-      "where": "header"
-    },
-    {
-      "id": "discount",
-      "name": "Discount",
-      "module": "Opportunity",
-      "where": "header"
-    },
-    {
-      "id": "amount",
-      "name": "Amount",
-      "module": "Opportunity",
-      "where": "header"
-    },
-    {
-      "id": "stage",
-      "name": "Stage",
-      "module": "Opportunity",
-      "where": "header"
-    }
+    { "id": "send-quote", "name": "Send Quote", "module": "Opportunities", "where": "header" },
+    { "id": "discount", "name": "Discount", "module": "Opportunities", "where": "header" },
+    { "id": "amount", "name": "Amount", "module": "Opportunities", "where": "header" },
+    { "id": "stage", "name": "Stage", "module": "Opportunities", "where": "header" },
+    { "id": "substitute", "name": "Substitute product", "module": "Opportunities", "where": "products" },
+    { "id": "accept-quote", "name": "Accept quote", "module": "Quotes", "where": "header" },
+    { "id": "convert-order", "name": "Convert to order", "module": "Quotes", "where": "header" },
+    { "id": "report-short", "name": "Report short", "module": "Shipments", "where": "lines" },
+    { "id": "redeliver", "name": "Schedule redelivery", "module": "Shipments", "where": "lines" },
+    { "id": "issue-credit", "name": "Issue credit", "module": "Invoices", "where": "header" },
+    { "id": "propose-plan", "name": "Propose payment plan", "module": "Invoices", "where": "header" },
+    { "id": "record-payment", "name": "Record payment", "module": "Invoices", "where": "header" },
+    { "id": "close-case", "name": "Close case", "module": "Cases", "where": "header" },
+    { "id": "approve", "name": "Approve", "module": "Approvals", "where": "header" },
+    { "id": "reject", "name": "Reject", "module": "Approvals", "where": "header" },
+    { "id": "request-release", "name": "Request hold release", "module": "Accounts", "where": "credit" },
+    { "id": "release-hold", "name": "Release hold", "module": "Accounts", "where": "credit" },
+    { "id": "release-order", "name": "Release held order", "module": "Orders", "where": "header" },
+    { "id": "reorder", "name": "Reorder", "module": "Inventory", "where": "row" },
+    { "id": "submit-po", "name": "Submit purchase order", "module": "Purchase Orders", "where": "header" },
+    { "id": "receive-po", "name": "Receive", "module": "Purchase Orders", "where": "header" },
+    { "id": "release-backorders", "name": "Release backorders", "module": "Purchase Orders", "where": "header" },
+    { "id": "apply-credit", "name": "Apply for credit", "module": "Accounts", "where": "checklist" },
+    { "id": "activate-account", "name": "Activate account", "module": "Accounts", "where": "checklist" }
   ]
 }
