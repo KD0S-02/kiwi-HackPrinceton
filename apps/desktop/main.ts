@@ -6,7 +6,7 @@ import { app, BrowserWindow, clipboard, desktopCapturer, globalShortcut, ipcMain
 import { uIOhook, UiohookKey } from "uiohook-napi";
 import { AssemblyAI, StreamingTranscriber } from "assemblyai";
 import { ask, clearSignedIn, primeCache, type Stop } from "../../scripts/ask.ts";
-import { askPage, onPageAction, pageInFront, pagePath, startBridge } from "./bridge.ts";
+import { askPage, onPageAction, onPageHover, pageInFront, pagePath, startBridge } from "./bridge.ts";
 import { ensureFieldnote } from "./fieldnote.ts";
 import { route } from "./router.ts";
 import { StepBuffer, goalReached, prepareStops, stepAligned } from "./steps.ts";
@@ -1004,6 +1004,7 @@ app.whenReady().then(async () => {
   if (!icon.isEmpty()) app.dock.setIcon(icon);
   startBridge();
   onPageAction((step) => recorder.action(step));
+  onPageHover((over) => showOnOverlay("hover", over));
   watchKeys();
   watchCursor();
   watchFront();

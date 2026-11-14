@@ -276,8 +276,23 @@ export function KiwiBridge() {
         if (element.type !== "password") tell("type", element, element.value);
       }
     };
+    // Kiwi's pointer turns into a hand over anything clickable. Only changes are sent.
+    let overClickable = false;
+    const hover = (over: boolean) => {
+      if (over === overClickable || socket?.readyState !== WebSocket.OPEN) return;
+      overClickable = over;
+      socket.send(JSON.stringify({ type: "hover", over }));
+    };
+    const onOver = (event: MouseEvent) => {
+      const element = (event.target as Element | null)?.closest(clickable) as HTMLElement | null;
+      hover(Boolean(element) && !element!.matches(":disabled, [aria-disabled='true']") && !(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement));
+    };
+    const onLeave = () => hover(false);
     document.addEventListener("click", onClick, true);
     document.addEventListener("change", onChange, true);
+    document.addEventListener("mouseover", onOver, true);
+    document.documentElement.addEventListener("mouseleave", onLeave);
+    window.addEventListener("blur", onLeave);
     // Chrome does not always fire visibilitychange when a window is restored from the Dock.
     const heartbeat = setInterval(report, 1000);
     document.addEventListener("visibilitychange", report);
@@ -289,6 +304,9 @@ export function KiwiBridge() {
       if (retry) clearTimeout(retry);
       document.removeEventListener("click", onClick, true);
       document.removeEventListener("change", onChange, true);
+      document.removeEventListener("mouseover", onOver, true);
+      document.documentElement.removeEventListener("mouseleave", onLeave);
+      window.removeEventListener("blur", onLeave);
       socket?.close();
       document.removeEventListener("visibilitychange", report);
       window.removeEventListener("focus", report);
