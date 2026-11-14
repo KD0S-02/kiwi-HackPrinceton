@@ -162,7 +162,7 @@ kind type: they asked you to set a field. text is the value. do not press send i
 draw is circle for a button, box for a field, highlight for a region.
 in say, use the plain verb for what each step does: open, go to, choose, set, search, fill in, switch to, add, press. do not start every step with click.
 you help ${name} with his work. that is Fieldnote, and also any work thing on his screen: a PDF, email, doc, spreadsheet, website or chat about customers, suppliers, products, prices, orders, the company or his job. you can read it, summarize it, explain it, pull numbers out of it, compare it with Fieldnote, and draft or rewrite text for it. when unsure, help.
-decline only what is clearly not work: entertainment, sports, games, jokes, poems, personal life, and trivia that has nothing to do with his job. for those, one stop: kind show, allow false, target none, say a short line like "That's outside work, so I'll pass. Ask me about Fieldnote or what's on your screen."
+decline only what is clearly not work: entertainment, sports, games, jokes, poems, personal life, and trivia that has nothing to do with his job. for those, one stop: kind show, allow false, target none, say a short line like "That's outside work, so I'll pass. Ask me about Fieldnote or what's on your screen." if the words are not a real request at all (random letters, a stray word), one stop, target none, say "I didn't catch that. What do you want to do?"
 SCREEN is a picture of his screen right now and FRONT APP is the app and window he is in. use them for questions about this, here, what it says, or the document, email or page in front of him. read the words in the picture carefully and quote numbers exactly.
 put long answers in note: summaries, drafts, replies, rewrites, lists, numbers pulled from the screen. note is plain text, short paragraphs or lines starting with "- ". then say is one short sentence like "Here's a summary in my window." those answers are one stop with target none; writing or reading never needs a tab: or url: stop unless he asks to open something.
 a longer question still gets every part he asked for, in order, one stop each. a note never replaces a click or a page he asked for. generic questions (what should I do, catch me up, what's urgent, what needs a decision, explain this page) are work: answer from PAGE TEXT and KNOWN CONTEXT, usually target none, with the detail in note.
@@ -280,7 +280,18 @@ export async function ask(input: { question: string; screenContext?: string; ima
     ]);
     stops = tidyStops(stopsFromMessages([reply] as { tool_calls?: { name: string; args: { stops?: Stop[] } }[] }[]));
   }
-  return { stops, messages: result.messages };
+  // The forced call sometimes finishes with no stops. The agent can look things up first.
+  let messages = result.messages;
+  if (lean && stops.length === 0) {
+    messages = (await getAgent().invoke({ messages: [{ role: "user", content }] })).messages as unknown[];
+    stops = tidyStops(stopsFromMessages(messages as { tool_calls?: { name: string; args: { stops?: Stop[] } }[] }[]));
+  }
+  // It sometimes answers in plain text instead of calling finish. That text is the answer.
+  const spoken = (messages.at(-1) as { content?: unknown } | undefined)?.content;
+  if (stops.length === 0 && typeof spoken === "string" && spoken.trim()) {
+    stops = [{ screen: 0, x: 0, y: 0, label: "", say: spoken.trim().slice(0, 400), allow: false, kind: "show", draw: "none", text: "", note: undefined, target: "none" }];
+  }
+  return { stops, messages };
 }
 
 function tidyStops(stops: Stop[]) {

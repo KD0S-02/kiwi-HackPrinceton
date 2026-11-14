@@ -393,6 +393,12 @@ async function playStop(stop: Stop) {
   await wait(300);
 }
 
+// Each step's say is shown alone, so "Then, click Save." reads as a fragment.
+function ownSentence(say: string) {
+  const trimmed = say.trim().replace(/^(and then|then|next|after that|finally|now),?\s+/i, "");
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+}
+
 function chainPrompt(question: string, played: Stop[], rejected?: Stop) {
   const done = played.map((stop) => stop.say || `${stop.kind} ${stop.target}`).filter(Boolean).join("; ") || "nothing yet";
   const wrong = rejected
@@ -431,7 +437,7 @@ async function runChain(
       rejected = undefined;
       const stops = prepareStops(question, result.stops, page.controls)
         .slice(0, 3)
-        .map((stop) => keepWritingHere(question, { ...stop, target: ownerTarget(question, stop.target ?? "") }));
+        .map((stop) => keepWritingHere(question, { ...stop, say: ownSentence(stop.say ?? ""), target: ownerTarget(question, stop.target ?? "") }));
       if (stops.length === 0) {
         if (played.length === 0) throw new Error("Kiwi did not return a stop.");
         break;
@@ -537,6 +543,7 @@ function offerable(question: string, stops: Stop[], doIt: boolean) {
   if (doIt || !howToQuestion.test(question)) return false;
   if (stops.some((stop) => blockedWords.test(`${stop.say} ${stop.note ?? ""}`))) return false;
   if (stops.some((stop) => stop.offer === false || stop.say.trim().endsWith("?"))) return false;
+  if (stops.some((stop) => stop.allow && (stop.kind === "type" || /^save|submit|send|approve|create/i.test(stop.target ?? "")))) return false;
   if (stops.some((stop) => stop.offer === true)) return true;
   if (stops.some((stop) => stop.allow && stop.kind !== "show" && !/^(url|tab):/i.test(stop.target ?? ""))) return false;
   return stops.some((stop) => stop.kind === "show" && !/^(none|paste)?$/i.test((stop.target ?? "").trim()));
@@ -604,10 +611,20 @@ async function answerQuestion(question: string, doIt = false) {
     if (current === runId) sendOffer(question, played, doIt);
   } catch (error) {
     if (current !== runId) return;
-    send("answer", error instanceof Error ? error.message : String(error));
+    send("answer", plainError(error));
   } finally {
     if (current === runId) send("status", { busy: false, label: "Ready" });
   }
+}
+
+// Model and network errors are long and technical. Say what happened in one line.
+function plainError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/429|quota|RESOURCE_EXHAUSTED|rate.?limit/i.test(message)) return "Kiwi is out of model requests for now. Try again in a little while.";
+  if (/503|UNAVAILABLE|high demand|overloaded/i.test(message)) return "The model is busy right now. Try again in a moment.";
+  if (/fetch failed|ENOTFOUND|ECONNREFUSED|ETIMEDOUT|network/i.test(message)) return "Kiwi can't reach the model. Check your internet connection.";
+  if (/did not return a stop/i.test(message)) return "I couldn't work that one out. Try asking another way.";
+  return message;
 }
 
 function timing(question: string, path: string, started: number) {
