@@ -13,13 +13,17 @@ Built for HackPrinceton.
 
 ## The demo in one paragraph
 
-Sparsh Bohra is an account executive at Fieldnote. His manager is Alex Morgan. The rule: an account executive may send a quote on their own opportunities and may not discount past 15 percent. Anything over the cap needs Alex's approval. The demo record is **Harbor Diner**, discounted 20 percent, so **Send Quote** is switched off. Sparsh holds Control + Option and asks "where is Send Quote?". Kiwi flies a small kiwi slice to the button, draws a ring around it, and explains that the discount is over the cap and Alex has to approve it.
+Sparsh Bohra is an account executive at Fieldnote. His manager and approver is Shail Shah. The rule: an account executive may send a quote on their own opportunities and may not discount past 15 percent. Anything over the cap needs Shail's approval. The demo record is **Harbor Diner**, discounted 20 percent, so **Send Quote** is switched off. Sparsh holds Control + Option and asks "where is Send Quote?". Kiwi flies a small kiwi slice to the button, draws a ring around it, and explains that the discount is over the cap and Shail has to approve it.
+
+Sign in with a work email. Three accounts are preloaded. Shail Shah reviews the team book and sends anything over the cap to Krishna Das. Krishna Das owns Fieldnote, has no manager and no approver, and sees the whole company.
 
 ## Who is who
 
-- **Sparsh Bohra** is the signed-in person. In the data, the graph and the plan he is the record `user` ("User"). The screens show his real name. Kiwi calls him Sparsh or "you".
-- **Alex Morgan** is Sparsh's manager and the discount approver. He reports to **Sam Ortiz**, VP of Sales.
-- **Fieldnote** is the fictional restaurant-supply company: 40 restaurants, 30 employees, 2 offices (Jersey City and Chicago), 3 warehouses, 40 products.
+- **Sparsh Bohra** (`sparsh.bohra@fieldnote.com`) is an account executive. In the data he is the record `user`. He owns his own restaurants. Kiwi calls him Sparsh or "you".
+- **Shail Shah** (`shail.shah@fieldnote.com`) is a senior account executive. He is Sparsh's manager and approver. He does not carry a personal book. His manager and approver is Krishna Das.
+- **Krishna Das** (`krishna.das@fieldnote.com`) owns Fieldnote. He has no manager and no approver. He sees every deal, and a discount over the cap stops with him.
+- **Alex Morgan** is still in the directory. Other account executives report to him. He is not Sparsh's manager.
+- **Fieldnote** is the fictional restaurant-supply company: 40 restaurants, 32 employees, 2 offices (Jersey City and Chicago), 3 warehouses, 40 products.
 
 ## How it works
 
@@ -53,15 +57,16 @@ screen capture (JPEG)  ----------------------------------+
 
 ### Desktop app (`apps/desktop`)
 
-- **Panel**: a small always-on-top window with a text box, Ask, Talk and a status spinner. Drag the top bar to move it. Its position is remembered. It shows on every desktop (Space), including over full-screen apps.
+- **Panel**: a small always-on-top window. Signed out, it asks for a work email and an SSO login, and it does not mention Fieldnote. Signed in, the header is Kiwi · Fieldnote with the person's name and role. Press Enter to ask. The mic sits to the right of the bar, and Record sits to the right of the mic. Log out is an icon on the top right. The kiwi matches the record button and spins while an answer is loading. Drag the top bar to move it. Its position is remembered. It shows on every desktop (Space), including over full-screen apps.
+- **Record**: while Record is on, Kiwi keeps a still each time the screen changes (`data/runs/<id>/`). Pause holds the trail. Stop asks for a title and a note and saves the run as a draft. It does not turn that trail into a skill yet. Asking a question does not wait on the recording.
 - **Overlay**: a transparent, click-through, full-screen window. The kiwi slice trails your mouse. When an answer arrives it flies along an arc to the target, draws a ring, shows the sentence, and goes back to following the mouse after about seven seconds.
-- **Push-to-talk**: hold Control + Option (a global key hook via `uiohook-napi`), release to ask. The mic is captured in the panel, down-sampled to 16 kHz PCM16, and streamed to AssemblyAI's `universal-3-6-pro` streaming model with key terms such as Fieldnote, Harbor Diner, Send Quote, Alex Morgan. Escape cancels.
+- **Push-to-talk**: hold Control + Option (a global key hook via `uiohook-napi`), release to ask. The mic is captured in the panel, down-sampled to 16 kHz PCM16, and streamed to AssemblyAI's `universal-3-6-pro` streaming model with key terms such as Fieldnote, Harbor Diner, Send Quote, Sparsh Bohra, Shail Shah and Krishna Das. Escape cancels.
 - **Screen capture**: Electron `desktopCapturer`, JPEG, with Kiwi's own windows hidden for the shot. Stop coordinates are scaled from the shot back to the display, including multi-display offsets.
 - **Packaged as `dist/Kiwi.app`** (a renamed, ad-hoc signed copy of Electron with the kiwi icon and bundle id `com.fieldnote.kiwi`). See the permissions note below for why this matters.
 
 ### Fieldnote (`apps/fieldnote`)
 
-A Next.js 15 app styled like a real SaaS CRM, with a login screen (any password works, the cookie is `fieldnote_session`), and six distinct screens:
+A Next.js 15 app styled like a real SaaS CRM. Sign in with a work email (`sparsh.bohra@fieldnote.com`, `shail.shah@fieldnote.com`, or `krishna.das@fieldnote.com`). The cookie `fieldnote_session` is that person's id. Unknown emails are refused. Six distinct screens:
 
 | Screen | Purpose |
 |---|---|
@@ -174,7 +179,7 @@ Kiwi keeps Clicky's interaction: hold Control + Option to talk, a buddy that fol
 
 ### Done
 
-- Seed company (40 restaurants, 30 people, warehouses, products), generated and authored pages, and a graph loader and embedder.
+- Seed company (40 restaurants, 32 people, warehouses, products), generated and authored pages, and a graph loader and embedder. Three sign-in accounts: Sparsh, Shail, and Krishna.
 - Agent with cached context, direct `finish`, and the discount and ownership rules. A five-question script (`npm test`) passed on the last full run. A single cached where-question measured about 1 second; the full five-question run was still slow because of Gemini latency spikes and the live search in the tour question.
 - Fieldnote CRM: login and logout, six distinct screens, global search, profile, working mock buttons, server-side rules.
 - Desktop app: movable panel on all Spaces, cursor buddy with flight to target, hold-to-talk with AssemblyAI streaming, screen capture, Escape to cancel, packaged and signed as Kiwi with its own icon and permission prompts.
@@ -201,7 +206,8 @@ Kiwi keeps Clicky's interaction: hold Control + Option to talk, a buddy that fol
 - A menu-bar icon (Clicky is menu-bar only) instead of a floating panel, plus a setting for the hotkey.
 - Multi-monitor stops: the agent only sees the display under the cursor today.
 - Detect UI elements with accessibility trees or DOM hints for more precise coordinates than a vision guess.
-- Per-role rules read from the graph (managers, ops, business development), not just the account executive cap.
+- A skill compiled from a recording, so a later question can use the idea even when the workflow is only close. Today a recording is a named draft trail and nothing more.
+- Per-role rules for the rest of the directory (ops, business development), not only the three sign-in accounts.
 - Real auth in Fieldnote and a real database in place of JSON files.
 - Fix the 1 high severity `npm audit` finding, add CI, and add a Playwright suite for Fieldnote.
 - A proper installer: notarized DMG with auto-update.
@@ -209,7 +215,7 @@ Kiwi keeps Clicky's interaction: hold Control + Option to talk, a buddy that fol
 ## Repo layout
 
 ```text
-apps/desktop/      Electron app: main.ts, panel.html, overlay.html, preload.cjs, kiwi.svg, kiwi-icon.svg
+apps/desktop/      Electron app: main.ts, panel.html, overlay.html, preload.cjs, record.ts, kiwi.svg, kiwi-icon.svg
 apps/fieldnote/    Next.js CRM: app/, components/, lib/data.ts, middleware.ts
 data/records/      Seed JSON the CRM and the graph read
 data/docs/         authored/ and generated/ written pages
