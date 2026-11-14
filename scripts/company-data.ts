@@ -1,3 +1,5 @@
+import { workflowDocuments } from "./workflow-docs.ts";
+
 export type AuthoredDocument = {
   fileName: string;
   title: string;
@@ -447,6 +449,7 @@ export function buildCompanyData(discountCapPercent: number) {
 }
 
 function authoredDocuments(discountCapPercent: number): AuthoredDocument[] {
+  const extra = workflowDocuments();
   const cap = `${discountCapPercent} percent`;
   const sharedRoles = ["account executive"];
   return [
@@ -455,21 +458,23 @@ An account executive may discount up to ${cap} on an opportunity they own. The c
 
 The same role may send a quote on their own opportunities when the discount on the screen is at or under ${cap}. Send Quote sits on the Opportunity header, next to the discount field. Pressing it while the field is over the cap does nothing. The page keeps the button visible so the account executive can see where the send would have happened.
 
-Alex Morgan approves anything over ${cap}. Alex is the manager for the Northeast, and User reports to Alex. The approval is a person, not a second button on the header. Leaving the field at 20 percent and asking the system to send is refused until the field comes down or Alex approves the exception.
+Shail Shah approves anything over ${cap} for Sparsh Bohra. Shail is Sparsh's manager. Krishna Das approves anything over the cap for Shail, and Krishna has no approver above him. The approval is a person, not a second button on the header. Leaving the field at 20 percent and asking the system to send is refused until the field comes down or the approver records the exception. An approved percent is the highest Send Quote will accept. Raising the field above that approved percent blocks the send again.
 
 Fieldnote uses one cap for every territory. The Northeast price book does not raise it. A sample, a first order, or a busy Friday does not raise it. If two account executives work the same restaurant, only the owner of that opportunity may send the quote.
 `),
     doc("sending-a-quote.md", "Sending a quote", "howto", "sales", sharedRoles, "Opportunities", `
 Open the opportunity. The send lives on the Opportunity header, not on the account, not in Quotes, and not in a menu buried in Details. The header shows the restaurant, the stage, the amount, the discount field, and Send Quote.
 
-Read the discount field before you touch Send Quote. If the number is over the cap in the discount policy, the button stays visible and does not send. Change the discount field, save it, and look again. The new number has to be on the screen. The quote list does not grow until the send actually lands.
+Read the discount field before you touch Send Quote. If the number is over the cap in the discount policy and no one has approved that percent, the button stays visible and does not send. Change the discount field, save it, and look again. The new number has to be on the screen. The quote list does not grow until the send actually lands. A send also refuses a line that is short of free stock, and it writes a version rather than overwriting the previous one. The quote versions page is the rest of that path.
 
 Details holds the restaurant and the line items. Products holds what is on this deal. Activity holds the notes. None of those subtabs is where the send happens. A walk-through of the page ends by naming the next place, and the next place for a quote is still the header.
 
 After a successful send, Quotes shows a new row for that opportunity. Harbor Diner does not have a sent quote while the discount is still 20 percent. That empty spot is the check that the button was refused.
 `),
     doc("approval-matrix.md", "Approval matrix", "policy", "sales", sharedRoles, "Approvals", `
-Discounts over the account executive cap go to Alex Morgan. Alex is the manager. Sam Ortiz is the VP of Sales and is the next person only when Alex is out. An account executive does not approve their own exception.
+Discounts over the account executive cap go to that person's approver. Sparsh Bohra's approver is Shail Shah. Shail's approver is Krishna Das. Krishna approves his own exceptions because nothing goes above the owner. An account executive does not approve their own exception.
+
+Credits over $100 follow the same approver. Payment plans over $1,000, credit limits over $2,500, purchase orders over $5,000, and credit-hold releases go to finance, which is Krishna Das. The Approvals page says who is waiting and what the rule was.
 
 The Approvals list holds pending discount requests. A pending row is not permission to press Send Quote. The opportunity still has to show a discount at or under the cap, or the approval has to be recorded, before the header button will send.
 
@@ -482,7 +487,7 @@ Day two is for the opportunities already on your name. Home lists them. User's l
 
 Learn the header before the rest of the navigation. Send Quote and the discount field are both on the Opportunity header. The long navigation is real: accounts, orders, inventory, warehouses, cases. You do not need all of it to send a quote you are allowed to send.
 
-Your manager is Alex Morgan. Your territory is Northeast. Your office is Jersey City. Restaurants in the Northeast are served from the Jersey City cold warehouse or the Newark dry goods warehouse.
+Sparsh Bohra's manager is Shail Shah. The territory on his profile is Northeast and the office is Jersey City. Restaurants in the Northeast are served from the Jersey City cold warehouse and the Newark dry goods warehouse.
 
 Read the discount policy before you promise a number on a call. The cap is the policy, and the screen is where you see the number that is actually saved.
 `),
@@ -494,11 +499,11 @@ Ask Alex Morgan before you invent a third book for one restaurant. A one-time de
 Do not type a price-book change into the discount field. The discount field is a percent. The price book is chosen for the territory, and Harbor Diner is Northeast.
 `),
     doc("credit-holds.md", "Credit holds", "policy", "finance", ["account executive", "finance"], "Accounts", `
-Finance places a credit hold on an account when invoices are open past the agreed window. A hold blocks a new order. It does not change the discount cap and it does not move Send Quote.
+Finance places a credit hold when an invoice still has a balance 30 days after its due date. A hold blocks a new order. It does not change the discount cap and it does not move Send Quote.
 
-The account page shows the hold. The opportunity header does not. If Harbor Diner is not on hold, the reason Send Quote is disabled is the discount, not credit.
+The account page shows the hold, the reason, the limit, the open balance, and the aging. The opportunity header does not. Harbor Diner is not on hold, so the reason Send Quote is off there is the 20 percent discount, not credit. Juniper Deli is on hold because invoice-17, for $1,840, was due on 2026-09-15 and is still open. Order-18 is held for that reason.
 
-An account executive asks finance to clear a hold. Alex Morgan does not clear credit. Sam Ortiz does not clear credit. The finance team owns the hold.
+Sparsh can ask for a release. Krishna Das records payments and releases the hold. Shail Shah does not clear credit. The release waits until every past-due invoice is paid or covered by an active payment plan whose first installment is paid. See the credit-hold release page for the Juniper steps.
 `),
     doc("returns.md", "Returns", "policy", "ops", sharedRoles, "Orders", `
 A restaurant can return unopened dry goods within five days of delivery. Dairy and opened oil do not come back. The driver notes the refusal on the shipment. The case type for a dispute after that is a billing question or a missing item, not a silent credit.
@@ -515,11 +520,11 @@ Mark the sample in Activity. Do not hide it by typing a larger percent into the 
 Harbor Diner's usual order is napkins, fryer oil, and gloves. A sample of that order is still priced on the opportunity, then discounted within the cap.
 `),
     doc("substitutions.md", "Substitutions", "policy", "ops", sharedRoles, "Products", `
-When a product is short, ops substitutes within the same family and tells the buyer before the truck leaves. Canola oil can cover fryer oil only if the restaurant agreed. Paper napkins do not get replaced with a linen rental.
+When a product is short, substitute within the same family and only after the buyer agrees. The substitute dialog asks for that agreement. Canola can cover fryer oil. Napkins do not get replaced with a linen rental, and a different family is refused.
 
-The product sheet says which warehouse stocks the item. The substitute has to be stocked at the warehouse that serves that account. Newark dry goods stocks fryer oil. A substitute that is only in Chicago does not go on a Northeast truck the same day.
+The substitute has to have free stock at a warehouse that serves the account. Free stock is on hand minus what open, backordered, and picking orders have already allocated. Newark dry goods stocks fryer oil and canola. A substitute that is only in Chicago does not go on a Northeast truck the same day.
 
-Write the substitution on the order. Do not write it into the discount field.
+North Fork Grill is the worked example: 24 fryer oil on the quote, 6 free at Newark, canola in the same family with stock. Write the substitution on the line. Do not write it into the discount field.
 `),
     doc("food-safety.md", "Food safety", "policy", "warehouse", ["account executive", "warehouse"], "Warehouses", `
 Cold product leaves Jersey City cold on a checked trailer. Dry goods leave Newark dry goods or Chicago dry. A case that sweats, leaks, or sits out of range is not loaded.
@@ -529,32 +534,34 @@ Account executives do not override a temperature refusal from the warehouse. The
 Fryer oil is dry storage. Butter, cream, milk, yogurt, and cheddar are cold storage. Do not tell a buyer that oil ships from the cold room.
 `),
     doc("delivery-windows.md", "Delivery windows", "policy", "ops", sharedRoles, "Shipments", `
-Northeast restaurants receive on Tuesday and Friday. Midwest restaurants receive on Wednesday. West restaurants receive on Thursday. The window is the morning drop, before lunch prep.
+Northeast restaurants receive on Tuesday and Friday. Southeast restaurants receive on Monday and Thursday. Midwest restaurants receive on Wednesday. West restaurants receive on Thursday. The window is the morning drop, before lunch prep. A redelivery or a converted order has to land on one of those days.
 
 A missed window moves to the next scheduled day. It does not become a reason to discount the opportunity. Drivers call the buyer when they will miss the window by more than an hour.
 
 Harbor Diner is Northeast, so the standing days are Tuesday and Friday. The shipment list shows status. The opportunity header does not.
 `),
     doc("shortages.md", "Shortages", "howto", "ops", sharedRoles, "Inventory", `
-Inventory shows on-hand by product and warehouse. A zero at Newark dry goods means the Northeast cannot promise that item for the next Tuesday. Check Chicago only when the restaurant can wait for a transfer.
+Inventory shows on-hand, the reorder point, and the reorder quantity by product and warehouse. Free stock is what is left after allocated orders and scheduled redeliveries. A quote or a redelivery that asks for more than free stock is refused, and the message names the product and both numbers.
 
-Tell the buyer what is short before you send a quote that includes it. The quote should match what the warehouse can ship. A shortage is not fixed by raising the discount.
+Fryer oil at Newark dry goods has 24 on hand and a reorder point of 40. River Salt's open order already holds 18, so 6 are free, and Cedar Spoon is backordered for 12 more. That is why Dockside Bowls can be credited for 18 short jugs but cannot be promised a redelivery of 18, and why North Fork Grill cannot send a quote for 24 fryer oil until the line is substituted or cut. Gloves at Newark are free enough for Dockside's redelivery of 4.
 
-Fryer oil on-hand lives on the Newark dry goods row. If that row is low, say so on the Harbor Diner activity note.
+Tell the buyer what is short before you send. A shortage is not fixed by raising the discount. The reorder page covers the purchase order that refills the row.
 `),
     doc("invoice-disputes.md", "Invoice disputes", "howto", "finance", ["account executive", "finance"], "Invoices", `
-A billing question starts as a case and points at an invoice. The account executive gathers what the buyer says. Finance decides the credit. Do not issue the credit by editing an open opportunity's discount.
+A billing question starts as a case and points at an invoice. The account executive gathers what the buyer says. The credit is a credit memo on that invoice, not a lower discount on the next opportunity.
 
-Open invoices stay open until finance posts the credit or the payment. The invoice list is the place to see status. Quotes are not invoices. Harbor Diner has no sent quote yet, so it has no invoice from this draft.
+A short shipment is the usual reason. Credit the short quantity that is not already on a redelivery. Memos over $100 wait for the approver. Payments are posted by Krishna Das, not by the account executive. The invoice balance is amount minus paid minus credited.
+
+Harbor Diner has no sent quote and no invoice from that draft. Dockside Bowls does: invoice-16 is the open bill for the short Tuesday truck. Juniper Deli's invoice-17 is the past-due bill behind the credit hold.
 
 Write the dispute in the case. Leave the opportunity discount alone unless the buyer is negotiating the next order.
 `),
     doc("new-account-setup.md", "New account setup", "howto", "sales", sharedRoles, "Accounts", `
-A new restaurant needs a name, a territory, a warehouse, an owner, and a buyer. Northeast accounts belong to the Jersey City office. The owner is the account executive who will send quotes.
+A new restaurant needs a name and a ZIP. Fieldnote sets the territory and the warehouse from the ZIP, and the account stays in onboarding until the checklist is done. The checklist is the buyer, an accounts-payable contact with an email, the territory, the price book, the delivery days, tax status, and an approved credit limit. The onboarding page walks through each item. Orders are refused until the account is active.
 
-User owns Harbor Diner and seven other restaurants. A restaurant owned by another account executive is visible in the list and is not yours to send. The send rule is own opportunities.
+Sparsh owns Harbor Diner, Dockside Bowls, North Fork Grill, Juniper Deli, and the rest of his book. A restaurant owned by another account executive is visible and is not his to send. The send rule is own opportunities.
 
-The buyer name on the account is who answers the phone. It is not the Fieldnote employee. Do not put Alex Morgan in the buyer field.
+The buyer name on the account is who answers the phone. It is not the Fieldnote employee. Do not put Shail Shah or Krishna Das in the buyer field. The accounts-payable contact is a second person, with an email, and credit cannot be requested before that contact exists.
 `),
     doc("commission.md", "Commission", "policy", "sales", sharedRoles, "Reports", `
 Commission follows the owner of the opportunity after the quote is sent and the order is invoiced. A discount within the cap still commissions. A discount Alex Morgan approved commissions at the approved percent, not at a number someone typed and could not send.
@@ -571,11 +578,11 @@ You can see accounts outside your territory. You send quotes on opportunities yo
 Harbor Diner is Northeast. Its warehouses are the Jersey City cold room and Newark dry goods. Chicago dry does not serve it on a normal week.
 `),
     doc("warehouse-receiving.md", "Warehouse receiving", "howto", "warehouse", ["account executive", "warehouse"], "Purchase Orders", `
-Receiving starts with the purchase order. The open purchase order is the one that has not been received. Match the supplier, the warehouse, and the count on the dock before you put product away.
+Receiving starts with a sent purchase order. Match the supplier, the warehouse, and the count on the dock, then receive each line. On hand rises by the count. A line cannot be received for more than it still needs.
 
-Newark dry goods receives dry grocery, paper, and oil. Jersey City cold receives dairy. Chicago dry receives the Midwest building. A jug of fryer oil scanned into the cold room is a mistake.
+Newark dry goods and Chicago dry receive dry goods, paper, oil, and smallwares. Jersey City cold receives dairy. A jug of fryer oil scanned into the cold room is refused. Each supplier has a minimum order, $500 for Harbor Mills, and a lead time that sets the expected date. A purchase order over $5,000 needs Krishna Das before it can be sent.
 
-Account executives do not receive. They can read the purchase order so they do not promise stock that is still on the truck.
+Account executives do not receive, submit, or release backorders. The button says so. They can read the purchase order so they do not promise stock that is still on the truck. The reorder page is the path from a low row to the draft.
 `),
     doc("cycle-counts.md", "Cycle counts", "howto", "warehouse", ["warehouse"], "Inventory", `
 Each warehouse counts a family every week. Oil is counted at Newark dry goods. Dairy is counted at Jersey City cold. The count replaces the on-hand number. It does not create a quote.
@@ -594,9 +601,11 @@ Write the exception on the shipment. The opportunity header is the wrong place f
     doc("case-handling.md", "Case handling", "howto", "ops", sharedRoles, "Cases", `
 Cases are delivery complaints, billing questions, and missing items. Open cases show on Home for the account owner. User sees cases on restaurants User owns.
 
-Close a case when the buyer has the credit, the replacement, or a clear no. Alex Morgan is not the default owner of a case. The account executive who owns the restaurant is.
+Close a case when every short line has a redelivery or a posted credit, or when the resolution is a clear no and nothing is still short. A pending credit memo blocks the close and names the approver. Shail Shah is not the owner of Sparsh's cases. The account executive who owns the restaurant is.
 
-A case does not enable Send Quote. The discount rule is separate. A friendly resolution on a missing napkin case is not approval to discount Harbor Diner past the cap.
+Dockside Bowls case-13 is the open missing-item case for the Tuesday truck, linked to shipment-11 and invoice-16. Work it from the case, not from the discount field.
+
+A case does not enable Send Quote. The discount rule is separate. A friendly resolution on a missing glove case is not approval to discount Harbor Diner past the cap.
 `),
     doc("supplier-claims.md", "Supplier claims", "howto", "ops", ["account executive", "ops"], "Suppliers", `
 A supplier claim starts when receiving rejects a delivery or a restaurant finds a defect that receiving could not have seen. The supplier on the product is the company that is billed. Fryer oil's supplier is the oil supplier on the product record, not the warehouse.
@@ -626,6 +635,7 @@ User sells against that book. The discount field on the opportunity is still a p
 
 Price Books in the navigation shows the two books: Standard and Northeast. There is no third book for a single diner.
 `),
+    ...extra,
   ];
 }
 

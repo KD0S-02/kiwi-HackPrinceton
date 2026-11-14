@@ -5,8 +5,8 @@ Department: ops
 Roles: account executive
 Module: Products
 
-Fryer filters is a oil item, sku FN-040, sold by the pack. The supplier is Atlas Smallwares. The standard price is 14.5.
+Fryer filters is a oil item, sku FN-040, sold by the pack. The supplier is Atlas Smallwares. The standard price is 14.5. The cost on a purchase order is 8.7.
 
-It is stocked at Jersey City cold. The on-hand count lives in inventory, not in this sheet. Handle it with the rest of its family: cold items stay cold, oil and paper stay dry.
+Stock: Jersey City cold: 56 on hand, reorder at 30, reorder quantity 40. Free stock is on hand minus what open orders have already allocated. A quote or a redelivery that needs more than the free count is refused. Below the reorder point, Supply offers a reorder to Atlas Smallwares.
 
-This sheet does not authorize a discount. The discount policy is a different page.
+Handle it with the rest of its family. Jersey City cold receives dairy. Newark dry goods and Chicago dry receive dry goods, paper, oil, and smallwares. This sheet does not authorize a discount. The discount policy is a different page.
