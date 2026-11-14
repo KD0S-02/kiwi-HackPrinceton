@@ -25,7 +25,7 @@
     .brand-copy small:empty { display: none; }
     .logo { width: 28px; height: 28px; display: block; }
     .pill.signed .logo { width: 36px; height: 36px; }
-    .logo.spin { animation: spin 1s linear infinite; }
+    .logo.spin { animation: spin 2.4s linear infinite; }
     strong { font-size: 14px; letter-spacing: -0.01em; }
     .corner { position: absolute; right: 0; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 8px; -webkit-app-region: no-drag; }
     .status { display: none; color: #9ca3af; font-size: 12px; }
@@ -58,7 +58,7 @@
     .session-error:not(:empty) { margin-top: 6px; }
     input { flex: 1; min-width: 0; border: 0; border-radius: 10px; padding: 10px 12px; background: #1f2937; color: white; font: inherit; }
     button { border: 0; border-radius: 10px; padding: 10px 12px; background: #1f6b32; color: white; font: inherit; cursor: pointer; -webkit-app-region: no-drag; display: inline-flex; align-items: center; justify-content: center; }
-    .hint, .partial, .answer { -webkit-app-region: no-drag; margin-left: 0; padding-left: 0; }
+    .hint, .partial, .answer { -webkit-app-region: no-drag; margin-left: 4px; padding-left: 0; }
     .hint { margin-top: 8px; color: #9ca3af; font-size: 12px; }
     .name-run { display: none; flex-direction: column; gap: 8px; margin-top: 10px; -webkit-app-region: no-drag; }
     .name-run.on { display: flex; }
@@ -104,7 +104,7 @@
     <form id="form">
       <div class="ask">
         <label class="search">
-          <input id="question" placeholder="Where is Send Quote?" />
+          <input id="question" placeholder="Type something..." />
           <button class="enter" type="submit" aria-label="Ask"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 10l-5 5 5 5"/><path d="M4 15h11a5 5 0 0 0 0-10H9"/></svg></button>
         </label>
         <button class="talk" id="talk" type="button" aria-label="Talk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg></button>
