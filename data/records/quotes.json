@@ -258,5 +258,21 @@
     "acceptedBy": "",
     "buyerPo": "",
     "orderId": ""
+  },
+  {
+    "id": "quote-opp-harbor-diner-2-v1",
+    "opportunityId": "opp-harbor-diner-2",
+    "accountId": "harbor-diner",
+    "ownerId": "user",
+    "status": "sent",
+    "version": 1,
+    "amount": 110,
+    "discountPercent": 3,
+    "sentTo": "contact-harbor-diner",
+    "sentAt": "2026-11-14T22:55:02.291Z",
+    "validUntil": "2026-11-28",
+    "acceptedBy": "",
+    "buyerPo": "",
+    "orderId": ""
   }
 ]

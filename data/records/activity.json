@@ -78,5 +78,17 @@
     "kind": "system",
     "outcome": "",
     "opportunityId": "opp-popeyes"
+  },
+  {
+    "id": "act-6",
+    "subjectType": "opportunity",
+    "subjectId": "opp-harbor-diner-2",
+    "accountId": "harbor-diner",
+    "text": "Sparsh Bohra sent quote version 1 to Priya Shah.",
+    "by": "user",
+    "at": "2026-11-14T22:55:02.292Z",
+    "kind": "system",
+    "outcome": "",
+    "opportunityId": "opp-harbor-diner-2"
   }
 ]

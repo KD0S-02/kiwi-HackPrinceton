@@ -54,5 +54,13 @@
     "quantity": 1,
     "unitPrice": 18.9,
     "substituteFor": ""
+  },
+  {
+    "id": "li-opp-harbor-diner-2",
+    "opportunityId": "opp-harbor-diner-2",
+    "productId": "oats",
+    "quantity": 5,
+    "unitPrice": 22.58,
+    "substituteFor": ""
   }
 ]

@@ -214,5 +214,14 @@
     "accountId": "popeyes",
     "name": "Popeyes",
     "amount": 0
+  },
+  {
+    "id": "opp-harbor-diner-2",
+    "ownerId": "user",
+    "stage": "Proposal",
+    "discountPercent": 3,
+    "accountId": "harbor-diner",
+    "amount": 3000,
+    "name": "Harbor Diner"
   }
 ]
