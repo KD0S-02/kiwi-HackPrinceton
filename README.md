@@ -1,6 +1,6 @@
 # Kiwi
 
-Kiwi is an employee-only desktop guide that sits next to your cursor. It looks at your screen, listens when you hold a key, and points at the button or field you asked about. It is modeled on [Clicky](https://github.com/farzaa/clicky), with one difference: Kiwi knows the company. It knows who you are, who your manager is, and which rules apply to you, so it can say "you can't send that quote yet, and here is why".
+Kiwi is an employee-only desktop guide that sits next to your cursor. It looks at your screen, listens when you hold a key, and points at the button or field you asked about. Kiwi knows the company. It knows who you are, who your manager is, and which rules apply to you, so it can say "you can't send that quote yet, and here is why".
 
 This repo has two apps:
 
