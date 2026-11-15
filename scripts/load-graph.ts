@@ -324,12 +324,6 @@ try {
     MATCH (invoice:Invoice {id: supportCase.invoiceId}) CREATE (supportCase)-[:ABOUT]->(invoice)`);
   await connect(`MATCH (approval:Approval) WHERE approval.subjectId <> "" AND approval.subjectType = "opportunity"
     MATCH (deal:Opportunity {id: approval.subjectId}) CREATE (approval)-[:DECIDES]->(deal)`);
-  await connect(`MATCH (approval:Approval) WHERE approval.accountId <> ""
-    MATCH (account:Account {id: approval.accountId}) CREATE (approval)-[:FOR]->(account)`);
-  for (const label of ["CreditMemo", "Payment", "PaymentPlan", "CreditApplication"]) {
-    await connect(`MATCH (row:${label}) WHERE row.accountId <> ""
-      MATCH (account:Account {id: row.accountId}) CREATE (row)-[:FOR]->(account)`);
-  }
   if (orderLines.length > 0) {
     await runWrite(session, `UNWIND $rows AS row
       MATCH (order:Order {id: row.orderId}), (product:Product {id: row.productId})

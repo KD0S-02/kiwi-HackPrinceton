@@ -5,6 +5,7 @@ import { SidebarNav } from "./SidebarNav";
 import { loadNames, readRecords } from "../lib/data";
 import { seesAll } from "../lib/people";
 import { signedInUser } from "../lib/session";
+import { approvalKind, approvalNumber } from "../lib/workflow/view";
 
 export async function Shell({ children }: { children: React.ReactNode }) {
   const person = await signedInUser();
@@ -17,10 +18,10 @@ export async function Shell({ children }: { children: React.ReactNode }) {
   const waitingOnMe = pending.filter((row) => row.approverId === person.id && row.requestedBy !== person.id);
   const subject = (row: (typeof approvals)[number]) => nameOf(row.accountId || row.opportunityId);
   const alerts = [
-    ...waitingOnMe.map((row) => ({ id: `w-${row.id}`, href: `/approvals/${row.id}`, title: `${nameOf(row.requestedBy)} needs your decision`, detail: `${String(row.kind)} · ${subject(row)}` })),
+    ...waitingOnMe.map((row) => ({ id: `w-${row.id}`, href: "/approvals?view=waiting", title: `${nameOf(row.requestedBy)} needs your decision`, detail: `${approvalKind(row.kind)} ${approvalNumber(row.id)} · ${subject(row)}` })),
     ...pending
       .filter((row) => row.requestedBy === person.id)
-      .map((row) => ({ id: `r-${row.id}`, href: `/approvals/${row.id}`, title: `${subject(row)} is waiting on ${nameOf(row.approverId)}`, detail: `${String(row.kind)} request pending` })),
+      .map((row) => ({ id: `r-${row.id}`, href: "/approvals?view=requests", title: `${subject(row)} is waiting on ${nameOf(row.approverId)}`, detail: `${approvalKind(row.kind)} ${approvalNumber(row.id)} pending` })),
     ...cases
       .filter((row) => row.status !== "closed" && (seesAll(person) || row.ownerId === person.id))
       .map((row) => ({ id: `c-${row.id}`, href: `/cases/${row.id}`, title: `${nameOf(row.accountId)}: ${row.kind}`, detail: `Case ${row.status}` })),

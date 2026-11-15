@@ -9,7 +9,9 @@
     #bird .icon { position: absolute; opacity: 0; transform: scale(.55) rotate(-24deg); transition: opacity .16s ease, transform .32s cubic-bezier(.34, 1.56, .64, 1); }
     #bird .icon svg { display: block; width: 100%; height: 100%; }
     #arrow { width: 26px; height: 31px; left: -2.6px; top: -2.6px; transform-origin: 2.6px 2.6px; }
+    /* Fingertip stays on the point. The palm mirrors to the left so it doesn't cover the next control. */
     #hand { width: 30px; height: 36px; left: -10.3px; top: -1.4px; transform-origin: 10.3px 1.4px; }
+    #hand svg { transform: scaleX(-1); transform-origin: 10.3px 1.4px; }
     #kiwi { width: 36px; height: 36px; left: -18px; top: -18px; transform-origin: 50% 50%; }
     #bird[data-look="arrow"] #arrow, #bird[data-look="hand"] #hand, #bird[data-look="kiwi"] #kiwi { opacity: 1; transform: none; }
     #kiwi img { width: 100%; height: 100%; animation: spin 1.6s linear infinite, pulse .8s ease-in-out infinite; }
@@ -17,7 +19,11 @@
     @keyframes spin { to { rotate: 360deg; } }
     @keyframes tap { 40% { transform: translateY(3px) scale(.9); } }
     #ring { position: absolute; width: 54px; height: 54px; margin-left: -27px; margin-top: -27px; border: 3px solid #3b82f6; border-radius: 50%; box-shadow: 0 0 0 8px rgba(59, 130, 246, .25); display: none; }
-    #card { position: absolute; max-width: 280px; background: #111827; color: white; border-radius: 14px; padding: 10px 12px; font: 14px/1.4 Inter, "Segoe UI", sans-serif; display: none; box-shadow: 0 12px 30px rgba(0,0,0,.28); }
+    #card { position: absolute; max-width: 300px; background: #111827; color: white; border-radius: 14px; padding: 10px 12px; font: 14px/1.4 Inter, "Segoe UI", sans-serif; display: none; box-shadow: 0 12px 30px rgba(0,0,0,.28); }
+    #card .step { display: flex; gap: 8px; align-items: flex-start; color: #e5e7eb; }
+    #card .step + .step { margin-top: 4px; }
+    #card .step i { color: #c6e36a; font-style: normal; font-weight: 700; }
+    #card .summary { margin-top: 8px; padding-top: 6px; border-top: 1px solid #374151; color: white; }
     @keyframes pulse { 50% { transform: scale(1.08); } }
   </style>
 </head>
@@ -52,14 +58,36 @@
     let shown = false;
     let busy = false;
     let hovering = false;
+    let heldLook = "hand";
     const hand = document.getElementById("hand");
 
-    // Loading shows the kiwi. Pointing at a control, or the mouse over something clickable, shows the hand.
+    // Loading shows the kiwi. A task points with the arrow. Hovering a control shows the hand.
     function look() {
-      if (mode === "hold") return "hand";
+      if (mode === "hold") return heldLook;
       if (mode === "fly") return "arrow";
       if (busy) return "kiwi";
       return hovering ? "hand" : "arrow";
+    }
+
+    function showTrail(payload) {
+      const steps = payload?.steps ?? [];
+      const summary = payload?.summary ?? "";
+      card.replaceChildren();
+      for (const text of steps) {
+        const row = document.createElement("div");
+        row.className = "step";
+        const mark = document.createElement("i");
+        mark.textContent = "→";
+        row.append(mark, document.createTextNode(text));
+        card.appendChild(row);
+      }
+      if (summary) {
+        const line = document.createElement("div");
+        line.className = "summary";
+        line.textContent = summary;
+        card.appendChild(line);
+      }
+      card.dataset.say = steps.length || summary ? "1" : "";
     }
 
     function place() {
@@ -97,7 +125,9 @@
     window.kiwi.on("point", (stop) => {
       if (!stop) {
         mode = "follow";
+        heldLook = "hand";
         card.dataset.say = "";
+        card.replaceChildren();
         card.style.display = "none";
         ring.style.display = "none";
         return;
@@ -105,9 +135,14 @@
       fly = { from: { x: bird.x, y: bird.y }, to: { x: stop.x, y: stop.y }, start: performance.now() };
       mode = "fly";
       shown = true;
-      card.dataset.say = stop.say;
-      card.textContent = stop.say;
+      heldLook = stop.look || "hand";
+      if (heldLook !== "arrow") {
+        card.dataset.say = stop.say || "";
+        card.textContent = stop.say || "";
+      }
     });
+
+    window.kiwi.on("trail", showTrail);
 
     window.kiwi.on("follow", () => {
       mode = "follow";

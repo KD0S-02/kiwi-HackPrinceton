@@ -6,8 +6,10 @@ Roles: account executive
 Module: Accounts
 Account: atlas-noodles
 
-Atlas Noodles is a Fieldnote restaurant in the Midwest territory. The buyer is Ethan Cole. The account executive who owns it is Morgan Blake. The warehouse that serves the account is Chicago dry.
+Atlas Noodles is a Fieldnote restaurant in the Midwest territory. The buyer is Ethan Cole. The account executive who owns it is Morgan Blake. The warehouse on the account is Chicago dry. Status is active. The price book is standard. Delivery days are Wed.
+
+Credit limit is 5000 on net 30. Credit status is approved. The account is not on credit hold. A hold blocks a new order and does not change the 15 percent discount cap.
 
 The usual order is Baking soda and Fryer oil. That sentence is the standing buy, not a discount and not a quote. Price talks still happen on the opportunity. This brief does not set a percent.
 
-Delivery follows the territory window. A shortage is checked on the inventory row for Chicago dry before anyone promises the next truck.
+Open invoices on this account, and any past-due balance, are on the invoice pages. Short deliveries are on the case pages. A shortage is checked against free stock before anyone promises the next truck.

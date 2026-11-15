@@ -1,7 +1,7 @@
 import { ActionButton } from "../../components/ActionButton";
 import { loadNames, money, readRecords, readRules } from "../../lib/data";
 import { seesAll } from "../../lib/people";
-import { approvalAmount } from "../../lib/workflow/view";
+import { approvalAmount, approvalKind, approvalNumber } from "../../lib/workflow/view";
 import { signedInUser } from "../../lib/session";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +33,19 @@ export default async function HomePage() {
   const pipeline = mine.reduce((sum, row) => sum + Number(row.amount), 0);
   const overCap = mine.filter((row) => Number(row.discountPercent) > rules.discountCapPercent);
   const harbor = opportunities.find((row) => row.id === "opp-harbor-diner");
-  const focus = overCap[0] ?? harbor;
+  const focusApproval = waiting[0] ?? null;
+  const focus = (focusApproval && opportunities.find((row) => row.id === focusApproval.opportunityId)) || overCap[0] || harbor;
+  const focusPending = focus
+    ? waiting.find((row) => row.opportunityId === focus.id) || asked.find((row) => row.opportunityId === focus.id)
+    : null;
+  const canDecideFocus = Boolean(focusPending && focusPending.approverId === person.id && focusPending.requestedBy !== person.id);
+  const canRequestFocus = Boolean(
+    focus
+    && Number(focus.discountPercent) > rules.discountCapPercent
+    && !focusPending
+    && (focus.ownerId === person.id || wide)
+    && person.approverName
+  );
   const stageRows = stages.map((stage) => {
     const rows = mine.filter((row) => row.stage === stage.stage);
     return { ...stage, count: rows.length, amount: rows.reduce((sum, row) => sum + Number(row.amount), 0) };
@@ -53,6 +65,7 @@ export default async function HomePage() {
             icon="plus"
             label="New opportunity"
             title="New opportunity"
+            kiwi="new-opportunity"
             description={wide ? "Start a deal on a restaurant. It stays with that restaurant's owner." : "Start a deal for one of your restaurants."}
             endpoint="/api/records/opportunities"
             redirect="/opportunities/{id}"
@@ -66,57 +79,147 @@ export default async function HomePage() {
         </div>
       </div>
 
-      <div className="stats">
-        <article className="card stat"><span>{wide ? "Restaurants" : "Your restaurants"}</span><strong>{myAccounts.length}</strong><em>of {accounts.length} in the company</em></article>
-        <article className="card stat tone-indigo"><span>Open deals</span><strong>{mine.length}</strong><em>{money(pipeline)} pipeline</em></article>
-        <article className="card stat tone-amber"><span>Over the cap</span><strong>{overCap.length}</strong><em>{person.approverName ? `need ${person.approverName}` : "yours to approve"}</em></article>
-        <article className="card stat tone-red"><span>Open cases</span><strong>{myCases.length}</strong><em>{person.book === "company" ? "across the company" : wide ? "across the team" : "on your restaurants"}</em></article>
-      </div>
-
-      {waiting.length > 0 || asked.length > 0 || onHold.length > 0 ? (
-        <section className="panel waiting-card" data-kiwi="waiting-on-you">
-          <div className="panel-head">
-            <h2>{waiting.length > 0 ? `Waiting on you · ${waiting.length}` : "Waiting on others"}</h2>
-            <a href={waiting.length > 0 ? "/approvals?view=waiting" : "/approvals?view=requests"}>Approvals →</a>
-          </div>
-          <div className="waiting-list">
-            {waiting.slice(0, 6).map((row) => (
-              <a key={String(row.id)} className="waiting-item" href={`/approvals/${row.id}`}>
-                <span className="pill warn">{String(row.kind)}</span>
-                <strong>{nameOf(row.accountId || row.opportunityId)}</strong>
-                <em>{approvalAmount(row)} · from {nameOf(row.requestedBy)}</em>
-              </a>
-            ))}
-            {waiting.length === 0 ? asked.slice(0, 6).map((row) => (
-              <a key={String(row.id)} className="waiting-item" href={`/approvals/${row.id}`}>
-                <span className="pill gray">{String(row.kind)}</span>
-                <strong>{nameOf(row.accountId || row.opportunityId)}</strong>
-                <em>waiting on {nameOf(row.approverId)}</em>
-              </a>
-            )) : null}
-            {onHold.map((row) => (
-              <a key={`hold-${row.id}`} className="waiting-item" href={`/accounts/${row.id}`}>
-                <span className="pill bad">credit hold</span>
-                <strong>{String(row.name)}</strong>
-                <em>{String(row.holdReason)}</em>
-              </a>
-            ))}
-          </div>
+      <div className="home-board">
+        <section className="today">
+          <ul className="stat-list">
+            <li data-kiwi="today-restaurants" data-kiwi-fact="today-restaurants"><span>{wide ? "Restaurants" : "Your restaurants"}</span><strong>{myAccounts.length}</strong><em>of {accounts.length} in the company</em></li>
+            <li data-kiwi="today-deals" data-kiwi-fact="today-deals"><span>Open deals</span><strong>{mine.length}</strong><em>{money(pipeline)} pipeline</em></li>
+            <li className="tone-amber" data-kiwi="today-over-cap" data-kiwi-fact="today-over-cap"><span>Over the cap</span><strong>{overCap.length}</strong><em>{person.approverName ? `need ${person.approverName}` : "yours to approve"}</em></li>
+            <li className="tone-red" data-kiwi="today-cases" data-kiwi-fact="today-cases"><span>Open cases</span><strong>{myCases.length}</strong><em>{person.book === "company" ? "across the company" : wide ? "across the team" : "on your restaurants"}</em></li>
+          </ul>
         </section>
-      ) : null}
+        {waiting.length > 0 || asked.length > 0 || onHold.length > 0 ? (
+          <section className="panel">
+            <div className="panel-head">
+              <h2 data-kiwi="waiting-on-you">{waiting.length > 0 ? `Waiting on you · ${waiting.length}` : "Waiting on others"}</h2>
+              <a href={waiting.length > 0 ? "/approvals?view=waiting" : "/approvals?view=requests"}>Approvals →</a>
+            </div>
+            <div className="scroll short">
+              <ul className="wait-check">
+                {waiting.slice(0, 6).map((row) => (
+                  <li key={String(row.id)} className="with-actions">
+                    <div className="wait-row" data-kiwi={`wait-${row.id}`} data-kiwi-fact={`wait-${row.id}`}>
+                      <strong>{nameOf(row.accountId || row.opportunityId)} <span className="muted">{approvalNumber(row.id)}</span></strong>
+                      <small>{approvalKind(row.kind)} · {approvalAmount(row)} · from {nameOf(row.requestedBy)}</small>
+                    </div>
+                    <div className="row-actions">
+                      <ActionButton
+                        small
+                        kiwi={`approve-${row.id}`}
+                        variant="primary"
+                        icon="check"
+                        label="Approve"
+                        title={`Approve ${approvalNumber(row.id)}`}
+                        action="decide-approval"
+                        hidden={{ approvalId: String(row.id), decision: "approved" }}
+                        submit="Approve"
+                        fields={[
+                          ...(row.kind === "credit limit" ? [{ name: "amount", label: "Approved limit", type: "number" as const, value: String(row.amount ?? "") }] : []),
+                          { name: "note", label: "Note (optional)", type: "textarea" as const },
+                        ]}
+                      />
+                      <ActionButton
+                        small
+                        kiwi={`reject-${row.id}`}
+                        variant="soft-danger"
+                        icon="x"
+                        label="Reject"
+                        title={`Reject ${approvalNumber(row.id)}`}
+                        action="decide-approval"
+                        hidden={{ approvalId: String(row.id), decision: "rejected" }}
+                        submit="Reject"
+                        fields={[{ name: "note", label: "Why", type: "textarea", required: true }]}
+                      />
+                    </div>
+                  </li>
+                ))}
+                {waiting.length === 0 ? asked.slice(0, 6).map((row) => (
+                  <li key={String(row.id)}>
+                    <a href={row.opportunityId ? `/opportunities/${row.opportunityId}` : `/accounts/${row.accountId}`} data-kiwi={`wait-${row.id}`} data-kiwi-fact={`wait-${row.id}`}>
+                      <strong>{nameOf(row.accountId || row.opportunityId)} <span className="muted">{approvalNumber(row.id)}</span></strong>
+                      <small>{approvalKind(row.kind)} · {approvalAmount(row)} · waiting on {nameOf(row.approverId)}</small>
+                    </a>
+                  </li>
+                )) : null}
+                {onHold.map((row) => (
+                  <li key={`hold-${row.id}`}>
+                    <a href={`/accounts/${row.id}`} data-kiwi={`wait-hold-${row.id}`} data-kiwi-fact={`wait-hold-${row.id}`}>
+                      <strong>{String(row.name)}</strong>
+                      <small>Credit hold · {String(row.holdReason)}</small>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        ) : null}
+      </div>
 
       <div className="dash-top">
         {focus ? (
           <section className="panel harbor-card">
             <div className="panel-label">Needs a decision</div>
-            <h2>{String(focus.name)}</h2>
+            <h2>{String(focus.name)}{focusPending ? <span className="muted"> {approvalNumber(focusPending.id)}</span> : null}</h2>
             <p>{focus.stage} · {money(focus.amount)}</p>
             <div className="harbor-meta">
               <span className="pill bad">{String(focus.discountPercent)}% discount</span>
               <span className="pill warn">Send Quote is off</span>
             </div>
-            <p className="warning">An account executive stops at {rules.discountCapPercent} percent. {person.approverName ? `${person.approverName} has to approve the rest.` : "You approve the rest."}</p>
-            <a className="btn primary" href={`/opportunities/${focus.id}`}>Open the opportunity</a>
+            <p className="warning">
+              {canDecideFocus
+                ? `${nameOf(focusPending!.requestedBy)} asked for ${approvalKind(focusPending!.kind)} ${approvalAmount(focusPending!)}. Decide it here.`
+                : focusPending
+                  ? `Waiting on ${nameOf(focusPending.approverId)} for ${approvalKind(focusPending.kind)} ${approvalNumber(focusPending.id)}.`
+                  : `An account executive stops at ${rules.discountCapPercent} percent. ${person.approverName ? `${person.approverName} has to approve the rest.` : "You approve the rest."}`}
+            </p>
+            <div className="row-actions">
+              {canDecideFocus ? (
+                <>
+                  <ActionButton
+                    kiwi={`approve-${focusPending!.id}`}
+                    variant="primary"
+                    icon="check"
+                    label="Approve"
+                    title={`Approve ${approvalNumber(focusPending!.id)}`}
+                    action="decide-approval"
+                    hidden={{ approvalId: String(focusPending!.id), decision: "approved" }}
+                    submit="Approve"
+                    fields={[
+                      ...(focusPending!.kind === "credit limit" ? [{ name: "amount", label: "Approved limit", type: "number" as const, value: String(focusPending!.amount ?? "") }] : []),
+                      { name: "note", label: "Note (optional)", type: "textarea" as const },
+                    ]}
+                  />
+                  <ActionButton
+                    kiwi={`reject-${focusPending!.id}`}
+                    variant="soft-danger"
+                    icon="x"
+                    label="Reject"
+                    title={`Reject ${approvalNumber(focusPending!.id)}`}
+                    action="decide-approval"
+                    hidden={{ approvalId: String(focusPending!.id), decision: "rejected" }}
+                    submit="Reject"
+                    fields={[{ name: "note", label: "Why", type: "textarea", required: true }]}
+                  />
+                </>
+              ) : null}
+              {canRequestFocus ? (
+                <ActionButton
+                  variant="primary"
+                  icon="check"
+                  kiwi="request-approval"
+                  label="Request approval"
+                  title="Request approval"
+                  description={`${person.approverName} gets the request for ${focus.discountPercent}%.`}
+                  endpoint="/api/records/approvals"
+                  hidden={{ opportunityId: String(focus.id) }}
+                  fields={[
+                    { name: "kind", label: "What needs approval", type: "select", options: [{ value: "discount", label: `Discount of ${focus.discountPercent}%` }, { value: "pricing exception", label: "Pricing exception" }] },
+                    { name: "note", label: "Why", type: "textarea", placeholder: "Matching a competitor's price on the standing order." },
+                  ]}
+                />
+              ) : null}
+              <a className={canDecideFocus || canRequestFocus ? "btn ghost" : "btn primary"} href={`/opportunities/${focus.id}`}>Open the opportunity</a>
+            </div>
           </section>
         ) : (
           <section className="panel"><div className="panel-label">Needs a decision</div><p className="empty">Every quote is within the cap.</p></section>

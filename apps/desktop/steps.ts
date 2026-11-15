@@ -42,7 +42,7 @@ function wantsDiscount(question: string) {
 }
 
 // "Add a restaurant called Tara" is a request to finish the form. A how-to is not.
-function accountRequest(question: string) {
+export function accountRequest(question: string) {
   if (/\bhow\b/i.test(question)) return false;
   return /\b(add|create|make|open)\b/i.test(question) && /\b(account|restaurant)\b/i.test(question) && restaurantName(question) !== "";
 }
@@ -60,7 +60,7 @@ function controlValue(controls: Control[], id: string) {
   return controls.find((control) => (control.id ?? "").toLowerCase() === id)?.value?.trim() ?? "";
 }
 
-function accountStillToDo(question: string, stops: Stop[]) {
+export function accountStillToDo(question: string, stops: Stop[]) {
   const name = restaurantName(question).toLowerCase();
   const named = stops.some((stop) => stop.kind === "type" && stop.target === "new-account-name" && stop.text.trim().toLowerCase() === name);
   const zip = restaurantZip(question);

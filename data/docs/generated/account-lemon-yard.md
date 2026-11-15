@@ -6,8 +6,10 @@ Roles: account executive
 Module: Accounts
 Account: lemon-yard
 
-Lemon Yard is a Fieldnote restaurant in the Southeast territory. The buyer is Sofia Berg. The account executive who owns it is Chris Alvarez. The warehouse that serves the account is Newark dry goods.
+Lemon Yard is a Fieldnote restaurant in the Southeast territory. The buyer is Sofia Berg. The account executive who owns it is Chris Alvarez. The warehouse on the account is Newark dry goods. Status is active. The price book is standard. Delivery days are Mon|Thu.
+
+Credit limit is 5000 on net 30. Credit status is approved. The account is not on credit hold. A hold blocks a new order and does not change the 15 percent discount cap.
 
 The usual order is Black pepper and Napkins. That sentence is the standing buy, not a discount and not a quote. Price talks still happen on the opportunity. This brief does not set a percent.
 
-Delivery follows the territory window. A shortage is checked on the inventory row for Newark dry goods before anyone promises the next truck.
+Open invoices on this account, and any past-due balance, are on the invoice pages. Short deliveries are on the case pages. A shortage is checked against free stock before anyone promises the next truck.

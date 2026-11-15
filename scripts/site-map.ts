@@ -98,11 +98,12 @@ export function siteMap() {
   lines.push(
     "BUTTONS. /accounts: New account, Import, Export, Edit, Delete. /accounts/<account id>: Edit, Follow, Log activity, Add buyer, Delete.",
     "/pipeline: New opportunity, Edit, Delete. /opportunities/<id>: discount field, Save discount, Send Quote (send-quote), Clone, Change owner, Add product, Edit line, Log activity, Request approval, Delete.",
-    "/orders: New order, New case, Export, Edit, Delete, case status. /supply: Cycle count, New purchase order, Export stock, Count on each stock row, Edit and Delete on purchase orders.",
+    "/orders: New order, New case, Export, Edit, Delete, case status. /supply: warehouse switcher (warehouse-<id>), New purchase order, Below reorder, Reorder and Count on stock rows that need them, Export.",
     "every other list: New, Export, Open, Edit, Delete. /company: Roster, Export roster. /profile: Log out.",
   );
   lines.push("account ids are the restaurant name in kebab case, like harbor-diner. deal pages are /opportunities/opp-<account id>. account pages are /accounts/<account id>.");
   lines.push("home is /. the sidebar Fieldnote logo is the control id brand. click brand to go home.");
+  lines.push("home Today rows are today-restaurants, today-deals, today-over-cap, today-cases. Waiting on others is waiting-on-you, and each row is wait-<approval id> or wait-hold-<account id>. approvals read as #1, #2 on screen; #1 is approval-1. an approver decides right on the row: approve-<approval id> and reject-<approval id>, on home and on /approvals. a requester has no buttons there. New opportunity on home is new-opportunity, then new-opportunity-accountId, new-opportunity-amount, new-opportunity-stage, and new-opportunity-submit.");
   lines.push("setting a discount is three stops in one finish: url:/opportunities/opp-<account id>, type target discount text <number>, click target save-discount.");
   lines.push("adding a restaurant he named does not stop when New account opens. the open dialog fields are new-account-name, new-account-buyerName, new-account-zip, and new-account-usualOrder. Create account is new-account-submit. type the name, type the ZIP when he gave one, then click new-account-submit. without a ZIP, type the name and ask for it.");
   return lines.join("\n");
