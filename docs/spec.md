@@ -10,9 +10,9 @@ Checked on this machine. No app code depends on it yet.
 
 | Service | State |
 |---|---|
-| Gemini chat | `gemini-3.1-flash-lite` answered. Key is `GEMINI_API_KEY` in `.env`, the one hardcoded in HelloSky `api/routers/companies_gcp.py`. |
+| Gemini chat | `gemini-3.1-flash-lite` answered. Key is `GEMINI_API_KEY` in `.env`. |
 | Gemini embeddings | `gemini-embedding-001` returned 768 dimensions with that same key. |
-| The other HelloSky key | The fallback in `company_resolver.py` returns 403, billing outstanding. Do not switch to it. `GEM_API_KEY` in old HelloSky env files is the Gem recruiting token. It is not in `.env`. |
+| Other keys | Do not add a second Gemini key. `GEM_API_KEY` is not a Gemini key and is not in `.env`. |
 | Neo4j Aura | `neo4j+s://1bd7d1f4.databases.neo4j.io`, database `1bd7d1f4`, user `1bd7d1f4`. `RETURN 1` succeeded. Password is only in `.env`. |
 | Pinecone | Index `fieldnote` is Ready. 768 dimensions, cosine, AWS us-east-1. Host `fieldnote-lpkzdlv.svc.aped-4627-b74a.pinecone.io`. Namespace `fieldnote` is created on the first upsert. |
 

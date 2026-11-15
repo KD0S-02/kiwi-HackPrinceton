@@ -15,6 +15,8 @@ Built for HackPrinceton.
 
 Sparsh Bohra is an account executive at Fieldnote. His manager is Shail Shah. The rule: an account executive may send a quote on their own opportunities and may not discount past 15 percent. Anything over the cap needs Shail. The demo record is **Harbor Diner**, discounted 20 percent, so **Send Quote** is switched off. Sparsh holds Control + Option and asks "where is Send Quote?". Kiwi flies a small kiwi slice to the button, draws a ring around it, and explains that the discount is over the cap and Shail has to sign off.
 
+Two more sentences finish real work. "Onboard a restaurant called Pizza Hut in Fenway 02215" creates the account from the ZIP: Northeast, Jersey City cold, Tuesday and Friday, taxable, and a $2,000 credit limit. "Send a quote for Popeyes with cheddar, quantity 1, at 10%" opens Pipeline, adds the product, saves the discount, and sends the quote, because 10 percent is under the cap. The panel lists each step. Kiwi does the clicks.
+
 Sign in with a work email. Three accounts are preloaded. Shail Shah reviews the team book and sends anything over the cap to Krishna Das. Krishna Das owns Fieldnote, has no manager, and sees the whole company.
 
 ## Who is who
@@ -73,7 +75,7 @@ A Next.js 15 app styled like a real SaaS CRM. Sign in with a work email (`sparsh
 | Home | Greeting, KPI cards, "needs a decision" card, pipeline by stage, deals, open cases |
 | Accounts / Account detail | Restaurant list filtered by search, owner, territory and warehouse, plus a per-restaurant page |
 | Pipeline | Opportunities by stage, filtered by search, stage, owner, discount (over or within the cap) and minimum amount |
-| Opportunity | Stage path, Owner / Stage / Amount / Discount cards, Send Quote, tabs for Overview, Products, Activity, Approvals |
+| Opportunity | Discount and Send Quote, a quote total, a Products tab (add a product and a quantity), and a Quotes tab (each send is a new version) |
 | Fulfillment | Orders filtered by status, warehouse, search and amount, plus invoices, shipments and cases |
 | Supply | Warehouse cards (click one to filter), a stock table filtered by warehouse, family and low stock, and purchase orders |
 | Company | Pipeline by territory and a scrollable roster per office |
@@ -95,7 +97,7 @@ Fieldnote runs five distributor workflows, each across several pages, with rules
 | Quote to order | `/opportunities/opp-north-fork-grill?tab=products` | Sparsh |
 | Overdue invoice → credit hold → release | `/accounts/juniper-deli` | Sparsh, then Krishna as finance |
 | Low stock → purchase order → receiving → backorders | `/supply?low=reorder` (fryer oil) | Krishna |
-| New restaurant onboarding | Accounts → New account with a ZIP | Sparsh, Krishna for limits over $2,500 |
+| New restaurant onboarding | Accounts → New account, name and ZIP | Sparsh. The ZIP sets territory, warehouse, price book, delivery days, tax, and a $2,000 limit. Krishna still approves a limit over $2,500 |
 
 Every step is a `POST /api/actions/<name>` (`apps/fieldnote/lib/workflow/actions`). A refusal is HTTP 400 with one sentence, and the page shows the same sentence under the disabled button (`data-kiwi="<id>-why"`). Status, money and stock never change through the generic record edit. Harbor Diner is untouched.
 
@@ -205,12 +207,12 @@ Kiwi keeps Clicky's interaction: hold Control + Option to talk, a buddy that fol
 
 ### Not done yet
 
-- **Voice and permissions are untested end to end.** The code exists, but nobody has yet held Control + Option on a real session and heard it answer back.
-- **Finding and pressing controls.** Fieldnote pages run a small bridge (`components/KiwiBridge.tsx`) that connects to Kiwi on `ws://127.0.0.1:4555`. Before each ask, Kiwi collects the page's visible controls (ids, labels, disabled state) and Chrome's tab titles, and the agent answers with a `target`, not just pixels. Kiwi then locates the real element, flies to its exact position, and clicks or types through the DOM. Chrome tabs are switched with AppleScript, which asks once for Automation permission. Kiwi no longer looks at screen pixels at all. `scripts/check-bridge.ts` and `scripts/check-targets.ts` test this.
+- **Push-to-talk is in use.** Hold Control + Option, release to ask. AssemblyAI transcribes, and Kiwi answers on screen. There is still no spoken reply.
+- **Finding and pressing controls.** Fieldnote pages run a small bridge (`components/KiwiBridge.tsx`) that connects to Kiwi on `ws://127.0.0.1:4555`. Before each ask, Kiwi collects the page's visible controls (ids, labels, disabled state) and Chrome's tab titles, and the agent answers with a `target`. Kiwi then locates the real element, flies to its exact position, and clicks or types through the DOM. Fieldnote is read through that bridge. A screenshot is only taken when the question is about something on screen outside Fieldnote. Chrome tabs are switched with AppleScript, which asks once for Automation permission. `scripts/check-bridge.ts` and `scripts/check-targets.ts` test this.
 - **Clicking and typing go through the page, not the mouse.** Kiwi only acts when you ask it to open, press or set something and the rule allows it. It refuses to type a discount over 15 and never confirms a delete. (`apps/desktop/input/kiwi-input`, the old Swift mouse helper, is still built but unused.)
 - **No spoken replies.** Kiwi answers on screen only. There is no text to speech.
 - **No permission card.** Kiwi has no "OK to do this for you?" step before an action.
-- **Tours** return stops, but only the first stop is shown. There is no step-through.
+- **Spoken onboarding and quoting play every step**, and the panel lists each one. A general tour still shows only the first stop. There is no next and back.
 - **Mock data persistence.** Fieldnote writes to the JSON files directly. Restore `data/records` from git after testing.
 - No automated tests for the desktop app or the Fieldnote UI. The checks are scripts under `scripts/`.
 - Not notarized. Only ad-hoc signed, so it runs on the machine it was built on.
