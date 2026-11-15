@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "id": "ql-quote-opp-harbor-diner-2-v1-1",
+    "quoteId": "quote-opp-harbor-diner-2-v1",
+    "productId": "oats",
+    "quantity": 5,
+    "unitPrice": 22.58
+  }
+]

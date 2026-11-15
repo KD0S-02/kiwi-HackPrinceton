@@ -4,6 +4,7 @@ import { createDeepAgent, registerHarnessProfile } from "deepagents";
 import { z } from "zod";
 import { requiredEnv } from "./load-env.ts";
 import { lookupUser } from "./lookup-user.ts";
+import { lookupWork, workflowQuestion } from "./lookup-work.ts";
 import { searchPages } from "./search-pages.ts";
 import { siteMap } from "./site-map.ts";
 import { authorityLine, firstName, mineLine, personById, type Person } from "../apps/fieldnote/lib/people.ts";
@@ -93,6 +94,15 @@ const searchPagesTool = tool(
   },
 );
 
+const lookupWorkTool = tool(
+  async ({ subject }) => lookupWork(subject),
+  {
+    name: "lookupWork",
+    description: "Connected records for a restaurant or a workflow: account, deals, quotes, orders, shipments, cases, shipment lines, free stock, credits, approvals, and the rule on the next step.",
+    schema: z.object({ subject: z.string() }),
+  },
+);
+
 const finishTool = tool(
   async ({ stops }) => stops,
   {
@@ -154,6 +164,7 @@ how ${name} works: ${person.workflow}
 the reply is spoken. one short sentence, under 20 words, unless they asked you to walk them through the page.
 you see the Fieldnote page they have open as PAGE CONTROLS and PAGE TEXT. you see the rest of the screen only when a SCREEN picture is attached.
 the user message starts with KNOWN CONTEXT. that is already loaded. for a where, why, or set-the-discount question, call finish on the first turn. do not call lookupUser.
+WORKFLOW, when the message has it, is the company graph for this request: the restaurant and the records linked to it, plus the rule on the next step. plan from that. a new restaurant then a deal is two parts: finish the new-account dialog, and once that account exists open a new opportunity on it. a delivery case or a credit follows the case, shipment, invoice, lines, and stock in WORKFLOW. those are facts. compare free stock with the short quantity, and the credit (quantity times the unit price) with the credit rule. a case subject names a shortage while the line short is still 0. when a rule there is not allowed, show why. do not post the credit, send the quote, or close the case.
 call searchPages only when they ask what a restaurant usually orders, which warehouse stocks something, or for a tour.
 call finish when you know the stops. plan at most 3 stops. Kiwi plays the next one only when that control is on the current page, and asks again with the new page when it is not. finish ends the run. do not use filesystem tools.
 kind show: they asked where, what, why, or for a tour. draw. do not click.
@@ -214,7 +225,7 @@ function getAgent() {
   if (sharedAgent) return sharedAgent;
   sharedAgent = createDeepAgent({
     model: getModel(),
-    tools: [lookupUserTool, searchPagesTool, finishTool],
+    tools: [lookupUserTool, lookupWorkTool, searchPagesTool, finishTool],
     systemPrompt: systemPromptFor(signedInPerson()),
     permissions: [{ operations: ["read", "write"], paths: ["/**"], mode: "deny" }],
   });
@@ -231,7 +242,8 @@ function knownContext(): string {
 }
 
 export async function ask(input: { question: string; screenContext?: string; imagePngBase64?: string; imageMime?: "image/png" | "image/jpeg"; mode?: "lean" | "deep" | "act" }) {
-  const question = `${knownContext()}${input.screenContext ? `${input.screenContext}\n` : ""}${input.question}`;
+  const work = workflowQuestion(input.question) ? await lookupWork(input.question) : "";
+  const question = `${knownContext()}${work ? `WORKFLOW\n${work}\n` : ""}${input.screenContext ? `${input.screenContext}\n` : ""}${input.question}`;
   const mime = input.imageMime ?? "image/png";
   const content = input.imagePngBase64
     ? [
