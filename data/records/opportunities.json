@@ -180,6 +180,42 @@
     "discountPercent": 8
   },
   {
+    "id": "opp-ph",
+    "ownerId": "user",
+    "stage": "Qualify",
+    "discountPercent": 0,
+    "accountId": "ph",
+    "amount": 200,
+    "name": "PH"
+  },
+  {
+    "id": "opp-domino-s",
+    "ownerId": "user",
+    "stage": "Qualify",
+    "discountPercent": 10,
+    "accountId": "domino-s",
+    "name": "Domino's",
+    "amount": 0
+  },
+  {
+    "id": "opp-mcd",
+    "ownerId": "user",
+    "stage": "Qualify",
+    "discountPercent": 10,
+    "accountId": "mcd",
+    "name": "McD",
+    "amount": 0
+  },
+  {
+    "id": "opp-popeyes",
+    "ownerId": "user",
+    "stage": "Qualify",
+    "discountPercent": 10,
+    "accountId": "popeyes",
+    "name": "Popeyes",
+    "amount": 0
+  },
+  {
     "id": "opp-harbor-diner-2",
     "ownerId": "user",
     "stage": "Proposal",

@@ -5,8 +5,8 @@ export const metadata = { title: "Fieldnote" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" suppressHydrationWarning>
+      <body suppressHydrationWarning>
         {children}
         <KiwiBridge />
       </body>

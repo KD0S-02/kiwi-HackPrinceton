@@ -62,15 +62,15 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
             label="New account"
             title="New account"
             kiwi="new-account"
-            description="The account starts in onboarding. Its territory and warehouse come from the ZIP."
+            description="Name and ZIP are enough. Territory, warehouse, price book, delivery days, tax, and a $2,000 credit limit are set from the ZIP. Buyer and usual order are optional."
             redirect="/accounts/{id}"
             endpoint="/api/records/accounts"
             submit="Create account"
             fields={[
-              { name: "name", label: "Restaurant name", required: true, placeholder: "Taylor Bistro" },
-              { name: "buyerName", label: "Buyer", placeholder: "Sam Lee" },
-              { name: "zip", label: "ZIP code", required: true, placeholder: "07302", hint: "Northeast 07, 08, 10–12 · Southeast 27–33 · Midwest 46, 53, 60, 61 · West 90, 91, 94, 98" },
-              { name: "usualOrder", label: "Usual order", placeholder: "napkins, fryer oil, and gloves" },
+              { name: "name", label: "Restaurant name", required: true, placeholder: "Pizza Hut" },
+              { name: "zip", label: "ZIP code", required: true, placeholder: "02215", hint: "Fenway and Boston are 02215. Northeast 02, 07, 08, 10–12 · Southeast 27–33 · Midwest 46, 53, 60, 61 · West 90, 91, 94, 98" },
+              { name: "buyerName", label: "Buyer", placeholder: "Optional" },
+              { name: "usualOrder", label: "Usual order", placeholder: "Optional" },
               ...(wide ? [{ name: "ownerId", label: "Owner", type: "select" as const, required: true, options: ownerOptions }] : []),
             ]}
           />

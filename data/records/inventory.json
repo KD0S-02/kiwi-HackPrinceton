@@ -40,6 +40,14 @@
     "reorderQty": 40
   },
   {
+    "id": "inv-cheddar-jersey",
+    "productId": "cheddar",
+    "warehouseId": "jersey-city-cold",
+    "onHand": 40,
+    "reorderPoint": 20,
+    "reorderQty": 40
+  },
+  {
     "id": "inv-cream",
     "productId": "cream",
     "warehouseId": "newark-dry-goods",

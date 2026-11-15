@@ -19,6 +19,44 @@ export async function defaultWarehouse(db: Db, territory: Row | undefined) {
   return (await db.rows("warehouses.json")).find((row) => territory && row.officeId === territory.officeId);
 }
 
+// Name and ZIP are the whole onboard. A covered ZIP sets the territory, warehouse, price book,
+// truck days, taxable status, and a $2,000 limit. Anything else stays optional.
+export async function accountFromZip(db: Db, zip: unknown): Promise<Row> {
+  const territory = await territoryForZip(db, zip);
+  const warehouse = await defaultWarehouse(db, territory);
+  const blank: Row = {
+    status: "onboarding",
+    zip: String(zip ?? ""),
+    territoryId: String(territory?.id ?? ""),
+    warehouseId: String(warehouse?.id ?? ""),
+    territoryConfirmed: "",
+    priceBookId: "",
+    deliveryDays: "",
+    taxStatus: "",
+    taxCertificate: "",
+    taxExpires: "",
+    creditLimit: 0,
+    creditStatus: "none",
+    paymentTerms: "",
+    creditHold: "",
+    holdReason: "",
+    holdSince: "",
+  };
+  if (!territory) return blank;
+  const rules = await db.rules();
+  return {
+    ...blank,
+    status: "active",
+    territoryConfirmed: "yes",
+    priceBookId: territory.id === "northeast" ? "northeast" : "standard",
+    deliveryDays: String(rules.deliveryDays[String(territory.id)] ?? ""),
+    taxStatus: "taxable",
+    creditLimit: 2000,
+    creditStatus: "approved",
+    paymentTerms: "net 30",
+  };
+}
+
 export async function apContact(db: Db, accountId: unknown) {
   return (await db.rows("contacts.json")).find((row) => row.accountId === accountId && row.role === "accounts payable" && String(row.email ?? "").includes("@"));
 }

@@ -9,7 +9,6 @@ import { signedInUser } from "../../../../lib/session";
 import { accountActivity } from "../../../../lib/workflow/activity";
 import { preflight } from "../../../../lib/workflow/actions";
 import { callOutcomes } from "../../../../lib/workflow/actions/cases";
-import { checklist } from "../../../../lib/workflow/actions/onboarding";
 import { orderBlocker, releaseBlocker } from "../../../../lib/workflow/credit";
 import { find, num, openDb } from "../../../../lib/workflow/db";
 import { agingBuckets, availableCredit, committed, invoiceBalance, isPastDue, openBalance } from "../../../../lib/workflow/money";
@@ -17,15 +16,13 @@ import { accountReason, financeCheck } from "../../../../lib/workflow/permission
 
 export const dynamic = "force-dynamic";
 
-const dayChoices = ["Mon", "Tue", "Wed", "Thu", "Fri"];
-
 export default async function AccountPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const db = openDb();
   const account = await find(db, "accounts.json", id);
   if (!account) notFound();
   const person = await signedInUser();
-  const [contacts, opportunities, orders, cases, activity, invoices, territories, warehouses, priceBooks, rules, nameOf] = await Promise.all([
+  const [contacts, opportunities, orders, cases, activity, invoices, territories, warehouses, rules, nameOf] = await Promise.all([
     db.rows("contacts.json"),
     db.rows("opportunities.json"),
     db.rows("orders.json"),
@@ -34,7 +31,6 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
     db.rows("invoices.json"),
     db.rows("territories.json"),
     db.rows("warehouses.json"),
-    db.rows("price-books.json"),
     db.rules(),
     loadNames(),
   ]);
@@ -51,21 +47,15 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
   const promised = await committed(db, id);
   const available = await availableCredit(db, account);
   const aging = agingBuckets(accountInvoices);
-  const items = onboarding ? await checklist(db, account) : [];
-  const territoryDays = String(rules.deliveryDays[String(account.territoryId)] ?? "").split("|").filter(Boolean);
   const newOrderBlocked = editBlocked || (await orderBlocker(db, account, 1));
   const holdBlocker = onHold ? await releaseBlocker(db, account) : "";
-  const [requestBlocked, releaseBlocked, activateBlocked, creditBlocked, territoryBlocked] = await Promise.all([
+  const [requestBlocked, releaseBlocked] = await Promise.all([
     onHold ? preflight("request-release", person, { accountId: id }) : Promise.resolve(""),
     onHold ? preflight("release-hold", person, { accountId: id }) : Promise.resolve(""),
-    onboarding ? preflight("activate-account", person, { accountId: id }) : Promise.resolve(""),
-    onboarding ? preflight("apply-credit", person, { accountId: id, requestedLimit: "2000" }) : Promise.resolve(""),
-    onboarding ? preflight("confirm-territory", person, { accountId: id }) : Promise.resolve(""),
   ]);
   const placeBlocked = financeCheck(person) || (onHold ? `${account.name} is already on credit hold.` : "");
   const pastDue = accountInvoices.filter((row) => isPastDue(row, rules));
   const lifetime = accountOrders.reduce((sum, row) => sum + num(row.amount), 0);
-  const itemDone = (key: string) => items.find((item) => item.key === key)?.done;
 
   return (
     <section>
@@ -125,6 +115,7 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
             submit="Create order"
             hidden={{ accountId: id, warehouseId: String(account.warehouseId ?? "") }}
             blocked={newOrderBlocked}
+            why="title"
             fields={[{ name: "amount", label: "Amount", type: "number", required: true, placeholder: "1500" }]}
           />
         </div>
@@ -144,39 +135,23 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
       ) : null}
 
       {onboarding ? (
-        <section className="panel checklist" data-kiwi="onboarding-checklist">
-          <div className="panel-head">
-            <h2>Onboarding · {items.filter((item) => item.done).length} of {items.length} done</h2>
-            <ActionButton kiwi="activate-account" variant="primary" icon="check" label="Activate" title={`Activate ${String(account.name)}`} description="Orders open once the account is active." action="activate-account" hidden={{ accountId: id }} submit="Activate" blocked={activateBlocked} fields={[]} />
-          </div>
-          <ol>
-            {items.map((item) => (
-              <li key={item.key} className={item.done ? "done" : ""}>
-                <span className="check-mark">{item.done ? "✓" : ""}</span>
-                <div><strong>{item.label}</strong><small>{item.detail}</small></div>
-                <div className="row-actions">
-                  {item.key === "buyer" ? <ActionButton small kiwi="add-buyer" icon="plus" label="Add buyer" title="Add buyer contact" endpoint="/api/records/contacts" hidden={{ accountId: id, role: "buyer" }} blocked={editBlocked} why="title" fields={[{ name: "name", label: "Name", required: true }, { name: "email", label: "Email", type: "email" }, { name: "phone", label: "Phone" }]} /> : null}
-                  {item.key === "ap" ? <ActionButton small kiwi="add-ap-contact" icon="plus" label="Add AP contact" title="Add accounts payable contact" description="Invoices go to this email." endpoint="/api/records/contacts" hidden={{ accountId: id, role: "accounts payable" }} blocked={editBlocked} why="title" fields={[{ name: "name", label: "Name", required: true }, { name: "email", label: "Email", type: "email", required: true }, { name: "phone", label: "Phone" }]} /> : null}
-                  {item.key === "territory" ? <ActionButton small kiwi="confirm-territory" icon="check" label="Confirm" title="Confirm territory and warehouse" description={`From ZIP ${account.zip || "—"}.`} action="confirm-territory" hidden={{ accountId: id }} submit="Confirm" blocked={territoryBlocked} why={itemDone("territory") ? "title" : "below"} fields={[]} /> : null}
-                  {item.key === "price-book" ? <ActionButton small kiwi="set-price-book" icon="edit" label="Set" title="Price book" action="set-price-book" hidden={{ accountId: id }} blocked={editBlocked} why="title" fields={[{ name: "priceBookId", label: "Price book", type: "select", value: account.territoryId === "northeast" ? "northeast" : "standard", options: priceBooks.map((row) => ({ value: String(row.id), label: String(row.name) })) }]} /> : null}
-                  {item.key === "delivery-days" ? <ActionButton small kiwi="set-delivery-days" icon="truck" label="Set" title="Delivery days" description={territoryDays.length ? `${nameOf(account.territoryId)} trucks run on ${territoryDays.join(" and ")}.` : "Confirm the territory first."} action="set-delivery-days" hidden={{ accountId: id }} blocked={editBlocked} why="title" fields={[{ name: "deliveryDays", label: "Days", type: "select", value: territoryDays.join("|"), options: [...(territoryDays.length > 1 ? [{ value: territoryDays.join("|"), label: territoryDays.join(" and ") }] : []), ...dayChoices.map((day) => ({ value: day, label: day }))] }]} /> : null}
-                  {item.key === "tax" ? <ActionButton small kiwi="set-tax" icon="edit" label="Set" title="Tax status" description="Exempt needs a certificate number and a future expiry date." action="set-tax" hidden={{ accountId: id }} blocked={editBlocked} why="title" fields={[{ name: "taxStatus", label: "Status", type: "select", options: [{ value: "taxable", label: "Taxable" }, { value: "exempt", label: "Exempt" }] }, { name: "taxCertificate", label: "Certificate number" }, { name: "taxExpires", label: "Certificate expires", type: "date" }]} /> : null}
-                  {item.key === "credit" ? <ActionButton small kiwi="apply-credit" icon="dollar" label="Apply" title="Apply for credit" description={`Up to ${money(rules.autoCreditLimitDollars)} is approved at once. More goes to finance.`} action="apply-credit" hidden={{ accountId: id }} submit="Apply" blocked={item.done ? "Credit is approved." : creditBlocked} why={item.done ? "title" : "below"} fields={[{ name: "requestedLimit", label: "Credit limit", type: "number", required: true, value: "2000" }, { name: "tradeReference", label: "Trade reference", placeholder: "Sysco, account 4471" }]} /> : null}
-                </div>
-              </li>
-            ))}
-          </ol>
-        </section>
+        <div className="banner warn" data-kiwi-fact="setup">
+          <strong>{account.territoryId ? `${account.name} is not active yet.` : `No territory covers ZIP ${account.zip || "(none)"}. Ask your manager.`}</strong>
+        </div>
       ) : null}
 
-      <div className="highlights">
-        <div className="highlight"><span>Credit limit</span><strong>{money(account.creditLimit)}</strong><small className="sub">{String(account.paymentTerms || "no terms")} · {String(account.creditStatus || "none")}</small></div>
-        <div className="highlight"><span>Open balance</span><strong>{money(balance)}</strong><small className="sub">{pastDue.length ? `${pastDue.length} past due` : "nothing past due"}</small></div>
-        <div className="highlight"><span>Committed</span><strong>{money(promised)}</strong><small className="sub">orders not billed yet</small></div>
-        <div className={`highlight${available < 0 ? " alert" : ""}`}><span>Available credit</span><strong id="available-credit">{money(available)}</strong></div>
+      <div className="metric-row">
+        <div className="metric-pair">
+          <div className="highlight"><span>Credit limit</span><strong>{money(account.creditLimit)}</strong><small className="sub">{String(account.paymentTerms || "no terms")} · {String(account.creditStatus || "none")}</small></div>
+          <div className="highlight"><span>Open balance</span><strong>{money(balance)}</strong><small className="sub">{pastDue.length ? `${pastDue.length} past due` : "nothing past due"}</small></div>
+        </div>
+        <div className="metric-pair">
+          <div className="highlight"><span>Committed</span><strong>{money(promised)}</strong><small className="sub">orders not billed yet</small></div>
+          <div className={`highlight${available < 0 ? " alert" : ""}`}><span>Available credit</span><strong id="available-credit">{money(available)}</strong></div>
+        </div>
       </div>
 
-      <div className="split">
+      <div className="split even">
         <section className="panel" data-kiwi="credit-panel">
           <div className="panel-head">
             <h2>Credit</h2>
@@ -224,7 +199,7 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
         </section>
       </div>
 
-      <div className="split">
+      <div className="split even">
         <section className="panel">
           <div className="panel-head"><h2>Deals</h2><a href="/pipeline">Pipeline →</a></div>
           {deals.length === 0 ? <p className="empty">No deals yet.</p> : (

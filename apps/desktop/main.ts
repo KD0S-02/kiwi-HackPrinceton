@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { app, BrowserWindow, clipboard, desktopCapturer, globalShortcut, ipcMain, nativeImage, screen, session, shell, systemPreferences } from "electron";
@@ -9,7 +9,7 @@ import { ask, clearSignedIn, primeCache, type Stop } from "../../scripts/ask.ts"
 import { askPage, onPageAction, onPageHover, pageInFront, pagePath, startBridge } from "./bridge.ts";
 import { ensureFieldnote } from "./fieldnote.ts";
 import { route } from "./router.ts";
-import { StepBuffer, accountRequest, accountStillToDo, goalReached, prepareStops, stepAligned } from "./steps.ts";
+import { StepBuffer, accountPageReady, accountRequest, accountSlug, accountStillToDo, discountOf, goalReached, onboardingSubmit, prepareStops, quoteRequest, quoteStillToDo, stepAligned } from "./steps.ts";
 import { adjustOwner, personByEmail, personById, type Person } from "../fieldnote/lib/people.ts";
 import { nav } from "../fieldnote/lib/data.ts";
 import { activateApp, chromeTabs, frontWindow, openChromeTab, prefetchChromeTabs } from "./chrome.ts";
@@ -46,6 +46,8 @@ let activePress = 0;
 let stoppedPress = 0;
 let talkGeneration = 0;
 let transcript = "";
+// Each pause starts a new turn. Keep them all so a long question is not cut to its last words.
+let turns = new Map<number, string>();
 let runId = 0;
 const howToQuestion = /^\s*(how (do|can|should|would|to)\b|how'?s\b|what (do|should) i\b|what'?s the (best )?way\b|what steps\b)/i;
 let followCursor = true;
@@ -96,13 +98,17 @@ function pushStep(line: string) {
   if (followTimer) clearTimeout(followTimer);
   followCursor = false;
   send("step", line);
-  showOnOverlay("trail", { steps: trail, summary: "" });
 }
 
 function pushSummary(line: string) {
   if (!line) return;
   send("summary", line);
-  showOnOverlay("trail", { steps: trail, summary: line });
+}
+
+// The window keeps the steps. The arrow and its card leave when the task is done.
+function releasePointer() {
+  holdingTrail = false;
+  point(null);
 }
 
 function returnToCursor(delayMs: number) {
@@ -283,7 +289,14 @@ async function screenContext() {
   } else {
     lines.push("FIELDNOTE IS NOT OPEN. kiwi opens it for you. start with a url: stop for the page that has what they want.");
   }
-  return { text: lines.join("\n"), controls, tabs, facts: page?.ok ? page.facts ?? [] : [] };
+  return { text: lines.join("\n"), controls, tabs, facts: page?.ok ? page.facts ?? [] : [], path: page?.ok ? page.path ?? "" : "" };
+}
+
+// The checklist polls the open page only. Scanning Chrome tabs on every check is what makes a long run feel stuck.
+async function readPage() {
+  const page = await askPage({ op: "inventory" }, 1200);
+  const controls = page?.ok ? page.controls ?? [] : [];
+  return { text: "", controls, tabs: [] as { title: string; url: string }[], facts: page?.ok ? page.facts ?? [] : [], path: page?.path || pagePath() };
 }
 
 function overlayPoint(screenX: number, screenY: number) {
@@ -353,6 +366,7 @@ function isAction(stop: Stop) {
   return Boolean(stop.allow && target && target !== "none" && target !== "paste" && stop.kind !== "show");
 }
 
+// What this step did, in the window. Not the model's say, which restates the request.
 function told(stop: Stop) {
   const target = stop.target.trim();
   if (/^url:/i.test(target)) {
@@ -369,12 +383,26 @@ function told(stop: Stop) {
   return `Clicked ${name}.`;
 }
 
+// The result, once. It must not be the step lines again.
 function wrapUp(question: string, played: Stop[]) {
-  if (accountRequest(question) && accountStillToDo(question, played)) return "";
+  if (quoteRequest(question) && quoteStillToDo(question, played)) return "";
+  if (quoteRequest(question)) return "The quote is sent. It's on Quotes.";
+  if (accountRequest(question) && accountStillToDo(question, played)) {
+    const created = played.some((stop) => stop.target === "new-account-submit");
+    const continued = played.some((stop) => /^(add-buyer|add-ap-contact|confirm-territory|set-price-book|set-delivery-days|set-tax|apply-credit|activate-account)/.test(stop.target));
+    if (created && !continued) return "The restaurant is created. The checklist on the next page did not open, so I stopped.";
+    return "";
+  }
   const actions = played.filter(isAction);
   if (actions.length === 0) return "";
   const last = actions[actions.length - 1];
   if (last.say?.trim().endsWith("?")) return "";
+  if (played.some((stop) => stop.target === "activate-account-submit")) return "The restaurant is active and can take orders.";
+  const note = [...played].reverse().find((stop) => stop.kind === "show" && stop.say?.trim());
+  if (note?.say && accountRequest(question)) {
+    const line = note.say.trim();
+    return /[.!?]$/.test(line) ? line : `${line}.`;
+  }
   if (/^url:/i.test(last.target)) {
     const [pathname, query = ""] = urlOf(last.target).split("?");
     const params = [...new URLSearchParams(query).entries()];
@@ -385,10 +413,10 @@ function wrapUp(question: string, played: Stop[]) {
     return `You're on ${pageName(pathname)}, with that filter on.`;
   }
   if (last.kind === "type") return "The fields are filled in.";
+  if (/new-account-submit/.test(last.target)) return "The restaurant is set up and can take orders.";
   if (/submit|save/i.test(last.target)) return "That's saved.";
   if (/^approve-/.test(last.target)) return "That's approved.";
   if (/^reject-/.test(last.target)) return "That's rejected.";
-  if (/new-account-submit/.test(last.target)) return "The restaurant is created.";
   return "That's done.";
 }
 
@@ -411,6 +439,7 @@ async function playStop(stop: Stop) {
 
   if (stop.note) send("note", stop.note);
   if (!target || target === "none") {
+    if (stop.kind === "show") return true;
     send("answer", stop.say);
     return;
   }
@@ -454,7 +483,7 @@ async function playStop(stop: Stop) {
     const opened = await askPage({ op: "navigate", url: urlOf(target) }, 22000);
     if (!opened?.ok) {
       pushStep(opened?.error ?? "Fieldnote did not open that page.");
-      return;
+      return false;
     }
     // A filtered URL points at that filter. A plain page open does not point at the bar.
     let spot: Awaited<ReturnType<typeof askPage>> | undefined;
@@ -468,13 +497,13 @@ async function playStop(stop: Stop) {
     if (spot?.ok && spot.rect) fly(spot.rect.x, spot.rect.y);
     pushStep(line);
     await wait(1200);
-    return;
+    return true;
   }
 
   const found = await askPage({ op: "locate", target }, 800);
   if (!found?.ok || !found.rect) {
     pushStep(`Couldn't find ${stop.label || target} on this page.`);
-    return;
+    return false;
   }
   fly(found.rect.x, found.rect.y);
   if (!doing) {
@@ -488,13 +517,13 @@ async function playStop(stop: Stop) {
   }
   await wait(550);
   const done = await askPage({ op: "act", target, kind: stop.kind, text: stop.text }, 800);
-  if (done?.rect) fly(done.rect.x, done.rect.y);
   if (!done?.ok) {
     pushStep(done?.error ?? "The page did not answer.");
-    return;
+    return false;
   }
   pushStep(line);
   await wait(300);
+  return true;
 }
 
 // Each step's say is shown alone, so "Then, click Save." reads as a fragment.
@@ -511,6 +540,105 @@ function chainPrompt(question: string, played: Stop[], rejected?: Stop) {
   return `${question}\n\nAlready done: ${done}.${wrong}\nPlan at most 3 stops. If the request is already finished, one stop with target none.`;
 }
 
+async function closeDialog() {
+  const found = await askPage({ op: "locate", target: "dialog-close" }, 500);
+  if (!found?.ok) return;
+  await askPage({ op: "act", target: "dialog-close", kind: "click" }, 800);
+  await wait(250);
+}
+
+// A submit click returns before the save finishes. Wait until the dialog closes, or the page says why it refused.
+async function afterOnboardingSubmit(target: string) {
+  let page = await readPage();
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const error = page.facts.find((fact) => fact.id === "form-error")?.text ?? "";
+    if (error) return { page, refused: error };
+    const open = page.controls.some((control) => (control.id ?? "").toLowerCase() === target.toLowerCase());
+    if (!open) return { page, refused: "" };
+    await wait(120);
+    page = await readPage();
+  }
+  const error = page.facts.find((fact) => fact.id === "form-error")?.text ?? "";
+  return { page, refused: error || (page.controls.length === 0 ? "" : "That step did not save.") };
+}
+
+async function waitUntilGone(id: string, page: Awaited<ReturnType<typeof readPage>>) {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    if (page.controls.length === 0) {
+      await wait(120);
+      page = await readPage();
+      continue;
+    }
+    const still = page.controls.some((control) => (control.id ?? "").toLowerCase() === id && !control.disabled);
+    if (!still) return page;
+    await wait(120);
+    page = await readPage();
+  }
+  return page;
+}
+
+async function waitForControl(id: string) {
+  let page = await readPage();
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const ready = id
+      ? page.controls.some((control) => (control.id ?? "").toLowerCase() === id)
+      : page.controls.length > 0;
+    if (ready) return page;
+    await wait(150);
+    page = await readPage();
+  }
+  return page;
+}
+
+async function waitForDeal() {
+  const started = Date.now();
+  while (Date.now() - started < 4000) {
+    if (pagePath().split("?")[0].startsWith("/opportunities/")) break;
+    await wait(100);
+  }
+  return waitForControl("tab-products");
+}
+
+async function waitForSavedDiscount(question: string) {
+  const wanted = discountOf(question);
+  let page = await readPage();
+  for (let attempt = 0; attempt < 16; attempt += 1) {
+    const fact = page.facts.find((item) => item.id === "saved-discount")?.text ?? "";
+    if (wanted && fact.toLowerCase().includes(`discount ${wanted}%`)) return page;
+    await wait(150);
+    page = await readPage();
+  }
+  return page;
+}
+
+async function waitForSentQuote() {
+  let page = await readPage();
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const sent = page.facts.some((fact) => (fact.id === "latest-quote" || fact.id === "quote-message") && /^quote sent\b/i.test(fact.text.trim()));
+    if (sent && /tab=quotes/.test(page.path)) return page;
+    await wait(150);
+    page = await readPage();
+  }
+  return page;
+}
+
+async function waitForNewAccount(question: string) {
+  const slug = accountSlug(question);
+  const started = Date.now();
+  while (Date.now() - started < 3500) {
+    const path = pagePath().split("?")[0];
+    if (slug && (path === `/accounts/${slug}` || path.startsWith(`/accounts/${slug}-`))) break;
+    await wait(100);
+  }
+  let page = await readPage();
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    if (accountPageReady(question, page.controls, page.facts, page.path || pagePath())) return page;
+    await wait(150);
+    page = await readPage();
+  }
+  return page;
+}
+
 async function runChain(
   question: string,
   asked: string,
@@ -523,13 +651,22 @@ async function runChain(
   const failed = new Set<string>();
   let rejected: Stop | undefined;
   let plans = 0;
-  while (current === runId && plans < 3) {
+  let blanks = 0;
+  const handsOn = accountRequest(question) || quoteRequest(question);
+  while (current === runId && plans < 3 && played.length < 40) {
     if (goalReached(question, played, buffer.pending === 0)) break;
     if (buffer.pending === 0) {
-      const local = prepareStops(question, [], page.controls).filter(
+      if (handsOn && page.controls.length === 0 && blanks < 4) {
+        blanks += 1;
+        await wait(180);
+        page = await readPage();
+        continue;
+      }
+      blanks = 0;
+      const local = prepareStops(question, played, page.controls, page.facts, page.path).filter(
         (stop) => !failed.has(stop.target) && !played.some((done) => done.kind === stop.kind && done.target === stop.target && done.text === stop.text),
       );
-      if (accountRequest(question)) {
+      if (handsOn) {
         if (local.length > 0) {
           buffer.push(local);
           continue;
@@ -554,7 +691,7 @@ async function runChain(
       });
       if (current !== runId) return played;
       rejected = undefined;
-      const stops = prepareStops(question, result.stops, page.controls)
+      const stops = prepareStops(question, result.stops, page.controls, page.facts, page.path)
         .slice(0, 3)
         .map((stop) => keepWritingHere(question, { ...stop, say: ownSentence(stop.say ?? ""), target: ownerTarget(question, stop.target ?? "") }))
         .filter((stop) => !failed.has(stop.target) && !played.some((done) => done.kind === stop.kind && done.target === stop.target && done.text === stop.text));
@@ -575,19 +712,62 @@ async function runChain(
       }
     }
     if (!stepAligned(step, page.controls)) {
-      // A click that opens a dialog lands before the fields exist. Read the page once more.
-      page = await screenContext();
+      // The address can change before the new page's buttons are in the inventory.
+      for (let attempt = 0; attempt < (handsOn ? 12 : 1) && !stepAligned(step, page.controls); attempt += 1) {
+        await wait(150);
+        page = handsOn ? await readPage() : await screenContext();
+      }
       if (!stepAligned(step, page.controls)) {
         failed.add(step.target);
         buffer.clear();
         rejected = step;
+        if (quoteRequest(question)) pushStep(`Couldn't find ${step.label || step.target} on this page.`);
         continue;
       }
     }
-    await playStop(step);
+    const did = await playStop(step);
     if (current !== runId) return played;
+    if (did === false) {
+      failed.add(step.target);
+      buffer.clear();
+      // A quote step that misses would add the wrong product. An account step can move on.
+      if (quoteRequest(question)) break;
+      if (accountRequest(question)) continue;
+      break;
+    }
+    if (onboardingSubmit(step.target) || step.target === "add-product-submit" || step.target === "new-opportunity-submit") {
+      const outcome = await afterOnboardingSubmit(step.target);
+      page = outcome.page;
+      if (outcome.refused) {
+        pushStep(outcome.refused);
+        failed.add(step.target);
+        failed.add(step.target.replace(/-submit$/, ""));
+        buffer.clear();
+        await closeDialog();
+        page = await readPage();
+        continue;
+      }
+      page = step.target === "new-opportunity-submit" ? await waitForDeal() : await waitUntilGone(step.target.replace(/-submit$/, ""), page);
+    } else if (handsOn) {
+      if (step.target === "new-account-submit") page = await waitForNewAccount(question);
+      else if (step.target === "save-discount") page = await waitForSavedDiscount(question);
+      else if (step.target === "send-quote") page = await waitForSentQuote();
+      else if (step.target === "new-opportunity") page = await waitForControl("new-opportunity-submit");
+      else if (step.target === "add-product") page = await waitForControl("add-product-submit");
+      else if (/^url:/i.test(step.target) && quoteRequest(question)) page = await waitForControl("new-opportunity");
+      else if (step.target.startsWith("deal-") || step.target === "tab-products" || step.target === "tab-quotes") page = await waitForControl("");
+      else page = await readPage();
+    } else {
+      page = await screenContext();
+      if (step.target === "new-account-submit") page = await waitForNewAccount(question);
+      else if (/^(add-buyer|add-ap-contact|confirm-territory|set-price-book|set-delivery-days|set-tax|apply-credit|activate-account)$/.test(step.target)) {
+        for (let attempt = 0; attempt < 5 && !page.controls.some((control) => (control.id ?? "").toLowerCase() === `${step.target}-submit`); attempt += 1) {
+          await wait(80);
+          page = await readPage();
+        }
+      }
+    }
     played.push(step);
-    page = await screenContext();
     if (goalReached(question, played, buffer.pending === 0)) {
       buffer.clear();
       break;
@@ -719,6 +899,7 @@ async function answerQuestion(question: string, doIt = false) {
     if (quick) {
       await playStop(quick);
       if (current === runId) pushSummary(wrapUp(question, [quick]));
+      if (current === runId) releasePointer();
       history.push(`User: ${question}`, `Kiwi: ${quick.say}`);
       timing(question, "local", started);
       if (current === runId) sendOffer(question, [quick], doIt);
@@ -740,6 +921,7 @@ async function answerQuestion(question: string, doIt = false) {
       if (status.length > 0) send("answer", status.join(" "));
     }
     if (current === runId) pushSummary(wrapUp(question, played));
+    if (current === runId) releasePointer();
     const notes = played.map((stop) => stop.note).filter(Boolean).join("\n").slice(0, 1500);
     history.push(`User: ${question}`, `Kiwi: ${played.map((stop) => stop.say).join(" ")}${notes ? `\nKiwi wrote: ${notes}` : ""}`);
     timing(question, shot ? "model+screen" : "model", started);
@@ -791,6 +973,7 @@ async function startTalking(press: number) {
   activePress = press;
   const stopAlready = stoppedPress === press;
   transcript = "";
+  turns = new Map();
   listening = true;
   send("listening", true);
   send("status", { busy: true, label: "Listening" });
@@ -805,8 +988,9 @@ async function startTalking(press: number) {
   });
   next.on("turn", (turn) => {
     if (!turn.transcript) return;
-    transcript = turn.transcript;
-    send("partial", turn.transcript);
+    turns.set(turn.turn_order, turn.transcript);
+    transcript = [...turns.entries()].sort((a, b) => a[0] - b[0]).map(([, text]) => text.trim()).join(" ");
+    send("partial", transcript);
   });
   next.on("error", (error) => {
     send("answer", error instanceof Error ? error.message : String(error));
@@ -914,18 +1098,38 @@ function nudgePanel(code: number) {
   writeFileSync(path.join(app.getPath("userData"), "panel-position.json"), JSON.stringify({ x, y }));
 }
 
-function trackShortcut(code: number, pressed: boolean) {
+type Modifiers = { altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean };
+
+// A key-up can get lost (Command-Tab, secure fields). Every event carries the real modifier state, so drop stale keys.
+function syncModifiers(flags: Modifiers) {
+  const groups: [boolean, number[]][] = [
+    [flags.altKey, [UiohookKey.Alt, UiohookKey.AltRight]],
+    [flags.ctrlKey, [UiohookKey.Ctrl, UiohookKey.CtrlRight]],
+    [flags.metaKey, [UiohookKey.Meta, UiohookKey.MetaRight]],
+    [flags.shiftKey, [UiohookKey.Shift, UiohookKey.ShiftRight]],
+  ];
+  for (const [down, codes] of groups) if (!down) for (const code of codes) heldKeys.delete(code);
+}
+
+function trackShortcut(code: number, pressed: boolean, flags?: Modifiers) {
   if (pressed) nudgePanel(code);
+  if (flags) syncModifiers(flags);
   if (!modifierKeys.has(code)) {
     if (pressed && shortcutHeld && shortcutUsesCommand) {
       shortcutHeld = false;
       shortcutUsesCommand = false;
       send("cancel", true);
+      return;
     }
+    updateHold();
     return;
   }
   if (pressed) heldKeys.add(code);
   else heldKeys.delete(code);
+  updateHold();
+}
+
+function updateHold() {
   const option = holding([UiohookKey.Alt, UiohookKey.AltRight]);
   const control = holding([UiohookKey.Ctrl, UiohookKey.CtrlRight]);
   const command = holding([UiohookKey.Meta, UiohookKey.MetaRight]);
@@ -945,8 +1149,8 @@ function appBundlePath() {
 function watchKeys() {
   const start = () => {
     if (keysWatching || !systemPreferences.isTrustedAccessibilityClient(false)) return;
-    uIOhook.on("keydown", (event) => trackShortcut(event.keycode, true));
-    uIOhook.on("keyup", (event) => trackShortcut(event.keycode, false));
+    uIOhook.on("keydown", (event) => trackShortcut(event.keycode, true, event));
+    uIOhook.on("keyup", (event) => trackShortcut(event.keycode, false, event));
     uIOhook.start();
     keysWatching = true;
   };
@@ -1086,6 +1290,7 @@ app.whenReady().then(async () => {
     runId += 1;
     point(null);
     void cancelTalking();
+    send("escape", true);
   });
   ipcMain.handle("sign-in", (_event, email: string) => signIn(String(email ?? "")));
   ipcMain.handle("sign-out", () => signOut());
@@ -1113,6 +1318,12 @@ app.whenReady().then(async () => {
     } catch {
       return { ok: false as const };
     }
+  });
+  ipcMain.handle("record-discard", (_event, id: string) => {
+    const cleanId = String(id ?? "");
+    if (!/^run-[a-z0-9]+$/.test(cleanId)) return { ok: false as const };
+    rmSync(path.join(dataDirectory, "runs", cleanId), { recursive: true, force: true });
+    return { ok: true as const };
   });
   ipcMain.handle("ask", (_event, question: string) => answerQuestion(question));
   ipcMain.handle("do-it", (_event, question: string) => answerQuestion(String(question), true));

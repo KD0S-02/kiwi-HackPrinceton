@@ -189,6 +189,13 @@ export function slug(text: string) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
+// Two restaurants can share a name. The ZIP tells them apart, and one that cannot ship is marked.
+export function restaurantChoice(row: Row) {
+  const ready = row.status === "active" && row.warehouseId;
+  const zip = row.zip ? ` · ${row.zip}` : "";
+  return { value: String(row.id), label: `${row.name}${zip}${ready ? "" : " · not set up"}` };
+}
+
 export function makeId(type: RecordType, values: Row, taken: Set<string>) {
   const seed = slug(String(values.name ?? values.accountId ?? values.supplierId ?? values.opportunityId ?? Date.now().toString(36)));
   const base = [type.prefix, seed].filter(Boolean).join("-");

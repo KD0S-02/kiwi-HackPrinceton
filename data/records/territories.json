@@ -3,7 +3,7 @@
     "id": "northeast",
     "name": "Northeast",
     "officeId": "jersey-city",
-    "zipPrefixes": "07|08|10|11|12"
+    "zipPrefixes": "02|07|08|10|11|12"
   },
   {
     "id": "southeast",

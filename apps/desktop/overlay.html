@@ -136,7 +136,11 @@
       mode = "fly";
       shown = true;
       heldLook = stop.look || "hand";
-      if (heldLook !== "arrow") {
+      if (heldLook === "arrow") {
+        card.dataset.say = "";
+        card.replaceChildren();
+        card.style.display = "none";
+      } else {
         card.dataset.say = stop.say || "";
         card.textContent = stop.say || "";
       }
