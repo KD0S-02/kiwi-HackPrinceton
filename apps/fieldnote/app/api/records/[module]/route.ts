@@ -5,7 +5,7 @@ import { requestApproval } from "../../../../lib/workflow/approvals";
 import { orderBlocker } from "../../../../lib/workflow/credit";
 import { openDb } from "../../../../lib/workflow/db";
 import { unitPriceFor } from "../../../../lib/workflow/money";
-import { defaultWarehouse, territoryForZip } from "../../../../lib/workflow/actions/onboarding";
+import { accountFromZip } from "../../../../lib/workflow/actions/onboarding";
 import { accountReason, opsCheck } from "../../../../lib/workflow/permissions";
 import { Refused } from "../../../../lib/workflow/refused";
 
@@ -102,28 +102,9 @@ export async function POST(request: Request, context: { params: Promise<{ module
   return NextResponse.json({ id: created[0].id, count: created.length });
 }
 
-// A new restaurant starts in onboarding. Its territory and warehouse come from the ZIP.
+// A name and a ZIP finish the account. Buyer and usual order stay optional.
 async function newAccount(db: ReturnType<typeof openDb>, values: Row): Promise<Row> {
-  const territory = await territoryForZip(db, values.zip);
-  const warehouse = await defaultWarehouse(db, territory);
-  return {
-    status: "onboarding",
-    zip: String(values.zip ?? ""),
-    territoryId: String(territory?.id ?? ""),
-    warehouseId: String(warehouse?.id ?? ""),
-    territoryConfirmed: "",
-    priceBookId: "",
-    deliveryDays: "",
-    taxStatus: "",
-    taxCertificate: "",
-    taxExpires: "",
-    creditLimit: 0,
-    creditStatus: "none",
-    paymentTerms: "",
-    creditHold: "",
-    holdReason: "",
-    holdSince: "",
-  };
+  return accountFromZip(db, values.zip);
 }
 
 // Request approval on an opportunity: the amount is the current discount, and the approver comes from the rule.

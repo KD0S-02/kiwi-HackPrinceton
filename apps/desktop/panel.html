@@ -66,8 +66,12 @@
     .name-run p { margin: 0 0 0 12px; color: #e5e7eb; }
     .name-run input, .name-run textarea { flex: none; width: 100%; box-sizing: border-box; background: #1f2937; color: white; border: 0; border-radius: 10px; padding: 10px 12px; font: inherit; }
     .name-run textarea { min-height: 68px; resize: none; }
-    .name-run .save-row { display: flex; justify-content: flex-end; }
+    .name-run .save-row { display: flex; justify-content: flex-end; gap: 8px; }
     .name-run button { background: #1f6b32; }
+    .name-run button.cancel { background: #374151; }
+    .name-head { display: flex; align-items: center; justify-content: space-between; }
+    .name-run #run-close { width: 26px; height: 26px; padding: 0; border-radius: 8px; background: transparent; color: #9ca3af; }
+    .name-run #run-close:hover { background: #374151; color: white; }
     .name-run .miss { color: #fca5a5; font-size: 12px; }
     .name-run .miss:empty { display: none; }
     .partial { min-height: 0; margin-top: 6px; color: #d1d5db; }
@@ -130,11 +134,11 @@
     </form>
     <div class="hint">Hold Control + Option to talk.</div>
     <form class="name-run" id="name-run">
-      <p id="run-count">Name this recording.</p>
+      <div class="name-head"><p id="run-count">Name this recording.</p><button type="button" id="run-close" aria-label="Cancel"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></div>
       <input id="run-title" type="text" placeholder="Title" autocomplete="off" spellcheck="false" />
       <textarea id="run-note" placeholder="Note" spellcheck="true"></textarea>
       <div class="miss" id="run-miss"></div>
-      <div class="save-row"><button type="submit">Save</button></div>
+      <div class="save-row"><button type="button" class="cancel" id="run-cancel">Cancel</button><button type="submit">Save</button></div>
     </form>
     <div class="partial" id="partial"></div>
     <div class="answer" id="answer"></div>
@@ -411,6 +415,8 @@
       const saved = await window.kiwi.recordStop();
       if (!saved || !saved.ok) return;
       pendingRun = saved.id;
+      partial.textContent = "";
+      answer.textContent = "";
       document.getElementById("run-title").value = "";
       document.getElementById("run-note").value = "";
       document.getElementById("run-miss").textContent = "";
@@ -421,6 +427,17 @@
       document.getElementById("run-title").focus();
       fit();
     });
+    // Closing the form throws the recording away. Nothing becomes a skill.
+    async function discardRun() {
+      if (!pendingRun) return;
+      await window.kiwi.recordDiscard(pendingRun);
+      hideNaming();
+      answer.textContent = "Recording discarded.";
+      fit();
+    }
+    document.getElementById("run-close").addEventListener("click", discardRun);
+    document.getElementById("run-cancel").addEventListener("click", discardRun);
+    window.kiwi.on("escape", discardRun);
     document.getElementById("name-run").addEventListener("submit", async (event) => {
       event.preventDefault();
       const title = document.getElementById("run-title").value.trim();

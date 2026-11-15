@@ -9,7 +9,10 @@ import { availableCredit, invoiceBalance, isPastDue, paidOn, planSchedule } from
 // Why a new order for this account would be refused, or "" when it may go ahead.
 export async function orderBlocker(db: Db, account: Row, amount: number) {
   const name = String(account.name);
-  if (account.status && account.status !== "active") return `${name} is still onboarding. Finish the checklist first.`;
+  if (account.status && account.status !== "active") {
+    if (!account.territoryId) return `No territory covers ZIP ${account.zip || "(none)"}. Ask your manager.`;
+    return `${name} is not active yet.`;
+  }
   if (account.creditHold === "yes") return `${name} is on credit hold: ${String(account.holdReason || "an invoice is past due.")}`;
   const available = await availableCredit(db, account);
   if (amount > available) return `This order is ${money(amount - available)} over ${name}'s available credit.`;

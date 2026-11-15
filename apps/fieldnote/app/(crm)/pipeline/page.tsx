@@ -1,7 +1,7 @@
 import { ActionButton } from "../../../components/ActionButton";
 import { DeleteButton } from "../../../components/DeleteButton";
 import { FilterBar } from "../../../components/FilterBar";
-import { loadNames, money, readRecords, readRules } from "../../../lib/data";
+import { loadNames, money, readRecords, readRules, restaurantChoice, slug } from "../../../lib/data";
 import { ownerMatches, textMatches } from "../../../lib/filters";
 import { loadFilters } from "../../../lib/page-filters";
 import { seesAll } from "../../../lib/people";
@@ -57,11 +57,12 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
             icon="plus"
             label="New opportunity"
             title="New opportunity"
+            kiwi="new-opportunity"
             endpoint="/api/records/opportunities"
             redirect="/opportunities/{id}"
             submit="Create opportunity"
             fields={[
-              { name: "accountId", label: "Restaurant", type: "select", required: true, options: myAccounts.map((row) => ({ value: String(row.id), label: String(row.name) })) },
+              { name: "accountId", label: "Restaurant", type: "select", required: true, options: myAccounts.map(restaurantChoice) },
               { name: "amount", label: "Amount", type: "number", placeholder: "5000" },
               { name: "stage", label: "Stage", type: "select", options: openStages.map((value) => ({ value, label: value })) },
             ]}
@@ -89,15 +90,19 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
                 <span>{cards.length} · {money(laneTotal)}</span>
               </header>
               <div className="lane-body">
-                {cards.length === 0 ? <p className="empty pad">No deals.</p> : cards.map((row) => (
-                  <a className="deal" key={String(row.id)} href={`/opportunities/${row.id}`}>
+                {cards.length === 0 ? <p className="empty pad">No deals.</p> : cards.map((row) => {
+                  const restaurant = accounts.find((item) => item.id === row.accountId);
+                  const ready = restaurant?.status === "active" && restaurant?.warehouseId;
+                  return (
+                  <a className="deal" key={String(row.id)} data-kiwi={ready ? `deal-${slug(String(row.name).replace(/['’]/g, ""))}` : `deal-unready-${row.id}`} href={`/opportunities/${row.id}`}>
                     <header><strong>{row.name}</strong><span>{money(row.amount)}</span></header>
                     <footer>
-                      <span>{nameOf(row.ownerId)}</span>
+                      <span>{ready ? nameOf(row.ownerId) : "Not set up"}</span>
                       <span className={Number(row.discountPercent) > cap ? "pill bad" : "pill good"}>{row.discountPercent}%</span>
                     </footer>
                   </a>
-                ))}
+                  );
+                })}
               </div>
             </section>
           );

@@ -22,5 +22,37 @@
     "quantity": 6,
     "unitPrice": 11.55,
     "substituteFor": ""
+  },
+  {
+    "id": "li-opp-ph",
+    "opportunityId": "opp-ph",
+    "productId": "napkins",
+    "quantity": 1,
+    "unitPrice": 4.2,
+    "substituteFor": ""
+  },
+  {
+    "id": "li-opp-domino-s",
+    "opportunityId": "opp-domino-s",
+    "productId": "cheddar",
+    "quantity": 1,
+    "unitPrice": 18,
+    "substituteFor": ""
+  },
+  {
+    "id": "li-opp-mcd",
+    "opportunityId": "opp-mcd",
+    "productId": "cheddar",
+    "quantity": 1,
+    "unitPrice": 18.9,
+    "substituteFor": ""
+  },
+  {
+    "id": "li-opp-popeyes",
+    "opportunityId": "opp-popeyes",
+    "productId": "cheddar",
+    "quantity": 1,
+    "unitPrice": 18.9,
+    "substituteFor": ""
   }
 ]

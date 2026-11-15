@@ -32,7 +32,7 @@ function isShown(element: Element) {
 // "the Fieldnote logo in the sidebar" and "Fieldnote logo, home" are the same control.
 function normalize(text: string) {
   const noise = /^(the|a|an|logo|icon|sidebar|button|link|in|on|menu)$/;
-  return text.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter((word) => word && !noise.test(word)).join(" ");
+  return text.toLowerCase().replace(/['’]/g, "").replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter((word) => word && !noise.test(word)).join(" ");
 }
 
 function find(target: string) {
@@ -107,12 +107,20 @@ function flash(element: HTMLElement) {
   highlight = { box, stop };
 }
 
+function fold(text: string) {
+  return text.toLowerCase().replace(/['’]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+}
+
 function choose(select: HTMLSelectElement, text: string) {
-  const wanted = text.trim().toLowerCase();
+  const wanted = fold(text);
   const options = [...select.options];
-  const option =
-    options.find((item) => item.value.toLowerCase() === wanted || item.label.toLowerCase() === wanted) ??
-    options.find((item) => item.label.toLowerCase().includes(wanted) || item.value.toLowerCase().includes(wanted));
+  const matches = options.filter((item) => {
+    const label = fold(item.label);
+    const value = fold(item.value);
+    return label === wanted || value === wanted || label.includes(wanted) || value.includes(wanted);
+  });
+  // The same name can be two restaurants. Use the one that can take an order.
+  const option = matches.find((item) => !fold(item.label).includes("not set up")) ?? matches[0];
   if (!option) return `${labelOf(select)} has no option called ${text}.`;
   Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")?.set?.call(select, option.value);
   select.dispatchEvent(new Event("change", { bubbles: true }));

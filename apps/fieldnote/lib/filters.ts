@@ -108,8 +108,12 @@ export function ownerMatches(ownerId: unknown, owner: string, viewer: { id: stri
   return ownerId === owner;
 }
 
+function fold(value: string) {
+  return value.toLowerCase().replace(/['’]/g, "");
+}
+
 export function textMatches(needle: string, values: unknown[]) {
-  const wanted = needle.trim().toLowerCase();
+  const wanted = fold(needle.trim());
   if (!wanted) return true;
-  return values.some((value) => String(value ?? "").toLowerCase().includes(wanted));
+  return values.some((value) => fold(String(value ?? "")).includes(wanted));
 }

@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld("kiwi", {
   recordResume: () => ipcRenderer.invoke("record-resume"),
   recordStop: () => ipcRenderer.invoke("record-stop"),
   recordName: (id, title, note) => ipcRenderer.invoke("record-name", id, title, note),
+  recordDiscard: (id) => ipcRenderer.invoke("record-discard", id),
   on: (channel, listener) => {
     const wrapped = (_event, payload) => listener(payload);
     ipcRenderer.on(channel, wrapped);

@@ -1,5 +1,5 @@
 import { ActionButton } from "../../components/ActionButton";
-import { loadNames, money, readRecords, readRules } from "../../lib/data";
+import { loadNames, money, readRecords, readRules, restaurantChoice } from "../../lib/data";
 import { seesAll } from "../../lib/people";
 import { approvalAmount, approvalKind, approvalNumber } from "../../lib/workflow/view";
 import { signedInUser } from "../../lib/session";
@@ -71,7 +71,7 @@ export default async function HomePage() {
             redirect="/opportunities/{id}"
             submit="Create opportunity"
             fields={[
-              { name: "accountId", label: "Restaurant", type: "select", required: true, options: myAccounts.map((row) => ({ value: String(row.id), label: String(row.name) })) },
+              { name: "accountId", label: "Restaurant", type: "select", required: true, options: myAccounts.map(restaurantChoice) },
               { name: "amount", label: "Amount", type: "number", placeholder: "5000" },
               { name: "stage", label: "Stage", type: "select", options: ["Qualify", "Proposal", "Commit"].map((value) => ({ value, label: value })) },
             ]}

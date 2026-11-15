@@ -43,8 +43,14 @@ export function DiscountEditor({
   async function sendQuote() {
     setBusy(true);
     const response = await fetch(`/api/opportunities/${opportunityId}/send`, { method: "POST" });
+    const text = await response.text();
     setBusy(false);
-    setNote(await response.text());
+    if (response.ok && /quote sent/i.test(text)) {
+      router.push(`/opportunities/${opportunityId}?tab=quotes`);
+      router.refresh();
+      return;
+    }
+    setNote(text);
     router.refresh();
   }
 
@@ -52,7 +58,7 @@ export function DiscountEditor({
   const ok = !blocked && /ready to send|quote sent|saved/i.test(message);
   return (
     <div className="highlight quote-box">
-      <span>Discount{approvedPercent != null ? ` · approved up to ${approvedPercent}%` : ` · cap ${cap}%`}</span>
+      <span data-kiwi-fact="saved-discount">Discount {discountPercent}%{approvedPercent != null ? ` · approved up to ${approvedPercent}%` : ` · cap ${cap}%`}</span>
       <div className="quote-row">
         <div className="pct">
           <input id="discount" aria-label="Discount percent" value={discountField} onChange={(event) => setDiscountField(event.target.value)} inputMode="decimal" disabled={!canEdit} />

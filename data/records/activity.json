@@ -18,5 +18,65 @@
     "by": "",
     "kind": "note",
     "outcome": ""
+  },
+  {
+    "id": "act-1",
+    "subjectType": "opportunity",
+    "subjectId": "opp-ph",
+    "accountId": "ph",
+    "text": "Sparsh Bohra sent quote version 1.",
+    "by": "user",
+    "at": "2026-11-15T03:14:55.988Z",
+    "kind": "system",
+    "outcome": "",
+    "opportunityId": "opp-ph"
+  },
+  {
+    "id": "act-2",
+    "subjectType": "opportunity",
+    "subjectId": "opp-ph",
+    "accountId": "ph",
+    "text": "Sparsh Bohra sent quote version 2.",
+    "by": "user",
+    "at": "2026-11-15T03:28:31.209Z",
+    "kind": "system",
+    "outcome": "",
+    "opportunityId": "opp-ph"
+  },
+  {
+    "id": "act-3",
+    "subjectType": "opportunity",
+    "subjectId": "opp-ph",
+    "accountId": "ph",
+    "text": "Sparsh Bohra sent quote version 3.",
+    "by": "user",
+    "at": "2026-11-15T03:28:44.937Z",
+    "kind": "system",
+    "outcome": "",
+    "opportunityId": "opp-ph"
+  },
+  {
+    "id": "act-4",
+    "subjectType": "opportunity",
+    "subjectId": "opp-mcd",
+    "accountId": "mcd",
+    "text": "Sparsh Bohra sent quote version 1.",
+    "by": "user",
+    "at": "2026-11-15T04:06:45.019Z",
+    "kind": "system",
+    "outcome": "",
+    "opportunityId": "opp-mcd"
+  },
+  {
+    "id": "act-5",
+    "subjectType": "opportunity",
+    "subjectId": "opp-popeyes",
+    "accountId": "popeyes",
+    "text": "Sparsh Bohra sent quote version 1.",
+    "by": "user",
+    "at": "2026-11-15T04:08:45.901Z",
+    "kind": "system",
+    "outcome": "",
+    "opportunityId": "opp-popeyes"
   }
 ]

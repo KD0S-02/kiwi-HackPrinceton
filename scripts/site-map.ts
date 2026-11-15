@@ -97,7 +97,7 @@ export function siteMap() {
   }
   lines.push(
     "BUTTONS. /accounts: New account, Import, Export, Edit, Delete. /accounts/<account id>: Edit, Follow, Log activity, Add buyer, Delete.",
-    "/pipeline: New opportunity, Edit, Delete. /opportunities/<id>: discount field, Save discount, Send Quote (send-quote), Clone, Change owner, Add product, Edit line, Log activity, Request approval, Delete.",
+    "/pipeline: New opportunity (new-opportunity), deal cards (deal-<name>), Edit, Delete. /opportunities/<id>: Products tab (tab-products), Add product (add-product, add-product-productId, add-product-quantity, add-product-submit), discount field, Save discount (save-discount), Send Quote (send-quote), Quotes tab (tab-quotes).",
     "/orders: New order, New case, Export, Edit, Delete, case status. /supply: warehouse switcher (warehouse-<id>), New purchase order, Below reorder, Reorder and Count on stock rows that need them, Export.",
     "every other list: New, Export, Open, Edit, Delete. /company: Roster, Export roster. /profile: Log out.",
   );

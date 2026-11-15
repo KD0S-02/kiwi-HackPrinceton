@@ -157,7 +157,7 @@ export function ActionButton(props: Props) {
                 <h3>{props.title}</h3>
                 {props.description ? <p>{props.description}</p> : null}
               </div>
-              <button type="button" className="icon-btn" aria-label="Close" onClick={() => setOpen(false)}><Icon name="x" /></button>
+              <button type="button" className="icon-btn" aria-label="Close" data-kiwi="dialog-close" onClick={() => setOpen(false)}><Icon name="x" /></button>
             </header>
             <div className="dialog-body">
               {props.fields.length === 0 ? <p className="muted">Nothing to fill in. Confirm to go ahead.</p> : null}
@@ -189,7 +189,7 @@ export function ActionButton(props: Props) {
                   {field.hint ? <small>{field.hint}</small> : null}
                 </label>
               ))}
-              {error ? <p className="form-error">{error}</p> : null}
+              {error ? <p className="form-error" data-kiwi-fact="form-error">{error}</p> : null}
             </div>
             <footer>
               <button type="button" className="btn ghost" onClick={() => setOpen(false)}>Cancel</button>
